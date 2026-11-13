@@ -11,5 +11,8 @@ module, read its documentation before editing it.
 For implementation tasks, load the `documentation` skill if your agent
 supports it. Otherwise, read `.agents/skills/documentation/SKILL.md` directly.
 
+To inspect or query the MySQL database, load the `database` skill if your
+agent supports it. Otherwise, read `.agents/skills/database/SKILL.md` directly.
+
 Before finishing a task that changed module behavior, update the relevant
 documentation, the README and the changelog as part of the same change.
