@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 
 import User from "../models/User.js";
-import { ConflictError, ValidationError } from "../utils/errors.js";
+import { ConflictError, UnauthorizedError, ValidationError } from "../utils/errors.js";
 
 const REQUIRED_FIELDS = ["email", "password", "role_id", "stakeholder_id"];
 
@@ -38,4 +38,31 @@ export async function signup({ email, password, role_id, stakeholder_id } = {}) 
         }
         throw error;
     }
+}
+
+export async function login({ email, password } = {}) {
+    if (!email || !password) {
+        throw new ValidationError("Missing required fields: email, password");
+    }
+
+    const user = await User.findOne({
+        where: { email: email.trim().toLowerCase() }
+    });
+
+    if (!user) {
+        throw new UnauthorizedError("Invalid email or password");
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (!isMatch) {
+        throw new UnauthorizedError("Invalid email or password");
+    }
+
+    return {
+        user_id: user.user_id,
+        stakeholder_id: user.stakeholder_id,
+        email: user.email,
+        role_id: user.role_id
+    };
 }

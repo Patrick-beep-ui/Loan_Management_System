@@ -1,5 +1,16 @@
 # Changelog — architecture
 
+## 2026-11-13 — Middleware de autenticación y rutas protegidas
+
+- Change: Se documentó `middlewares/checkAuth.js` y
+  `utils/generateToken.js`, y el nuevo orden de `api.js`: `/auth` público
+  primero, luego `checkAuth`, después `/users` y `/roles`.
+- Impact: Todo router registrado después de `checkAuth` requiere
+  `Authorization: Bearer <token>`; sin token o con token inválido responde
+  `401`. Se agregó `UnauthorizedError` a los errores tipados.
+- Verification: `GET /api/users` y `GET /api/roles` sin token → `401`; con
+  token válido → `200`; token inválido → `401`.
+
 ## 2026-11-13 — Arquitectura por capas y ruteo global
 
 - Change: Se reorganizó la API en Models, Services, Controllers y Routes. Se

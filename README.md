@@ -33,7 +33,7 @@ React y Vite para la interfaz, Express para la API y MySQL con Sequelize para el
 - React 19 y Vite 6 (con `@vitejs/plugin-react`).
 - Express 5 con módulos ES (`"type": "module"`).
 - MySQL a través de Sequelize 6 y `mysql2`.
-- Autenticación con Passport (estrategias local y JWT) y `bcryptjs`.
+- Autenticación con JWT (`jsonwebtoken`) y `bcryptjs`.
 - Gestor de paquetes: pnpm.
 
 ## Requisitos
@@ -53,6 +53,7 @@ DB_USER=root
 DB_PASSWORD=...
 DB_NAME=loan_management_system
 JWT_SECRET=...
+JWT_EXPIRES_IN=1h
 ```
 
 ## Comandos
@@ -77,6 +78,8 @@ La API se organiza en capas: `routes → controllers → services → models`.
 
 Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
 
+`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/users`, `/api/roles`) exige `Authorization: Bearer <token>`.
+
 ## Estructura del proyecto
 
 ```
@@ -88,15 +91,18 @@ src/
 │  └─ assets/
 └─ server/                  API Express
    ├─ main.js               servidor, monta /api y escucha en el puerto 3000
-   ├─ api.js                router global: monta /users, /roles y /auth
+   ├─ api.js                router global: monta /auth y luego checkAuth + /users y /roles
    ├─ config/
    │  ├─ connection.js      conexión Sequelize a MySQL
-   │  └─ passport.js        estrategias local y JWT
+   │  └─ passport.js        estrategias local y JWT (no usado por la API actual)
    ├─ controllers/          intermediarios entre rutas y services
+   ├─ middlewares/
+   │  └─ checkAuth.js       exige Authorization: Bearer <token>
    ├─ services/             lógica de negocio y operaciones
    ├─ routes/               definición de métodos y URLs
    ├─ utils/
-   │  └─ errors.js          errores tipados (AppError, ValidationError, ConflictError)
+   │  ├─ errors.js          errores tipados (AppError, ValidationError, UnauthorizedError, ConflictError)
+   │  └─ generateToken.js   firma el JWT de 1 hora
    └─ models/
       ├─ Role.js               tabla roles
       ├─ User.js               tabla users
@@ -117,9 +123,12 @@ La documentación por módulo vive en [`.agents/skills/`](.agents/skills/); cada
 
 | Método | Ruta | Descripción |
 | --- | --- | --- |
-| `GET` | `/api/roles` | Lista los roles registrados. |
-| `GET` | `/api/users` | Lista los usuarios con su stakeholder y rol. |
+| `GET` | `/api/roles` | Lista los roles registrados. Requiere token. |
+| `GET` | `/api/users` | Lista los usuarios con su stakeholder y rol. Requiere token. |
 | `POST` | `/api/auth/signup` | Crea un usuario; valida los campos y hashea la contraseña. Recibe `email`, `password`, `role_id` y `stakeholder_id`. |
+| `POST` | `/api/auth/login` | Inicia sesión. Recibe `email` y `password`; responde `{ token, user }` con un JWT de 1 hora. |
 | `GET` | `/hello` | Verificación simple de que el servidor responde. |
 
-La autenticación con Passport se inicializa en `src/server/main.js`.
+Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`; sin token o con uno inválido responden `401`. El login exitoso responde `200` y las credenciales incorrectas `401`.
+
+Passport sigue configurado en `src/server/config/passport.js` pero la API actual no lo usa; la autenticación se resuelve con JWT.

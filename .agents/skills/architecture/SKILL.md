@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: Layered backend architecture for the API: models, services, controllers, routes, typed errors, and global routing.
+description: Layered backend architecture for the API: models, services, controllers, routes, middleware, typed errors, and global routing.
 ---
 
 # arquitectura
@@ -28,14 +28,30 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Rutas globales
 
-`src/server/api.js` es el router raíz montado en `/api` desde `main.js`. Solo
-importa `models/associations.js` y registra los routers de cada módulo:
+`src/server/api.js` es el router raíz montado en `/api` desde `main.js`.
+Importa `models/associations.js`, registra los routers públicos y luego aplica
+`checkAuth` a todo lo que sigue:
 
 ```js
+api.use("/auth", AuthRouter); // público: /api/auth
+
+api.use(checkAuth); // protege todo lo registrado debajo
+
 api.use("/users", UserRouter); // /api/users
 api.use("/roles", RoleRouter); // /api/roles
-api.use("/auth", AuthRouter);   // /api/auth
 ```
+
+El orden importa: cualquier router registrado después de `checkAuth` exige
+`Authorization: Bearer <token>`.
+
+## Middlewares
+
+- `src/server/middlewares/checkAuth.js`: valida el JWT del header
+  `Authorization: Bearer <token>`, deja `req.user = { user_id, role_id }` y
+  responde `401` si falta o es inválido. No consulta la base de datos.
+
+La firma de tokens vive en `src/server/utils/generateToken.js` (payload
+`{ user_id, role_id }`, expiración `JWT_EXPIRES_IN` o `1h`).
 
 ## Convención de rutas
 
@@ -59,6 +75,7 @@ los controllers traducen a códigos HTTP:
 - `ValidationError` — entrada inválida (400).
 - `ConflictError` — conflicto con datos existentes, por ejemplo email
   duplicado (409).
+- `UnauthorizedError` — credenciales inválidas o token ausente/expirado (401).
 
 Los controllers usan `try/catch`: si el error es `AppError` responden con
 `error.statusCode` y `{ error: error.message }`; cualquier otro error se
@@ -69,5 +86,6 @@ registra y responde `500` con `{ error: "Internal Server Error" }`.
 - `200` lectura correcta.
 - `201` recurso creado.
 - `400` datos faltantes o inválidos.
+- `401` credenciales inválidas o token ausente/expirado.
 - `409` conflicto de unicidad.
 - `500` error inesperado.
