@@ -66,6 +66,17 @@ pnpm start     # inicia el servidor en modo producción
 
 `pnpm dev` ejecuta nodemon sobre `src/server`, cargando `.env` con `node --env-file=.env`.
 
+## Arquitectura
+
+La API se organiza en capas: `routes → controllers → services → models`.
+
+- Las **routes** definen el método y la URL y delegan en el controller.
+- Los **controllers** reciben `req`/`res`, pasan los datos al service y construyen la respuesta.
+- Los **services** contienen la lógica de negocio y no conocen HTTP, lo que permite probarlos de forma aislada.
+- Los **models** mapean las tablas MySQL con Sequelize.
+
+Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
+
 ## Estructura del proyecto
 
 ```
@@ -77,10 +88,15 @@ src/
 │  └─ assets/
 └─ server/                  API Express
    ├─ main.js               servidor, monta /api y escucha en el puerto 3000
-   ├─ api.js                rutas de la API
+   ├─ api.js                router global: monta /users, /roles y /auth
    ├─ config/
    │  ├─ connection.js      conexión Sequelize a MySQL
    │  └─ passport.js        estrategias local y JWT
+   ├─ controllers/          intermediarios entre rutas y services
+   ├─ services/             lógica de negocio y operaciones
+   ├─ routes/               definición de métodos y URLs
+   ├─ utils/
+   │  └─ errors.js          errores tipados (AppError, ValidationError, ConflictError)
    └─ models/
       ├─ Role.js               tabla roles
       ├─ User.js               tabla users
@@ -95,7 +111,7 @@ src/
       └─ associations.js       relaciones entre modelos
 ```
 
-La documentación de los modelos y sus asociaciones está en [`.agents/skills/models/SKILL.md`](.agents/skills/models/SKILL.md).
+La documentación por módulo vive en [`.agents/skills/`](.agents/skills/); cada módulo tiene su `SKILL.md` y `CHANGELOG.md`.
 
 ## API
 
@@ -103,7 +119,7 @@ La documentación de los modelos y sus asociaciones está en [`.agents/skills/mo
 | --- | --- | --- |
 | `GET` | `/api/roles` | Lista los roles registrados. |
 | `GET` | `/api/users` | Lista los usuarios con su stakeholder y rol. |
-| `POST` | `/api/signup` | Crea un usuario; hashea la contraseña con bcrypt. Recibe `email`, `password`, `role_id` y `stakeholder_id`. |
+| `POST` | `/api/auth/signup` | Crea un usuario; valida los campos y hashea la contraseña. Recibe `email`, `password`, `role_id` y `stakeholder_id`. |
 | `GET` | `/hello` | Verificación simple de que el servidor responde. |
 
 La autenticación con Passport se inicializa en `src/server/main.js`.
