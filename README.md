@@ -18,6 +18,13 @@ El propósito es **reemplazar el control manual de préstamos** por un registro 
 | `stakeholders` | Personas que participan en los préstamos. Una misma persona puede ser cliente en un préstamo y fiadora en otro. |
 | `users` | Cuentas de acceso vinculadas a una persona. |
 | `roles` | Roles de acceso al sistema, como `admin` y `operator`. |
+| `loans` | Préstamos que vinculan a un prestamista con un cliente y registran las condiciones del desembolso. |
+| `loan_installments` | Cuotas de un préstamo. Cada una tiene su propio monto, vencimiento, estado y tasa diaria de mora. |
+| `loan_guarantors` | Personas que actúan como fiadoras de un préstamo específico. |
+| `loan_collaterals` | Bienes dados en garantía, con su descripción y valor estimado cuando se conoce. |
+| `loan_payments` | Pagos recibidos, con su monto, fecha y usuario que los registró. |
+| `installment_payments` | Vincula un pago con la cuota a la que se aplica. Una cuota puede recibir varios abonos. |
+| `loan_interest_payments` | Vincula un pago de interés ordinario directamente con el préstamo. |
 
 ## Tecnologías
 
@@ -75,11 +82,20 @@ src/
    │  ├─ connection.js      conexión Sequelize a MySQL
    │  └─ passport.js        estrategias local y JWT
    └─ models/
-      ├─ Role.js            tabla roles
-      ├─ User.js            tabla users
-      ├─ Stakeholder.js     tabla stakeholders
-      └─ associations.js    relaciones entre modelos
+      ├─ Role.js               tabla roles
+      ├─ User.js               tabla users
+      ├─ Stakeholder.js        tabla stakeholders
+      ├─ Loan.js               tabla loans
+      ├─ LoanInstallment.js    tabla loan_installments
+      ├─ LoanGuarantor.js      tabla loan_guarantors
+      ├─ LoanCollateral.js     tabla loan_collaterals
+      ├─ LoanPayment.js        tabla loan_payments
+      ├─ InstallmentPayment.js tabla installment_payments
+      ├─ LoanInterestPayment.js tabla loan_interest_payments
+      └─ associations.js       relaciones entre modelos
 ```
+
+La documentación de los modelos y sus asociaciones está en [`.agents/skills/models/SKILL.md`](.agents/skills/models/SKILL.md).
 
 ## API
 
