@@ -91,7 +91,7 @@ src/
 │  └─ assets/
 └─ server/                  API Express
    ├─ main.js               servidor, monta /api y escucha en el puerto 3000
-   ├─ api.js                router global: monta /auth y luego checkAuth + /users y /roles
+   ├─ api.js                router global: monta /auth y luego checkAuth + /users, /roles y /stakeholders
    ├─ config/
    │  ├─ connection.js      conexión Sequelize a MySQL
    │  └─ passport.js        estrategias local y JWT (no usado por la API actual)
@@ -125,6 +125,12 @@ La documentación por módulo vive en [`.agents/skills/`](.agents/skills/); cada
 | --- | --- | --- |
 | `GET` | `/api/roles` | Lista los roles registrados. Requiere token. |
 | `GET` | `/api/users` | Lista los usuarios con su stakeholder y rol. Requiere token. |
+| `GET` | `/api/stakeholders` | Lista los stakeholders ordenados por apellido y nombre. Requiere token. |
+| `GET` | `/api/stakeholders/:id` | Devuelve un stakeholder. Requiere token. |
+| `POST` | `/api/stakeholders` | Crea un stakeholder. Requiere `first_name` y `last_name`. Requiere token. |
+| `PUT` | `/api/stakeholders/:id` | Reemplaza un stakeholder; los campos opcionales omitidos quedan en `null`. Requiere token. |
+| `PATCH` | `/api/stakeholders/:id` | Actualiza solo los campos enviados. Requiere token. |
+| `DELETE` | `/api/stakeholders/:id` | Elimina un stakeholder; responde `409` si está referenciado. Requiere token. |
 | `POST` | `/api/auth/signup` | Crea un usuario; valida los campos y hashea la contraseña. Recibe `email`, `password`, `role_id` y `stakeholder_id`. |
 | `POST` | `/api/auth/login` | Inicia sesión. Recibe `email` y `password`; responde `{ token, user }` con un JWT de 1 hora. |
 | `GET` | `/hello` | Verificación simple de que el servidor responde. |

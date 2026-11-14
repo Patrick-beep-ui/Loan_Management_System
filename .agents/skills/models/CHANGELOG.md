@@ -1,5 +1,14 @@
 # Changelog — models
 
+## 2026-11-13 — `date_of_birth` como `DATEONLY`
+
+- Change: `Stakeholder.date_of_birth` pasó de `DataTypes.DATE` a
+  `DataTypes.DATEONLY` para coincidir con la columna `date` de MySQL.
+- Impact: Las fechas de nacimiento se leen y escriben como `YYYY-MM-DD`, sin
+  componente de hora ni conversión de zona horaria.
+- Verification: El CRUD de stakeholders devolvió `"1990-05-15"` tal como se
+  envió.
+
 ## 2026-11-13 — Modelos de préstamos, cuotas, garantías y pagos
 
 - Change: Se agregaron los modelos `Loan`, `LoanInstallment`, `LoanGuarantor`,

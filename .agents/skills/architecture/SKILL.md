@@ -39,6 +39,7 @@ api.use(checkAuth); // protege todo lo registrado debajo
 
 api.use("/users", UserRouter); // /api/users
 api.use("/roles", RoleRouter); // /api/roles
+api.use("/stakeholders", StakeholderRouter); // /api/stakeholders
 ```
 
 El orden importa: cualquier router registrado después de `checkAuth` exige
@@ -76,6 +77,7 @@ los controllers traducen a códigos HTTP:
 - `ConflictError` — conflicto con datos existentes, por ejemplo email
   duplicado (409).
 - `UnauthorizedError` — credenciales inválidas o token ausente/expirado (401).
+- `NotFoundError` — recurso inexistente (404).
 
 Los controllers usan `try/catch`: si el error es `AppError` responden con
 `error.statusCode` y `{ error: error.message }`; cualquier otro error se
@@ -87,5 +89,6 @@ registra y responde `500` con `{ error: "Internal Server Error" }`.
 - `201` recurso creado.
 - `400` datos faltantes o inválidos.
 - `401` credenciales inválidas o token ausente/expirado.
+- `404` recurso inexistente.
 - `409` conflicto de unicidad.
 - `500` error inesperado.

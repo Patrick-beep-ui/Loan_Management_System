@@ -28,7 +28,7 @@ const Stakeholder = connection.define("Stakeholder", { // table name = stakehold
         allowNull: true   
     },
     date_of_birth: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: true 
     }
 }, {

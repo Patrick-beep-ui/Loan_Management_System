@@ -1,5 +1,14 @@
 # Changelog — architecture
 
+## 2026-11-13 — Router de stakeholders
+
+- Change: Se montó `StakeholderRouter` en `/api/stakeholders`, después de
+  `checkAuth`. Se agregó `NotFoundError` (`404`) a los errores tipados.
+- Impact: Las rutas de stakeholders requieren Bearer token; los recursos
+  inexistentes responden `404`.
+- Verification: `node --check` en los archivos nuevos y modificados; CRUD
+  completo probado en runtime con token.
+
 ## 2026-11-13 — Middleware de autenticación y rutas protegidas
 
 - Change: Se documentó `middlewares/checkAuth.js` y
