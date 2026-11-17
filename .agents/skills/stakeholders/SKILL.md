@@ -52,6 +52,10 @@ Todas las rutas requieren `Authorization: Bearer <token>`.
 Los campos desconocidos se ignoran. Un `:id` no numérico o menor o igual a cero
 responde `400`.
 
+`POST` y `PUT` de `/api/loans` también pueden crear stakeholders inline para
+fiadores. Esos registros usan las mismas reglas de campos y `national_id` único,
+pero se gestionan desde el módulo `loans` y no desde este CRUD.
+
 ## Errores
 
 - `400` campos obligatorios, enum, fecha o longitud inválidos; `:id` inválido.

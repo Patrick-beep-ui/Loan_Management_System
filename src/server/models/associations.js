@@ -30,7 +30,7 @@ Loan.hasMany(LoanInstallment, { foreignKey: "loan_id", as: "installments" });
 LoanInstallment.belongsTo(Loan, { foreignKey: "loan_id" });
 
 // Loan - LoanGuarantor
-Loan.hasMany(LoanGuarantor, { foreignKey: "loan_id" });
+Loan.hasMany(LoanGuarantor, { foreignKey: "loan_id", as: "guarantors" });
 LoanGuarantor.belongsTo(Loan, { foreignKey: "loan_id" });
 
 // LoanGuarantor - Stakeholder
@@ -38,7 +38,7 @@ LoanGuarantor.belongsTo(Stakeholder, { foreignKey: "guarantor_stakeholder_id", a
 Stakeholder.hasMany(LoanGuarantor, { foreignKey: "guarantor_stakeholder_id", as: "guarantorLinks" });
 
 // Loan - LoanCollateral
-Loan.hasMany(LoanCollateral, { foreignKey: "loan_id" });
+Loan.hasMany(LoanCollateral, { foreignKey: "loan_id", as: "collaterals" });
 LoanCollateral.belongsTo(Loan, { foreignKey: "loan_id" });
 
 // LoanPayment - User
@@ -58,5 +58,5 @@ LoanPayment.hasOne(LoanInterestPayment, { foreignKey: "payment_id" });
 LoanInterestPayment.belongsTo(LoanPayment, { foreignKey: "payment_id" });
 
 // Loan - LoanInterestPayment
-Loan.hasMany(LoanInterestPayment, { foreignKey: "loan_id", as: "interestPayments" });
+Loan.hasOne(LoanInterestPayment, { foreignKey: "loan_id", as: "interestPayment" });
 LoanInterestPayment.belongsTo(Loan, { foreignKey: "loan_id" });

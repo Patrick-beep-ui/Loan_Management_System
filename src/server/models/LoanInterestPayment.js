@@ -9,12 +9,18 @@ const LoanInterestPayment = connection.define("LoanInterestPayment", { // table 
     },
     payment_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         unique: true
     },
     loan_id: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        unique: true
+    },
+    status: {
+        type: DataTypes.ENUM("pending", "paid"),
+        allowNull: false,
+        defaultValue: "pending"
     }
 }, {
     tableName: "loan_interest_payments",

@@ -1,5 +1,22 @@
 # Changelog — models
 
+## 2026-11-16 — Modo de interés y obligación pendiente por préstamo
+
+- Change: `Loan` agregó `interest_payment_mode` y los virtuales
+  `interest_amount`/`total_to_pay`; `LoanInterestPayment` ahora tiene
+  `payment_id` nullable, `loan_id` único y `status` (`pending`/`paid`).
+  `associations.js` expone `guarantors`, `collaterals` e `interestPayment`
+  (`hasOne`). La migración
+  `database/migrations/2026-11-16-loan-interest-payment-mode.sql` aplica los
+  cambios de columnas, el índice único y la restricción de estado.
+- Impact: las consultas de préstamos incluyen una sola obligación de interés;
+  `included` no tiene fila y `separate` usa una fila pendiente con
+  `payment_id = null`. Los totales se calculan desde `loan_amount` e
+  `interest_rate`, sin almacenarse.
+- Verification: importación de modelos/asociaciones sin errores; préstamo de
+  `1000` al 20% devolvió `interest_amount = 200` y `total_to_pay = 1200`;
+  migración aplicada y verificada contra MySQL 8.4.3.
+
 ## 2026-11-13 — `date_of_birth` como `DATEONLY`
 
 - Change: `Stakeholder.date_of_birth` pasó de `DataTypes.DATE` a

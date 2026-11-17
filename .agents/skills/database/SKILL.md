@@ -13,6 +13,20 @@ run queries. Connection settings come from `.env` in the repository root.
 - `.env` contains `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
 - Dependencies installed (`pnpm install`), so `mysql2` is available.
 
+## Schema migrations
+
+Schema changes are applied manually from `database/migrations/*.sql`; the models
+do not use `sequelize.sync()`. The current migration,
+`2026-11-16-loan-interest-payment-mode.sql`, adds `loans.interest_payment_mode`,
+makes `loan_interest_payments.payment_id` nullable, adds `status`, adds the
+unique key on `loan_id`, and adds `chk_loan_interest_payment_state`.
+
+Run a migration with the same `mysql2` connection method described below, then
+verify the affected columns, keys, and constraints with `information_schema`.
+Keep existing data in mind: the migration that adds a `NOT NULL` column without
+a default assumes the table is empty or that MySQL assigns the enum's first
+value.
+
 ## Connection method
 
 The server runs MySQL 8, which uses `caching_sha2_password`. Do **not** use

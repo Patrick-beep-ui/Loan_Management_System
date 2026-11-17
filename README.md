@@ -6,7 +6,7 @@ El propósito es **reemplazar el control manual de préstamos** por un registro 
 
 ## Alcance
 
-- Registrar préstamos con su monto, tasa de interés ordinario, fecha de desembolso y calendario de cuotas.
+- Registrar préstamos con su monto, tasa de interés ordinario, fecha de desembolso, calendario de cuotas, fiadores, garantías y modo de interés (incluido en las cuotas o cobrado por separado).
 - Registrar uno o varios abonos por cuota y llevar por separado los pagos de interés ordinario.
 - Identificar cuotas pendientes, pagadas, vencidas o reprogramadas, y calcular la mora diaria por cuota.
 - Consultar el historial de préstamos de una persona como cliente, prestamista o fiador.
@@ -18,13 +18,13 @@ El propósito es **reemplazar el control manual de préstamos** por un registro 
 | `stakeholders` | Personas que participan en los préstamos. Una misma persona puede ser cliente en un préstamo y fiadora en otro. |
 | `users` | Cuentas de acceso vinculadas a una persona. |
 | `roles` | Roles de acceso al sistema, como `admin` y `operator`. |
-| `loans` | Préstamos que vinculan a un prestamista con un cliente y registran las condiciones del desembolso. |
+| `loans` | Préstamos que vinculan a un prestamista con un cliente y registran las condiciones del desembolso y el modo de interés (`included`/`separate`). |
 | `loan_installments` | Cuotas de un préstamo. Cada una tiene su propio monto, vencimiento, estado y tasa diaria de mora. |
 | `loan_guarantors` | Personas que actúan como fiadoras de un préstamo específico. |
 | `loan_collaterals` | Bienes dados en garantía, con su descripción y valor estimado cuando se conoce. |
 | `loan_payments` | Pagos recibidos, con su monto, fecha y usuario que los registró. |
 | `installment_payments` | Vincula un pago con la cuota a la que se aplica. Una cuota puede recibir varios abonos. |
-| `loan_interest_payments` | Vincula un pago de interés ordinario directamente con el préstamo. |
+| `loan_interest_payments` | Obligación de interés ordinario por préstamo: pendiente (`payment_id` nulo) o pagada. |
 
 ## Tecnologías
 
@@ -85,6 +85,10 @@ Cada router se registra en `src/server/api.js`. Los services lanzan errores tipa
 ## Estructura del proyecto
 
 ```
+database/
+└─ migrations/
+   └─ 2026-11-16-loan-interest-payment-mode.sql
+
 src/
 ├─ client/                  interfaz React (Vite)
 │  ├─ main.jsx              punto de entrada de React
@@ -108,7 +112,7 @@ src/
    │  └─ validators/
    │     ├─ common.js              helpers compartidos (enteros, strings opcionales, números)
    │     ├─ authValidation.js      validación/normalización de payloads de auth
-   │     ├─ loanValidation.js      validación/parseo de préstamos
+   │     ├─ loanValidation.js      validación/parseo de préstamos y sus relaciones
    │     └─ stakeholderValidation.js validación/parseo de stakeholders
    └─ models/
       ├─ Role.js               tabla roles
@@ -138,18 +142,53 @@ La documentación por módulo vive en [`.agents/skills/`](.agents/skills/); cada
 | `PUT` | `/api/stakeholders/:id` | Reemplaza un stakeholder; los campos opcionales omitidos quedan en `null`. Requiere token. |
 | `PATCH` | `/api/stakeholders/:id` | Actualiza solo los campos enviados. Requiere token. |
 | `DELETE` | `/api/stakeholders/:id` | Elimina un stakeholder; responde `409` si está referenciado. Requiere token. |
-| `GET` | `/api/loans` | Lista los préstamos con prestamista y cliente. Requiere token. |
-| `GET` | `/api/loans/:id` | Devuelve un préstamo con prestamista y cliente. Requiere token. |
-| `POST` | `/api/loans` | Crea un préstamo. Requiere `lender_id`, `customer_id`, `loan_amount` y `disbursed_at` (datetime); `lender_id` y `customer_id` deben ser distintos. Requiere token. |
-| `PUT` | `/api/loans/:id` | Reemplaza un préstamo; `interest_rate` omitido queda en `null`. Requiere token. |
-| `PATCH` | `/api/loans/:id` | Actualiza solo los campos enviados. Requiere token. |
-| `DELETE` | `/api/loans/:id` | Elimina un préstamo; responde `409` si está referenciado. Requiere token. |
+| `GET` | `/api/loans` | Lista los préstamos con prestamista, cliente, cuotas, fiadores, garantías e interés. Requiere token. |
+| `GET` | `/api/loans/:id` | Devuelve un préstamo con sus relaciones. Requiere token. |
+| `POST` | `/api/loans` | Crea un préstamo con `installments`, `guarantors` y `collaterals` en una transacción. Requiere `lender_id`, `customer_id`, `loan_amount`, `interest_payment_mode` y `disbursed_at`; prestamista y cliente deben ser distintos. Requiere token. |
+| `PUT` | `/api/loans/:id` | Reemplaza un préstamo y todas sus relaciones; exige los tres arreglos. Requiere token. |
+| `PATCH` | `/api/loans/:id` | Actualiza solo los campos o arreglos enviados; los cambios financieros requieren `installments`. Requiere token. |
+| `DELETE` | `/api/loans/:id` | Elimina un préstamo y sus relaciones; responde `409` si tiene pagos de cuotas o interés pagado. Requiere token. |
 | `POST` | `/api/auth/signup` | Crea un usuario; valida los campos y hashea la contraseña. Recibe `email`, `password`, `role_id` y `stakeholder_id`; un rol o stakeholder inexistente responde `409`. |
 | `POST` | `/api/auth/login` | Inicia sesión. Recibe `email` y `password`; responde `{ token, user }` con un JWT de 1 hora. |
 | `GET` | `/hello` | Verificación simple de que el servidor responde. |
 
 Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`; sin token o con uno inválido responden `401`. El login exitoso responde `200` y las credenciales incorrectas `401`.
 
-En los préstamos, `disbursed_at` debe incluir hora y acepta ISO 8601 (`2026-01-15T10:30:00Z`, con zona opcional) o formato MySQL (`2026-01-15 10:30:00`); sin zona se interpreta como hora local del servidor y la respuesta usa ISO UTC. `loan_amount` debe ser mayor que 0 y hasta `9999999999.99`; `interest_rate` va de 0 a `999.9999`.
+### Préstamos
+
+`POST` y `PUT` reciben el préstamo junto con `installments`, `guarantors` y `collaterals`:
+
+```json
+{
+  "lender_id": 1,
+  "customer_id": 2,
+  "loan_amount": 1000,
+  "interest_rate": 20,
+  "interest_payment_mode": "separate",
+  "disbursed_at": "2026-01-15T10:30:00Z",
+  "installments": [
+    { "installment_number": 1, "amount_due": 200, "due_date": "2026-02-15" },
+    { "installment_number": 2, "amount_due": 200, "due_date": "2026-03-15" },
+    { "installment_number": 3, "amount_due": 200, "due_date": "2026-04-15" },
+    { "installment_number": 4, "amount_due": 200, "due_date": "2026-05-15" },
+    { "installment_number": 5, "amount_due": 200, "due_date": "2026-06-15" }
+  ],
+  "guarantors": [
+    { "stakeholder_id": 3 },
+    { "first_name": "Ana", "last_name": "Pérez", "national_id": "..." }
+  ],
+  "collaterals": [
+    { "description": "Vehículo", "estimated_value": 5000 }
+  ]
+}
+```
+
+Las cuotas deben numerarse desde 1, tener fechas únicas y ascendentes, y montos iguales salvo la última. El interés se calcula como `round(loan_amount * interest_rate / 100, 2)` y `total_to_pay` es `loan_amount + interest_amount`. En modo `included` las cuotas suman `total_to_pay` y no hay registro de interés; en modo `separate` suman `loan_amount` y se crea una obligación pendiente en `loan_interest_payments`. `separate` exige `interest_rate > 0`.
+
+Cada fiador puede referenciar un `stakeholder_id` existente o enviar los campos de un stakeholder nuevo, pero no ambos. Las garantías requieren `description` y aceptan `estimated_value` opcional. Las respuestas incluyen `interest_amount`, `total_to_pay`, cuotas ordenadas, fiadores, garantías e `interestPayment`.
+
+`disbursed_at` debe incluir hora y acepta ISO 8601 (`2026-01-15T10:30:00Z`, con zona opcional) o formato MySQL (`2026-01-15 10:30:00`); sin zona se interpreta como hora local del servidor y la respuesta usa ISO UTC. `loan_amount` debe ser mayor que 0, tener máximo 2 decimales y llegar hasta `9999999999.99`; `interest_rate` va de 0 a `999.9999`.
+
+`PATCH` reemplaza solo los arreglos enviados y exige `installments` cuando cambian `loan_amount`, `interest_rate` o `interest_payment_mode`. Los pagos de cuotas o un interés pagado bloquean los cambios y la eliminación con `409`.
 
 Passport sigue configurado en `src/server/config/passport.js` pero la API actual no lo usa; la autenticación se resuelve con JWT.
