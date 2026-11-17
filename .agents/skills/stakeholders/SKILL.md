@@ -65,4 +65,5 @@ responde `400`.
 - `src/server/routes/stakeholderRoutes.js` (montado en `/api/stakeholders`)
 - `src/server/controllers/stakeholderController.js`
 - `src/server/services/stakeholderService.js`
+- `src/server/utils/validators/stakeholderValidation.js`
 - `src/server/models/Stakeholder.js`

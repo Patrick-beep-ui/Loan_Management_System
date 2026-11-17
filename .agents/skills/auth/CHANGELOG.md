@@ -1,5 +1,17 @@
 # Changelog — auth
 
+## 2026-11-16 — Validadores por módulo y endurecimiento de signup
+
+- Change: `authValidation.js` se movió a `src/server/utils/validators/` y ahora devuelve los valores normalizados que usa `authService`. Se exige que `email`/`password` sean strings, email con formato básico `local@dominio`, contraseña no vacía y `role_id`/`stakeholder_id` enteros positivos. `signup` traduce `SequelizeForeignKeyConstraintError` a `409 role_id or stakeholder_id does not exist`.
+- Impact: Los payloads inválidos que antes llegaban a la base y producían `500` ahora responden `400`; referencias inexistentes a rol/stakeholder responden `409`. El login normaliza el email desde el validador y mantiene `401 Invalid email or password`. También se eliminó el log del JWT en `authController.login`.
+- Verification: Pruebas de runtime contra el servidor: signup `{}` → `400`; email numérico/inválido → `400`; password en blanco → `400`; `role_id` no numérico → `400`; rol/stakeholder inexistente → `409`; signup válido con email/IDs normalizados → `201`; email duplicado → `409`; login con password incorrecta → `401`; login válido → `200` y token aceptado en `/api/users`. Datos temporales eliminados.
+
+## 2026-11-16 — Validación de auth movida a utilidades compartidas
+
+- Change: Se extrajeron la validación de payloads de signup/login y la normalización de email de `authService` a `src/server/utils/authValidation.js`, conservando los mismos campos requeridos, normalización (`trim` + minúsculas) y mensajes de error.
+- Impact: Sin cambios en el comportamiento de `POST /api/auth/signup` y `POST /api/auth/login`; la lógica de validación ahora reside en una utilidad compartida.
+- Verification: `node --check` en `src/server/services/authService.js` y `src/server/utils/authValidation.js` (sin errores). No se ejecutaron pruebas funcionales de endpoints en esta sesión.
+
 ## 2026-11-13 — Login y protección con JWT
 
 - Change: Se agregó `POST /api/auth/login` con validación, búsqueda de usuario

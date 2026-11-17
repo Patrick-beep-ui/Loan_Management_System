@@ -24,20 +24,28 @@ Recibe `{ email, password, role_id, stakeholder_id }`.
 
 - Valida que los cuatro campos estén presentes; si falta alguno lanza
   `ValidationError` (`400`) con la lista de campos faltantes.
-- Normaliza el email (`trim` + minúsculas).
+- Exige que `email` y `password` sean strings. El email se normaliza
+  (`trim` + minúsculas) y debe tener formato básico `local@dominio`; una
+  contraseña vacía o solo con espacios responde `400`.
+- `role_id` y `stakeholder_id` deben ser enteros positivos (`"2"` se acepta y
+  se normaliza a número).
 - Hashea `password` con `bcryptjs` (10 rondas) y lo guarda en `password_hash`.
 - Crea el usuario y responde `201`:
   `{ message: "User created successfully", user }`, donde `user` solo incluye
   `user_id`, `stakeholder_id`, `email` y `role_id` (nunca `password_hash`).
 - Si el email ya existe, `SequelizeUniqueConstraintError` se traduce a
-  `ConflictError` (`409`).
+  `ConflictError` (`409`). Si `role_id` o `stakeholder_id` no existen,
+  `SequelizeForeignKeyConstraintError` se traduce a `ConflictError` (`409`)
+  con `role_id or stakeholder_id does not exist`.
 
 ## Login
 
 Recibe `{ email, password }`.
 
 - Si falta alguno lanza `ValidationError` (`400`).
-- Normaliza el email y busca el usuario por email.
+- Exige `email` y `password` strings; el email se normaliza (`trim` +
+  minúsculas) y debe tener formato básico `local@dominio`.
+- Busca el usuario por email normalizado.
 - Usuario inexistente o contraseña incorrecta lanzan `UnauthorizedError`
   (`401`) con el mensaje genérico `Invalid email or password` (no revela si el
   email existe).
@@ -63,5 +71,6 @@ Cualquier error inesperado se registra y responde `500` con
 - `src/server/routes/authRoutes.js` (montado en `/api/auth`)
 - `src/server/controllers/authController.js`
 - `src/server/services/authService.js`
+- `src/server/utils/validators/authValidation.js`
 - `src/server/utils/generateToken.js`
 - `src/server/middlewares/checkAuth.js`

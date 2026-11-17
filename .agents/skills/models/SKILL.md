@@ -52,5 +52,7 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 - `loan_guarantors` tiene índice único `(loan_id, guarantor_stakeholder_id)`.
 - `Stakeholder.date_of_birth` usa `DataTypes.DATEONLY` para coincidir con la
   columna `date` de MySQL y evitar desplazamientos de zona horaria.
+- `Loan.disbursed_at` usa `DataTypes.DATE` para coincidir con la columna
+  `datetime`; la API lo serializa como ISO UTC.
 - Los modelos no crean ni alteran el esquema: las tablas ya existen en MySQL y no
   se usa `sequelize.sync()` ni migraciones.

@@ -7,6 +7,7 @@ import AuthRouter from "./routes/authRoutes.js";
 import UserRouter from "./routes/userRoutes.js";
 import RoleRouter from "./routes/roleRoutes.js";
 import StakeholderRouter from "./routes/stakeholderRoutes.js";
+import LoanRouter from "./routes/loanRoutes.js";
 
 const api = express.Router({ mergeParams: true });
 
@@ -17,5 +18,6 @@ api.use(checkAuth); // every route registered below requires a valid token
 api.use("/users", UserRouter); // /api/users
 api.use("/roles", RoleRouter); // /api/roles
 api.use("/stakeholders", StakeholderRouter); // /api/stakeholders
+api.use("/loans", LoanRouter); // /api/loans
 
 export default api;

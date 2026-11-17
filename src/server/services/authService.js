@@ -1,26 +1,19 @@
 import bcrypt from "bcryptjs";
 
 import User from "../models/User.js";
-import { ConflictError, UnauthorizedError, ValidationError } from "../utils/errors.js";
+import { ConflictError, UnauthorizedError } from "../utils/errors.js";
+import {
+    validateLoginPayload,
+    validateSignupPayload
+} from "../utils/validators/authValidation.js";
 
-const REQUIRED_FIELDS = ["email", "password", "role_id", "stakeholder_id"];
-
-export async function signup({ email, password, role_id, stakeholder_id } = {}) {
-    const fields = { email, password, role_id, stakeholder_id };
-    const missing = REQUIRED_FIELDS.filter((field) => {
-        const value = fields[field];
-        return value === undefined || value === null || value === "";
-    });
-
-    if (missing.length > 0) {
-        throw new ValidationError(`Missing required fields: ${missing.join(", ")}`);
-    }
-
+export async function signup(payload = {}) {
+    const { email, password, role_id, stakeholder_id } = validateSignupPayload(payload);
     const password_hash = await bcrypt.hash(password, 10);
 
     try {
         const user = await User.create({
-            email: email.trim().toLowerCase(),
+            email,
             password_hash,
             role_id,
             stakeholder_id
@@ -36,18 +29,19 @@ export async function signup({ email, password, role_id, stakeholder_id } = {}) 
         if (error.name === "SequelizeUniqueConstraintError") {
             throw new ConflictError("A user with that email already exists");
         }
+
+        if (error.name === "SequelizeForeignKeyConstraintError") {
+            throw new ConflictError("role_id or stakeholder_id does not exist");
+        }
+
         throw error;
     }
 }
 
-export async function login({ email, password } = {}) {
-    if (!email || !password) {
-        throw new ValidationError("Missing required fields: email, password");
-    }
+export async function login(payload = {}) {
+    const { email, password } = validateLoginPayload(payload);
 
-    const user = await User.findOne({
-        where: { email: email.trim().toLowerCase() }
-    });
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
         throw new UnauthorizedError("Invalid email or password");

@@ -26,6 +26,18 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 - **Routes** (`src/server/routes/`): definen método y URL y delegan en el
   controller correspondiente.
 
+## Validación de entrada
+
+La validación vive en `src/server/utils/validators/`, separada por módulo:
+
+- `common.js`: helpers compartidos para enteros positivos, strings opcionales
+  con longitud máxima y números finitos con límites.
+- `authValidation.js`, `stakeholderValidation.js` y `loanValidation.js`:
+  construyen los atributos validados/normalizados que reciben los services.
+
+Los controllers no validan: pasan `req.body` al service, y el validador del
+dominio lanza `ValidationError` (`400`) ante datos inválidos.
+
 ## Rutas globales
 
 `src/server/api.js` es el router raíz montado en `/api` desde `main.js`.
@@ -40,6 +52,7 @@ api.use(checkAuth); // protege todo lo registrado debajo
 api.use("/users", UserRouter); // /api/users
 api.use("/roles", RoleRouter); // /api/roles
 api.use("/stakeholders", StakeholderRouter); // /api/stakeholders
+api.use("/loans", LoanRouter); // /api/loans
 ```
 
 El orden importa: cualquier router registrado después de `checkAuth` exige

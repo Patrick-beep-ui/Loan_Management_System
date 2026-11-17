@@ -1,5 +1,17 @@
 # Changelog — stakeholders
 
+## 2026-11-16 — Validador reubicado en `utils/validators`
+
+- Change: `stakeholderValidation.js` se movió a `src/server/utils/validators/` y pasó a reutilizar `parsePositiveInteger` y `parseOptionalString` de `validators/common.js`.
+- Impact: Sin cambios de comportamiento, reglas ni mensajes en `/api/stakeholders`; solo cambia la ubicación del archivo y su import en `stakeholderService`.
+- Verification: `node --check` en los validadores y el service; pruebas de runtime de auth/loans/stakeholders con datos temporales ejecutadas en la misma sesión, sin regresiones en el CRUD de stakeholders.
+
+## 2026-11-16 — Validadores movidos a utilidades compartidas
+
+- Change: Se extrajeron los validadores y parseadores de entrada de `stakeholderService` (`validateField`, construcción de atributos para creación/reemplazo/actualización parcial y `parseStakeholderId`) a `src/server/utils/stakeholderValidation.js` para centralizarlos y reutilizarlos, manteniendo las mismas reglas y mensajes de validación.
+- Impact: Sin cambios en el comportamiento de la API ni en las rutas/datos; `stakeholderService` ahora importa la validación desde utilidades compartidas.
+- Verification: `node --check` en `src/server/services/stakeholderService.js` y `src/server/utils/stakeholderValidation.js` (sin errores). No se ejecutaron pruebas funcionales de endpoints en esta sesión.
+
 ## 2026-11-13 — CRUD de stakeholders
 
 - Change: Se agregó el CRUD completo de `stakeholders` en

@@ -76,9 +76,11 @@ La API se organiza en capas: `routes → controllers → services → models`.
 - Los **services** contienen la lógica de negocio y no conocen HTTP, lo que permite probarlos de forma aislada.
 - Los **models** mapean las tablas MySQL con Sequelize.
 
+La validación y normalización de payloads vive en `src/server/utils/validators/`, organizada por módulo. Los helpers compartidos (`common.js`) se encargan de enteros positivos, strings opcionales y números finitos; cada validador de dominio construye los atributos que recibe el service.
+
 Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
 
-`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/users`, `/api/roles`) exige `Authorization: Bearer <token>`.
+`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`) exige `Authorization: Bearer <token>`.
 
 ## Estructura del proyecto
 
@@ -91,7 +93,7 @@ src/
 │  └─ assets/
 └─ server/                  API Express
    ├─ main.js               servidor, monta /api y escucha en el puerto 3000
-   ├─ api.js                router global: monta /auth y luego checkAuth + /users, /roles y /stakeholders
+   ├─ api.js                router global: monta /auth y luego checkAuth + /users, /roles, /stakeholders y /loans
    ├─ config/
    │  ├─ connection.js      conexión Sequelize a MySQL
    │  └─ passport.js        estrategias local y JWT (no usado por la API actual)
@@ -101,8 +103,13 @@ src/
    ├─ services/             lógica de negocio y operaciones
    ├─ routes/               definición de métodos y URLs
    ├─ utils/
-   │  ├─ errors.js          errores tipados (AppError, ValidationError, UnauthorizedError, ConflictError)
-   │  └─ generateToken.js   firma el JWT de 1 hora
+   │  ├─ errors.js              errores tipados (AppError, ValidationError, UnauthorizedError, ConflictError, NotFoundError)
+   │  ├─ generateToken.js       firma el JWT
+   │  └─ validators/
+   │     ├─ common.js              helpers compartidos (enteros, strings opcionales, números)
+   │     ├─ authValidation.js      validación/normalización de payloads de auth
+   │     ├─ loanValidation.js      validación/parseo de préstamos
+   │     └─ stakeholderValidation.js validación/parseo de stakeholders
    └─ models/
       ├─ Role.js               tabla roles
       ├─ User.js               tabla users
@@ -131,10 +138,18 @@ La documentación por módulo vive en [`.agents/skills/`](.agents/skills/); cada
 | `PUT` | `/api/stakeholders/:id` | Reemplaza un stakeholder; los campos opcionales omitidos quedan en `null`. Requiere token. |
 | `PATCH` | `/api/stakeholders/:id` | Actualiza solo los campos enviados. Requiere token. |
 | `DELETE` | `/api/stakeholders/:id` | Elimina un stakeholder; responde `409` si está referenciado. Requiere token. |
-| `POST` | `/api/auth/signup` | Crea un usuario; valida los campos y hashea la contraseña. Recibe `email`, `password`, `role_id` y `stakeholder_id`. |
+| `GET` | `/api/loans` | Lista los préstamos con prestamista y cliente. Requiere token. |
+| `GET` | `/api/loans/:id` | Devuelve un préstamo con prestamista y cliente. Requiere token. |
+| `POST` | `/api/loans` | Crea un préstamo. Requiere `lender_id`, `customer_id`, `loan_amount` y `disbursed_at` (datetime); `lender_id` y `customer_id` deben ser distintos. Requiere token. |
+| `PUT` | `/api/loans/:id` | Reemplaza un préstamo; `interest_rate` omitido queda en `null`. Requiere token. |
+| `PATCH` | `/api/loans/:id` | Actualiza solo los campos enviados. Requiere token. |
+| `DELETE` | `/api/loans/:id` | Elimina un préstamo; responde `409` si está referenciado. Requiere token. |
+| `POST` | `/api/auth/signup` | Crea un usuario; valida los campos y hashea la contraseña. Recibe `email`, `password`, `role_id` y `stakeholder_id`; un rol o stakeholder inexistente responde `409`. |
 | `POST` | `/api/auth/login` | Inicia sesión. Recibe `email` y `password`; responde `{ token, user }` con un JWT de 1 hora. |
 | `GET` | `/hello` | Verificación simple de que el servidor responde. |
 
 Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`; sin token o con uno inválido responden `401`. El login exitoso responde `200` y las credenciales incorrectas `401`.
+
+En los préstamos, `disbursed_at` debe incluir hora y acepta ISO 8601 (`2026-01-15T10:30:00Z`, con zona opcional) o formato MySQL (`2026-01-15 10:30:00`); sin zona se interpreta como hora local del servidor y la respuesta usa ISO UTC. `loan_amount` debe ser mayor que 0 y hasta `9999999999.99`; `interest_rate` va de 0 a `999.9999`.
 
 Passport sigue configurado en `src/server/config/passport.js` pero la API actual no lo usa; la autenticación se resuelve con JWT.

@@ -1,5 +1,17 @@
 # Changelog — architecture
 
+## 2026-11-16 — Validadores centralizados por módulo
+
+- Change: Los validadores de auth, stakeholders y loans se movieron a `src/server/utils/validators/`, con helpers compartidos en `common.js`. Los services importan el validador de su dominio y los controllers siguen sin validar.
+- Impact: La estructura de `utils/` queda `errors.js`, `generateToken.js` y `validators/`. No cambia el contrato HTTP más allá de las reglas específicas documentadas en cada módulo.
+- Verification: `node --check` en todo `src/server` y pruebas de runtime de auth, stakeholders y loans con token; conteos de base restaurados.
+
+## 2026-11-16 — Router de préstamos
+
+- Change: Se montó `LoanRouter` en `/api/loans` después de `checkAuth` en `src/server/api.js`, siguiendo el patrón por capas (`routes → controllers → services → models`).
+- Impact: Nuevas rutas protegidas bajo `/api/loans` (CRUD de préstamos). Requieren `Authorization: Bearer <token>`.
+- Verification: `node --check` en `src/server/api.js`, `src/server/routes/loanRoutes.js`, `src/server/controllers/loanController.js`, `src/server/services/loanService.js` y `src/server/utils/loanValidation.js` (sin errores). No se ejecutaron pruebas funcionales de endpoints en esta sesión.
+
 ## 2026-11-13 — Router de stakeholders
 
 - Change: Se montó `StakeholderRouter` en `/api/stakeholders`, después de

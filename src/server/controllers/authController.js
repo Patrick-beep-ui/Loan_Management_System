@@ -19,7 +19,6 @@ export async function login(req, res) {
     try {
         const user = await loginService(req.body);
         const token = generateToken(user);
-        console.log("Generated Token:", token); // Log the generated token for debugging
         return res.status(200).json({ token, user });
     } catch (error) {
         if (error instanceof AppError) {
