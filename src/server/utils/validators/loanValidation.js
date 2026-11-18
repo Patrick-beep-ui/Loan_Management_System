@@ -22,6 +22,11 @@ const UPDATABLE_FIELDS = [
     "interest_payment_mode",
     "disbursed_at"
 ];
+const FINANCIAL_FIELDS = [
+    "loan_amount",
+    "interest_rate",
+    "interest_payment_mode"
+];
 const DATETIME_PATTERN =
     /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(Z|[+-]\d{2}:?\d{2})?$/;
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -389,13 +394,59 @@ export function parseLoanId(id) {
     return parsePositiveInteger(id, "loan_id");
 }
 
-export function assertDistinctStakeholders(lender_id, customer_id) {
+function normalizeFinancialValue(field, value) {
+    if (field === "interest_payment_mode") {
+        return value;
+    }
+
+    return value === null || value === undefined ? null : Number(value);
+}
+
+function combinedTerms(loan, attributes) {
+    return {
+        lender_id:
+            attributes.lender_id !== undefined
+                ? attributes.lender_id
+                : loan.lender_id,
+        customer_id:
+            attributes.customer_id !== undefined
+                ? attributes.customer_id
+                : loan.customer_id,
+        loan_amount:
+            attributes.loan_amount !== undefined
+                ? attributes.loan_amount
+                : loan.loan_amount,
+        interest_rate:
+            attributes.interest_rate !== undefined
+                ? attributes.interest_rate
+                : loan.interest_rate,
+        interest_payment_mode:
+            attributes.interest_payment_mode !== undefined
+                ? attributes.interest_payment_mode
+                : loan.interest_payment_mode
+    };
+}
+
+function hasFinancialChanges(loan, attributes) {
+    return FINANCIAL_FIELDS.some((field) => {
+        if (attributes[field] === undefined) {
+            return false;
+        }
+
+        return (
+            normalizeFinancialValue(field, attributes[field]) !==
+            normalizeFinancialValue(field, loan[field])
+        );
+    });
+}
+
+function assertDistinctStakeholders(lender_id, customer_id) {
     if (lender_id === customer_id) {
         throw new ValidationError("lender_id and customer_id must be different");
     }
 }
 
-export function assertInterestPaymentMode(interest_payment_mode, interest_rate) {
+function assertInterestPaymentMode(interest_payment_mode, interest_rate) {
     if (
         interest_payment_mode === "separate" &&
         !(Number(interest_rate) > 0)
@@ -406,7 +457,7 @@ export function assertInterestPaymentMode(interest_payment_mode, interest_rate) 
     }
 }
 
-export function assertInstallmentTotals(installments, terms) {
+function assertInstallmentTotals(installments, terms) {
     const totalCents = installments.reduce(
         (total, installment) => total + toCents(installment.amount_due),
         0
@@ -420,7 +471,7 @@ export function assertInstallmentTotals(installments, terms) {
     }
 }
 
-export function buildFullLoanAttributes(payload) {
+function buildFullLoanAttributes(payload) {
     const data = asObject(payload);
 
     return {
@@ -436,7 +487,7 @@ export function buildFullLoanAttributes(payload) {
     };
 }
 
-export function buildPartialLoanAttributes(payload) {
+function buildPartialLoanAttributes(payload) {
     const data = asObject(payload);
     const attributes = {};
 
@@ -454,11 +505,13 @@ export function buildCreateLoanPayload(payload) {
     const loan = buildFullLoanAttributes(data);
     const installments = parseInstallments(data.installments);
 
+    assertDistinctStakeholders(loan.lender_id, loan.customer_id);
     assertInterestPaymentMode(loan.interest_payment_mode, loan.interest_rate);
     assertInstallmentTotals(installments, loan);
 
     return {
         loan,
+        terms: loan,
         installments,
         guarantors: parseGuarantors(data.guarantors),
         collaterals: parseCollaterals(data.collaterals)
@@ -469,7 +522,7 @@ export function buildReplaceLoanPayload(payload) {
     return buildCreateLoanPayload(payload);
 }
 
-export function buildPartialLoanPayload(payload) {
+export function buildPartialLoanPayload(payload, currentLoan) {
     const data = asObject(payload);
     const loan = buildPartialLoanAttributes(data);
     const result = { loan };
@@ -493,6 +546,32 @@ export function buildPartialLoanPayload(payload) {
     if (Object.keys(loan).length === 0 && !hasRelations) {
         throw new ValidationError("No fields to update");
     }
+
+    const terms = combinedTerms(currentLoan, loan);
+    const financialChanges = hasFinancialChanges(currentLoan, loan);
+    const installmentsProvided = result.installments !== undefined;
+
+    assertDistinctStakeholders(terms.lender_id, terms.customer_id);
+
+    if (financialChanges || loan.interest_payment_mode !== undefined) {
+        assertInterestPaymentMode(
+            terms.interest_payment_mode,
+            terms.interest_rate
+        );
+    }
+
+    if (financialChanges && !installmentsProvided) {
+        throw new ValidationError(
+            "installments is required when loan_amount, interest_rate, or interest_payment_mode changes"
+        );
+    }
+
+    if (installmentsProvided) {
+        assertInstallmentTotals(result.installments, terms);
+    }
+
+    result.terms = terms;
+    result.financialChanges = financialChanges;
 
     return result;
 }

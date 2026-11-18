@@ -1,5 +1,18 @@
 # Changelog — models
 
+## 2026-11-17 — Índice único de `national_id` declarado en `Stakeholder`
+
+- Change: `Stakeholder.js` declara `uq_stakeholders_national_id` como índice
+  único sobre `national_id`, con el mismo nombre que la restricción existente
+  en MySQL.
+- Impact: el modelo refleja la restricción existente. Como Sequelize informa la
+  violación con el nombre del índice, el service reconoce también ese nombre
+  para distinguir el conflicto de otros registros relacionados duplicados. No
+  hay cambios de esquema ni de `sequelize.sync()`.
+- Verification: una violación duplicada responde
+  `409 A stakeholder with that national ID already exists` y la transacción se
+  revierte sin dejar préstamos almacenados.
+
 ## 2026-11-16 — Modo de interés y obligación pendiente por préstamo
 
 - Change: `Loan` agregó `interest_payment_mode` y los virtuales

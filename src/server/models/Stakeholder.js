@@ -34,6 +34,13 @@ const Stakeholder = connection.define("Stakeholder", { // table name = stakehold
 }, {
     tableName: "stakeholders",
     timestamps: false,
+    indexes: [
+        {
+            name: "uq_stakeholders_national_id",
+            unique: true,
+            fields: ["national_id"]
+        }
+    ]
 })
 
 export default Stakeholder;

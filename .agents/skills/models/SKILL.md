@@ -61,6 +61,11 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
   negocio.
 - `loan_installments` tiene índice único `(loan_id, installment_number)`.
 - `loan_guarantors` tiene índice único `(loan_id, guarantor_stakeholder_id)`.
+- `stakeholders.national_id` tiene el índice único `uq_stakeholders_national_id`
+  en MySQL y `Stakeholder.js` lo declara con ese nombre para reflejar la
+  restricción. Sequelize informa la violación con el nombre del índice, así que
+  el service reconoce tanto el campo como el nombre del índice para responder
+  `409` con un mensaje específico.
 - `Stakeholder.date_of_birth` usa `DataTypes.DATEONLY` para coincidir con la
   columna `date` de MySQL y evitar desplazamientos de zona horaria.
 - `Loan.disbursed_at` usa `DataTypes.DATE` para coincidir con la columna

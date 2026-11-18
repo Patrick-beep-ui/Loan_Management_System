@@ -76,7 +76,7 @@ La API se organiza en capas: `routes → controllers → services → models`.
 - Los **services** contienen la lógica de negocio y no conocen HTTP, lo que permite probarlos de forma aislada.
 - Los **models** mapean las tablas MySQL con Sequelize.
 
-La validación y normalización de payloads vive en `src/server/utils/validators/`, organizada por módulo. Los helpers compartidos (`common.js`) se encargan de enteros positivos, strings opcionales y números finitos; cada validador de dominio construye los atributos que recibe el service.
+La validación y normalización de payloads vive en `src/server/utils/validators/`, organizada por módulo. Los helpers compartidos (`common.js`) se encargan de enteros positivos, strings opcionales y números finitos; cada validador de dominio construye los atributos que recibe el service. En actualizaciones parciales el validador recibe también el registro almacenado para resolver las reglas que dependen del estado actual; los services solo ejecutan la persistencia y los conflictos por pagos existentes.
 
 Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
 
@@ -175,7 +175,7 @@ Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`
   ],
   "guarantors": [
     { "stakeholder_id": 3 },
-    { "first_name": "Ana", "last_name": "Pérez", "national_id": "..." }
+    { "first_name": "Ana", "last_name": "Pérez", "national_id": "555-1234" }
   ],
   "collaterals": [
     { "description": "Vehículo", "estimated_value": 5000 }
@@ -185,7 +185,7 @@ Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`
 
 Las cuotas deben numerarse desde 1, tener fechas únicas y ascendentes, y montos iguales salvo la última. El interés se calcula como `round(loan_amount * interest_rate / 100, 2)` y `total_to_pay` es `loan_amount + interest_amount`. En modo `included` las cuotas suman `total_to_pay` y no hay registro de interés; en modo `separate` suman `loan_amount` y se crea una obligación pendiente en `loan_interest_payments`. `separate` exige `interest_rate > 0`.
 
-Cada fiador puede referenciar un `stakeholder_id` existente o enviar los campos de un stakeholder nuevo, pero no ambos. Las garantías requieren `description` y aceptan `estimated_value` opcional. Las respuestas incluyen `interest_amount`, `total_to_pay`, cuotas ordenadas, fiadores, garantías e `interestPayment`.
+Cada fiador puede referenciar un `stakeholder_id` existente o enviar los campos de un stakeholder nuevo, pero no ambos. El `national_id` de un stakeholder inline debe ser único: repetir uno ya registrado responde `409`. Las garantías requieren `description` y aceptan `estimated_value` opcional. Las respuestas incluyen `interest_amount`, `total_to_pay`, cuotas ordenadas, fiadores, garantías e `interestPayment`.
 
 `disbursed_at` debe incluir hora y acepta ISO 8601 (`2026-01-15T10:30:00Z`, con zona opcional) o formato MySQL (`2026-01-15 10:30:00`); sin zona se interpreta como hora local del servidor y la respuesta usa ISO UTC. `loan_amount` debe ser mayor que 0, tener máximo 2 decimales y llegar hasta `9999999999.99`; `interest_rate` va de 0 a `999.9999`.
 

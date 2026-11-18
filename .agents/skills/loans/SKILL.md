@@ -16,6 +16,20 @@ una obligación pendiente en `loan_interest_payments`.
 
 El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 
+## Validación
+
+Toda la validación y normalización del payload vive en
+`src/server/utils/validators/loanValidation.js`. El service no valida datos de
+entrada: recibe los atributos y arreglos ya normalizados y solo ejecuta la
+persistencia transaccional y los bloqueos por pagos existentes. En `PATCH`, el
+validador recibe el préstamo almacenado para resolver las reglas que dependen
+del estado actual (términos efectivos, cambios financieros y totales de cuotas).
+
+Cuando una petición tiene errores de entrada y además el préstamo tiene pagos,
+responde el error de validación (`400`); el conflicto por pagos (`409`) se
+evalúa después. Un `:id` inexistente se detecta antes que un cuerpo inválido
+en `PATCH`, así que en ese caso responde `404`.
+
 ## Endpoints
 
 Todas las rutas requieren `Authorization: Bearer <token>`.
@@ -141,8 +155,9 @@ responde `400`.
   prestamista igual al cliente o `:id` inválido.
 - `401` token ausente o inválido (lo aplica `checkAuth`).
 - `404` préstamo inexistente.
-- `409` referencia inválida, `national_id` inline duplicado, pagos de cuotas,
-  interés pagado o conflicto de unicidad al crear/reemplazar.
+- `409` referencia inválida, `national_id` inline duplicado (mensaje `A stakeholder with that national ID already exists`), fiador duplicado
+  (un `stakeholder_id` y un stakeholder inline que resuelve al mismo registro),
+  pagos de cuotas, interés pagado o conflicto de unicidad al crear/reemplazar.
 - `500` error inesperado.
 
 ## Archivos

@@ -1,5 +1,24 @@
 # Changelog — loans
 
+## 2026-11-17 — Conflicto de `national_id` identificado por nombre de índice
+
+- Change: `handleConstraintError` reúne los caminos de `error.errors` y
+  `error.fields` y reconoce `national_id` o nombres de índice que lo contengan.
+- Impact: un `national_id` inline duplicado responde
+  `409 A stakeholder with that national ID already exists` en lugar del
+  mensaje genérico `A related record already exists`, incluso si Sequelize
+  informa el nombre de la restricción. El resto de unicidades conservan el
+  mensaje genérico.
+- Verification: creación de un préstamo con un fiador inline cuyo
+  `national_id` ya existía devolvió el mensaje específico sin dejar préstamos
+  almacenados; `node --check` y `git diff --check` sin errores.
+
+## 2026-11-17 — Service simplificado y validación centralizada
+
+- Change: `loanService.js` pasó de 24 a 10 funciones (6 operaciones y 4 helpers: `handleConstraintError`, `findLoanOrThrow`, `assertNoPayments` y `writeChildren`). Se eliminaron las funciones puente y se movieron a `loanValidation.js` el cálculo de términos efectivos, la detección de cambios financieros y todas las reglas de `PATCH` (stakeholders distintos, modo de interés y totales de cuotas). Los helpers de validación dejaron de exportarse.
+- Impact: Sin cambios en rutas ni en el contrato de respuestas. Un `stakeholder_id` de fiador repetido junto con un stakeholder inline que resuelve al mismo registro responde ahora `409` por la restricción única de `loan_guarantors` (antes `400`). La validación de entrada se resuelve antes que los bloqueos por pagos, y un `:id` inexistente se detecta antes que un cuerpo inválido en `PATCH`.
+- Verification: 28 comprobaciones de servicio sobre la base de datos (crear, listar, reemplazar, actualizar y eliminar; relaciones anidadas, campos virtuales, códigos 400/404/409, bloqueos por pago de cuota y sincronización de interés incluido/separado) y arranque del servidor de la API en el puerto 3000. `node --check` y `git diff --check` sin errores. Base restaurada a 0 préstamos y 6 stakeholders.
+
 ## 2026-11-16 — Préstamos con cuotas, fiadores, garantías e interés incluido/separado
 
 - Change: `loanValidation.js` y `loanService.js` se rediseñaron para que `POST` y

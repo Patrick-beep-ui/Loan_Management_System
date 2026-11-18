@@ -36,7 +36,11 @@ La validación vive en `src/server/utils/validators/`, separada por módulo:
   construyen los atributos validados/normalizados que reciben los services.
 
 Los controllers no validan: pasan `req.body` al service, y el validador del
-dominio lanza `ValidationError` (`400`) ante datos inválidos.
+dominio lanza `ValidationError` (`400`) ante datos inválidos. Los validadores
+pueden recibir el registro almacenado (por ejemplo en `PATCH /api/loans/:id`)
+para resolver reglas que dependen del estado actual. Los services no contienen
+validación de entrada: solo persisten y reportan conflictos de estado, como
+pagos existentes, mediante `ConflictError` (`409`).
 
 ## Rutas globales
 
