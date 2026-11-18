@@ -24,7 +24,7 @@ estado.
 | --- | --- |
 | `loan_id` | Entero positivo obligatorio; el préstamo debe existir y pertenecer al prestamista autenticado (`admin` ve todos). |
 | `amount` | Número finito obligatorio en `(0, 9999999999.99]`, máximo 2 decimales; debe ser exactamente igual al monto pendiente del destino. No se admiten abonos parciales. |
-| `paid_at` | Opcional. ISO 8601 con hora y zona (`Z` u offset); si se omite se usa la hora actual del servidor y se responde en UTC. |
+| `paid_at` | En `POST` es opcional: ISO 8601 con hora y zona (`Z` u offset); si se omite se usa la hora actual del servidor y se responde en UTC. En `PATCH /api/payments/:id` es obligatorio y es el único campo editable. |
 | `installment_id` | Entero positivo obligatorio en `POST /api/payments/installment`. |
 | `loan_interest_payment_id` | Entero positivo obligatorio en `POST /api/payments/interest`. |
 
@@ -42,6 +42,8 @@ Todas las rutas requieren `Authorization: Bearer <token>`.
 | `GET` | `/api/payments/:id` | `paymentController.getPaymentById` | `paymentService.getPaymentById` | lender propio / admin |
 | `POST` | `/api/payments/installment` | `paymentController.createInstallmentPayment` | `paymentService.createInstallmentPayment` | lender propio / admin |
 | `POST` | `/api/payments/interest` | `paymentController.createInterestPayment` | `paymentService.createInterestPayment` | lender propio / admin |
+| `PATCH` | `/api/payments/:id` | `paymentController.updatePayment` | `paymentService.updatePayment` | lender propio / admin |
+| `DELETE` | `/api/payments/:id` | `paymentController.deletePayment` | `paymentService.deletePayment` | lender propio / admin |
 
 No existe un `POST /api/payments` genérico.
 
@@ -94,6 +96,34 @@ Devuelve los pagos de los préstamos visibles para el usuario, ordenados por
 Devuelve un pago con las mismas relaciones que los `POST`, o `404` si no existe, no
 tiene una aplicación reconocida o pertenece a otro prestamista.
 
+### `PATCH /api/payments/:id`
+
+Corrige solo `paid_at` en el registro de `loan_payments`:
+
+```json
+{
+  "paid_at": "2026-02-16T09:15:00Z"
+}
+```
+
+El cuerpo vacío o sin `paid_at` responde `400`. `amount`, `recorded_by`, el
+préstamo y el destino son inmutables; para corregirlos hay que eliminar y volver
+a registrar el pago. La respuesta (`200`) incluye las mismas relaciones que
+`GET /:id`.
+
+### `DELETE /api/payments/:id`
+
+Revierte el pago en una sola transacción y responde `204` sin cuerpo:
+
+- Pago de cuota: elimina el vínculo en `installment_payments` y deja la cuota en
+  `status = "pending"`.
+- Pago de interés: deja `payment_id = null` y `status = "pending"` en
+  `loan_interest_payments`, y elimina el registro en `loan_payments`.
+
+Un pago inexistente o ajeno responde `404`. La reversión elimina el registro en
+`loan_payments` en ambos casos, así que el préstamo vuelve a aceptar cambios
+financieros y eliminación.
+
 ## Permisos y propiedad
 
 `paymentService` reutiliza `loanScope` de `loanService`: los préstamos de un
@@ -106,12 +136,13 @@ La existencia de pagos bloquea los cambios financieros, el reemplazo y la
 eliminación del préstamo con `409` (regla implementada en `loanService`).
 Pagar una cuota cambia su `status` a `paid`; pagar el interés cambia su `status`
 a `paid` y asigna `payment_id`, cumpliendo la restricción
-`chk_loan_interest_payment_state`.
+`chk_loan_interest_payment_state`. `DELETE /api/payments/:id` invierte estos
+cambios y restaura ambos destinos a `pending`.
 
 ## Errores
 
 - `400` datos inválidos, identificador de destino ausente en el endpoint
-  correspondiente, o monto distinto al pendiente.
+  correspondiente, `paid_at` ausente en `PATCH`, o monto distinto al pendiente.
 - `401` token ausente o inválido (lo aplica `checkAuth`).
 - `403` usuario `lender` sin stakeholder vinculado.
 - `404` préstamo, cuota, obligación de interés o pago inexistente o ajeno.

@@ -73,3 +73,13 @@ export function buildCreateInterestPaymentPayload(payload = {}) {
         )
     };
 }
+
+export function buildUpdatePaymentPayload(payload = {}) {
+    const data = asObject(payload);
+
+    if (!isProvided(data.paid_at)) {
+        throw new ValidationError("paid_at is required");
+    }
+
+    return { paid_at: parsePaidAt(data.paid_at) };
+}

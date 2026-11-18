@@ -10,6 +10,7 @@ import { parsePositiveInteger } from "../utils/validators/common.js";
 import {
     buildCreateInstallmentPaymentPayload,
     buildCreateInterestPaymentPayload,
+    buildUpdatePaymentPayload,
     parsePaymentId
 } from "../utils/validators/paymentValidation.js";
 import { loanScope } from "./loanService.js";
@@ -89,6 +90,19 @@ async function runPaymentTransaction(payload, user, recordPayment) {
             const payment = await recordPayment(payload, loan, user, transaction);
 
             return await findPaymentOrThrow(payment.payment_id, user, transaction);
+        });
+    } catch (error) {
+        handleConstraintError(error);
+    }
+}
+
+async function runPaymentByIdTransaction(id, user, operate) {
+    const payment_id = parsePaymentId(id);
+
+    try {
+        return await connection.transaction(async (transaction) => {
+            const payment = await findPaymentOrThrow(payment_id, user, transaction);
+            return await operate(payment, transaction);
         });
     } catch (error) {
         handleConstraintError(error);
@@ -268,4 +282,43 @@ export async function createInstallmentPayment(data = {}, user) {
 export async function createInterestPayment(data = {}, user) {
     const payload = buildCreateInterestPaymentPayload(data);
     return await runPaymentTransaction(payload, user, recordInterestPayment);
+}
+
+export async function updatePayment(id, data = {}, user) {
+    const payload = buildUpdatePaymentPayload(data);
+
+    return await runPaymentByIdTransaction(id, user, async (payment, transaction) => {
+        await payment.update({ paid_at: payload.paid_at }, { transaction });
+        return await findPaymentOrThrow(payment.payment_id, user, transaction);
+    });
+}
+
+export async function deletePayment(id, user) {
+    return await runPaymentByIdTransaction(id, user, async (payment, transaction) => {
+        if (payment.InstallmentPayment) {
+            await InstallmentPayment.destroy({
+                where: { payment_id: payment.payment_id },
+                transaction
+            });
+            await LoanInstallment.update(
+                { status: "pending" },
+                {
+                    where: {
+                        installment_id: payment.InstallmentPayment.installment_id
+                    },
+                    transaction
+                }
+            );
+        } else {
+            await LoanInterestPayment.update(
+                { payment_id: null, status: "pending" },
+                { where: { payment_id: payment.payment_id }, transaction }
+            );
+        }
+
+        await LoanPayment.destroy({
+            where: { payment_id: payment.payment_id },
+            transaction
+        });
+    });
 }

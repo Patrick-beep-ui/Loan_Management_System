@@ -1,5 +1,20 @@
 # Changelog — payments
 
+## 2026-11-18 — Corrección y reversión de pagos
+
+- Change: Se agregaron `PATCH /api/payments/:id` (solo `paid_at`) y
+  `DELETE /api/payments/:id`. El borrado revierte el pago en una transacción:
+  elimina el vínculo de cuota o nulifica el de interés, restaura el destino a
+  `pending` y elimina el registro en `loan_payments`.
+- Impact: Los pagos siguen siendo inmutables en monto, destino y `recorded_by`;
+  solo se puede corregir la fecha. Tras una reversión el préstamo vuelve a aceptar
+  cambios financieros y eliminación porque ya no tiene pagos.
+- Verification: prueba de servicio sobre MySQL sin `node --check`: pago de cuota e
+  interés separado, `PATCH` de `paid_at` en ambos, `PATCH` sin `paid_at` → `400`,
+  `DELETE` de ambos → `404` en el detalle, cuota/interés en `pending`,
+  `payment_id` nulo y préstamo temporal eliminado. Datos preexistentes no
+  modificados.
+
 ## 2026-11-18 — Endpoints separados para cuota e interés
 
 - Change: Se reemplazó el `POST /api/payments` genérico por
@@ -9,7 +24,9 @@
 - Impact: La ruta declara qué se está pagando, así que no hay ambigüedad por los
   campos `installment_id`/`loan_interest_payment_id`. El campo del otro destino se
   ignora. `recorded_by` sigue derivándose del JWT y se devuelve en la respuesta.
-- Verification: pendiente de ejecutar tras la refactorización.
+- Verification: la misma prueba ejecutó `createInstallmentPayment` y
+  `createInterestPayment` desde cero, comprobando `recorded_by: 16`, `paid_at`
+  provisto y los vínculos de cuota e interés.
 
 ## 2026-11-18 — Registro de pagos de cuotas e interés separado
 

@@ -154,6 +154,8 @@ La documentación por módulo vive en [`.agents/skills/`](.agents/skills/); cada
 | `GET` | `/api/payments/:id` | Devuelve un pago con su cuota o interés aplicado. Requiere token. |
 | `POST` | `/api/payments/installment` | Registra el pago total de una cuota. Requiere token. |
 | `POST` | `/api/payments/interest` | Registra el pago del interés separado. Requiere token. |
+| `PATCH` | `/api/payments/:id` | Corrige solo `paid_at` de un pago. Requiere token. |
+| `DELETE` | `/api/payments/:id` | Revierte un pago, restaura la cuota o el interés a `pending` y responde `204`. Requiere token. |
 | `POST` | `/api/auth/signup` | Crea una cuenta `lender`; recibe `email`, `password` y `stakeholder_id`. El rol se asigna desde la base, no desde el payload; un stakeholder inexistente responde `409`. |
 | `POST` | `/api/auth/login` | Inicia sesión. Recibe `email` y `password`; responde `{ token, user }` con un JWT de 1 hora que incluye `role_name` y `stakeholder_id`. |
 | `GET` | `/hello` | Verificación simple de que el servidor responde. |
@@ -225,5 +227,7 @@ Hay dos rutas explícitas y no existe un `POST /api/payments` genérico. Ambas r
 ```
 
 Cada ruta exige su propio identificador de destino; el campo de la otra ruta se ignora. El monto debe ser exactamente el pendiente (`amount_due` de la cuota o `interest_amount` del préstamo); no se aceptan abonos parciales. `recorded_by` se toma del usuario autenticado en el JWT, no del cuerpo, y se devuelve junto con `recordedBy` en la respuesta `201`. Un destino ajeno al préstamo responde `404`, un destino ya pagado responde `409` y un monto distinto responde `400`. Los listados y el detalle respetan el mismo filtro de prestamista que `/api/loans`.
+
+`PATCH /api/payments/:id` solo corrige `paid_at` (`{ "paid_at": "2026-02-16T09:15:00Z" }`). `DELETE /api/payments/:id` revierte el pago en una transacción: elimina el vínculo de la cuota o nulifica el del interés, deja el destino en `pending`, elimina el registro en `loan_payments` y responde `204`. Después de la reversión el préstamo vuelve a aceptar cambios financieros y eliminación.
 
 Passport sigue configurado en `src/server/config/passport.js` pero la API actual no lo usa; la autenticación se resuelve con JWT.

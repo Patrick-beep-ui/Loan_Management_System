@@ -1,8 +1,10 @@
 import {
     createInstallmentPayment as createInstallmentPaymentService,
     createInterestPayment as createInterestPaymentService,
+    deletePayment as deletePaymentService,
     getAllPayments as getAllPaymentsService,
-    getPaymentById as getPaymentByIdService
+    getPaymentById as getPaymentByIdService,
+    updatePayment as updatePaymentService
 } from "../services/paymentService.js";
 import { AppError } from "../utils/errors.js";
 
@@ -48,5 +50,23 @@ export async function createInterestPayment(req, res) {
         return res.status(201).json(payment);
     } catch (error) {
         return handleError(res, error, "creating interest payment");
+    }
+}
+
+export async function updatePayment(req, res) {
+    try {
+        const payment = await updatePaymentService(req.params.id, req.body, req.user);
+        return res.status(200).json(payment);
+    } catch (error) {
+        return handleError(res, error, "updating payment");
+    }
+}
+
+export async function deletePayment(req, res) {
+    try {
+        await deletePaymentService(req.params.id, req.user);
+        return res.status(204).end();
+    } catch (error) {
+        return handleError(res, error, "deleting payment");
     }
 }
