@@ -35,8 +35,9 @@ La validación vive en `src/server/utils/validators/`, separada por módulo:
 - `authValidation.js`, `stakeholderValidation.js` y `loanValidation.js`:
   construyen los atributos validados/normalizados que reciben los services.
 
-Los controllers no validan: pasan `req.body` al service, y el validador del
-dominio lanza `ValidationError` (`400`) ante datos inválidos. Los validadores
+Los controllers no validan: pasan `req.body` al service (y `req.user` cuando la
+operación depende de permisos o propiedad), y el validador del dominio lanza
+`ValidationError` (`400`) ante datos inválidos. Los validadores
 pueden recibir el registro almacenado (por ejemplo en `PATCH /api/loans/:id`)
 para resolver reglas que dependen del estado actual. Los services no contienen
 validación de entrada: solo persisten y reportan conflictos de estado, como
@@ -65,11 +66,14 @@ El orden importa: cualquier router registrado después de `checkAuth` exige
 ## Middlewares
 
 - `src/server/middlewares/checkAuth.js`: valida el JWT del header
-  `Authorization: Bearer <token>`, deja `req.user = { user_id, role_id }` y
-  responde `401` si falta o es inválido. No consulta la base de datos.
+  `Authorization: Bearer <token>`, deja
+  `req.user = { user_id, role_id, role_name, stakeholder_id }` y responde `401`
+  si falta o es inválido. No consulta la base de datos.
 
 La firma de tokens vive en `src/server/utils/generateToken.js` (payload
-`{ user_id, role_id }`, expiración `JWT_EXPIRES_IN` o `1h`).
+`{ user_id, role_id, role_name, stakeholder_id }`, expiración
+`JWT_EXPIRES_IN` o `1h`). Los services de préstamos usan `role_name` y
+`stakeholder_id` para autorizar y filtrar por propiedad.
 
 ## Convención de rutas
 
@@ -94,6 +98,8 @@ los controllers traducen a códigos HTTP:
 - `ConflictError` — conflicto con datos existentes, por ejemplo email
   duplicado (409).
 - `UnauthorizedError` — credenciales inválidas o token ausente/expirado (401).
+- `ForbiddenError` — operación no permitida para el rol o el recurso de otro
+  prestamista (403).
 - `NotFoundError` — recurso inexistente (404).
 
 Los controllers usan `try/catch`: si el error es `AppError` responden con
@@ -106,6 +112,7 @@ registra y responde `500` con `{ error: "Internal Server Error" }`.
 - `201` recurso creado.
 - `400` datos faltantes o inválidos.
 - `401` credenciales inválidas o token ausente/expirado.
+- `403` operación no permitida para el usuario autenticado.
 - `404` recurso inexistente.
 - `409` conflicto de unicidad.
 - `500` error inesperado.

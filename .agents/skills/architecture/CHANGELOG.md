@@ -1,5 +1,17 @@
 # Changelog — architecture
 
+## 2026-11-17 — Identidad del usuario y errores 403
+
+- Change: `generateToken` incluye `role_name` y `stakeholder_id`, `checkAuth`
+  los expone en `req.user`, y los controllers de préstamos pasan `req.user` a
+  sus services. Se agregó `ForbiddenError` a `utils/errors.js` con código 403.
+- Impact: los services pueden aplicar reglas de permisos y propiedad sin
+  conocer HTTP; los tokens anteriores al cambio carecen de esas claim y expiran
+  en 1 hora. `admin` mantiene acceso global a préstamos.
+- Verification: `node --check` en los archivos modificados; signup/login
+  devolvieron `role_name` y el JWT incluyó `stakeholder_id`; las rutas de
+  préstamos respetaron el scoping por prestamista.
+
 ## 2026-11-16 — Validadores centralizados por módulo
 
 - Change: Los validadores de auth, stakeholders y loans se movieron a `src/server/utils/validators/`, con helpers compartidos en `common.js`. Los services importan el validador de su dominio y los controllers siguen sin validar.

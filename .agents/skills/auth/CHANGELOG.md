@@ -1,5 +1,20 @@
 # Changelog — auth
 
+## 2026-11-17 — Signup solo para lenders e identidad en el JWT
+
+- Change: `validateSignupPayload` ya no exige `role_id`; `authService.signup`
+  resuelve el rol `lender` desde `roles` por nombre y lo asigna. `login`
+  incluye `role_name` consultando la asociación con `Role`, y `generateToken`
+  firma `{ user_id, role_id, role_name, stakeholder_id }`. `checkAuth` expone
+  esos cuatro valores en `req.user`.
+- Impact: el registro público ya no puede crear cuentas `admin`; los services
+  de préstamos pueden derivar el prestamista autenticado. Los tokens emitidos
+  antes del cambio no incluyen `role_name` ni `stakeholder_id` y expiran en 1 h.
+- Verification: migración aplicada; signup con `role_id: 1` devolvió
+  `role_id: 2, role_name: "lender"`; login devolvió `role_name: "lender"` y el
+  JWT decodificado contuvo `role_name` y `stakeholder_id`. Datos temporales
+  eliminados.
+
 ## 2026-11-16 — Validadores por módulo y endurecimiento de signup
 
 - Change: `authValidation.js` se movió a `src/server/utils/validators/` y ahora devuelve los valores normalizados que usa `authService`. Se exige que `email`/`password` sean strings, email con formato básico `local@dominio`, contraseña no vacía y `role_id`/`stakeholder_id` enteros positivos. `signup` traduce `SequelizeForeignKeyConstraintError` a `409 role_id or stakeholder_id does not exist`.

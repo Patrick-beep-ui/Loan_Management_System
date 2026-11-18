@@ -1,5 +1,15 @@
 # Changelog — database
 
+## 2026-11-17 — Renombrado de `operator` a `lender`
+
+- Change: nueva migración
+  `database/migrations/2026-11-17-rename-operator-role-to-lender.sql` que
+  actualiza `roles.role_name` y `updated_at` donde el nombre es `operator`.
+- Impact: el `role_id` no cambia, así que los usuarios asignados siguen válidos.
+  El signup resuelve el rol `lender` por nombre desde esta tabla.
+- Verification: migración aplicada con `mysql2`; `roles` devolvió
+  `(1, admin), (2, lender)` y el usuario 16 conservó `role_id = 2`.
+
 ## 2026-11-16 — Migración de interés incluido/separado
 
 - Change: Se documentó que los cambios de esquema se aplican manualmente desde

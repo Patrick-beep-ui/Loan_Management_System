@@ -17,7 +17,7 @@ El propósito es **reemplazar el control manual de préstamos** por un registro 
 | --- | --- |
 | `stakeholders` | Personas que participan en los préstamos. Una misma persona puede ser cliente en un préstamo y fiadora en otro. |
 | `users` | Cuentas de acceso vinculadas a una persona. |
-| `roles` | Roles de acceso al sistema, como `admin` y `operator`. |
+| `roles` | Roles de acceso al sistema: `admin` y `lender`. |
 | `loans` | Préstamos que vinculan a un prestamista con un cliente y registran las condiciones del desembolso y el modo de interés (`included`/`separate`). |
 | `loan_installments` | Cuotas de un préstamo. Cada una tiene su propio monto, vencimiento, estado y tasa diaria de mora. |
 | `loan_guarantors` | Personas que actúan como fiadoras de un préstamo específico. |
@@ -80,14 +80,15 @@ La validación y normalización de payloads vive en `src/server/utils/validators
 
 Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
 
-`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`) exige `Authorization: Bearer <token>`.
+`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`) exige `Authorization: Bearer <token>`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`; `checkAuth` los expone en `req.user`. El signup público solo crea cuentas `lender`. Las rutas de préstamos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista.
 
 ## Estructura del proyecto
 
 ```
 database/
 └─ migrations/
-   └─ 2026-11-16-loan-interest-payment-mode.sql
+   ├─ 2026-11-16-loan-interest-payment-mode.sql
+   └─ 2026-11-17-rename-operator-role-to-lender.sql
 
 src/
 ├─ client/                  interfaz React (Vite)
@@ -107,7 +108,7 @@ src/
    ├─ services/             lógica de negocio y operaciones
    ├─ routes/               definición de métodos y URLs
    ├─ utils/
-   │  ├─ errors.js              errores tipados (AppError, ValidationError, UnauthorizedError, ConflictError, NotFoundError)
+    │  ├─ errors.js              errores tipados (AppError, ValidationError, UnauthorizedError, ForbiddenError, ConflictError, NotFoundError)
    │  ├─ generateToken.js       firma el JWT
    │  └─ validators/
    │     ├─ common.js              helpers compartidos (enteros, strings opcionales, números)
@@ -142,14 +143,14 @@ La documentación por módulo vive en [`.agents/skills/`](.agents/skills/); cada
 | `PUT` | `/api/stakeholders/:id` | Reemplaza un stakeholder; los campos opcionales omitidos quedan en `null`. Requiere token. |
 | `PATCH` | `/api/stakeholders/:id` | Actualiza solo los campos enviados. Requiere token. |
 | `DELETE` | `/api/stakeholders/:id` | Elimina un stakeholder; responde `409` si está referenciado. Requiere token. |
-| `GET` | `/api/loans` | Lista los préstamos con prestamista, cliente, cuotas, fiadores, garantías e interés. Requiere token. |
-| `GET` | `/api/loans/:id` | Devuelve un préstamo con sus relaciones. Requiere token. |
-| `POST` | `/api/loans` | Crea un préstamo con `installments`, `guarantors` y `collaterals` en una transacción. Requiere `lender_id`, `customer_id`, `loan_amount`, `interest_payment_mode` y `disbursed_at`; prestamista y cliente deben ser distintos. Requiere token. |
-| `PUT` | `/api/loans/:id` | Reemplaza un préstamo y todas sus relaciones; exige los tres arreglos. Requiere token. |
-| `PATCH` | `/api/loans/:id` | Actualiza solo los campos o arreglos enviados; los cambios financieros requieren `installments`. Requiere token. |
-| `DELETE` | `/api/loans/:id` | Elimina un préstamo y sus relaciones; responde `409` si tiene pagos de cuotas o interés pagado. Requiere token. |
-| `POST` | `/api/auth/signup` | Crea un usuario; valida los campos y hashea la contraseña. Recibe `email`, `password`, `role_id` y `stakeholder_id`; un rol o stakeholder inexistente responde `409`. |
-| `POST` | `/api/auth/login` | Inicia sesión. Recibe `email` y `password`; responde `{ token, user }` con un JWT de 1 hora. |
+| `GET` | `/api/loans` | Lista los préstamos del prestamista autenticado (todos para `admin`). Requiere token. |
+| `GET` | `/api/loans/:id` | Devuelve un préstamo propio con sus relaciones, o `404` si no pertenece al prestamista. Requiere token. |
+| `POST` | `/api/loans` | Crea un préstamo con `installments`, `guarantors` y `collaterals` en una transacción. Requiere `customer_id`, `loan_amount`, `interest_payment_mode` y `disbursed_at`; para `lender`, `lender_id` se deriva del usuario (otro valor responde `403`), mientras `admin` puede elegirlo. Requiere token. |
+| `PUT` | `/api/loans/:id` | Reemplaza un préstamo propio y todas sus relaciones; exige los tres arreglos. Requiere token. |
+| `PATCH` | `/api/loans/:id` | Actualiza solo los campos o arreglos enviados; los cambios financieros requieren `installments`. Un `lender` no puede cambiar `lender_id`. Requiere token. |
+| `DELETE` | `/api/loans/:id` | Elimina un préstamo propio y sus relaciones; responde `409` si tiene pagos de cuotas o interés pagado. Requiere token. |
+| `POST` | `/api/auth/signup` | Crea una cuenta `lender`; recibe `email`, `password` y `stakeholder_id`. El rol se asigna desde la base, no desde el payload; un stakeholder inexistente responde `409`. |
+| `POST` | `/api/auth/login` | Inicia sesión. Recibe `email` y `password`; responde `{ token, user }` con un JWT de 1 hora que incluye `role_name` y `stakeholder_id`. |
 | `GET` | `/hello` | Verificación simple de que el servidor responde. |
 
 Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`; sin token o con uno inválido responden `401`. El login exitoso responde `200` y las credenciales incorrectas `401`.
@@ -160,7 +161,7 @@ Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`
 
 ```json
 {
-  "lender_id": 1,
+  "lender_id": 2,
   "customer_id": 2,
   "loan_amount": 1000,
   "interest_rate": 20,
@@ -186,6 +187,8 @@ Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`
 Las cuotas deben numerarse desde 1, tener fechas únicas y ascendentes, y montos iguales salvo la última. El interés se calcula como `round(loan_amount * interest_rate / 100, 2)` y `total_to_pay` es `loan_amount + interest_amount`. En modo `included` las cuotas suman `total_to_pay` y no hay registro de interés; en modo `separate` suman `loan_amount` y se crea una obligación pendiente en `loan_interest_payments`. `separate` exige `interest_rate > 0`.
 
 Cada fiador puede referenciar un `stakeholder_id` existente o enviar los campos de un stakeholder nuevo, pero no ambos. El `national_id` de un stakeholder inline debe ser único: repetir uno ya registrado responde `409`. Las garantías requieren `description` y aceptan `estimated_value` opcional. Las respuestas incluyen `interest_amount`, `total_to_pay`, cuotas ordenadas, fiadores, garantías e `interestPayment`.
+
+Para cuentas `lender`, `lender_id` debe ser el stakeholder vinculado al usuario: el service lo deriva del JWT y responde `403` si se envía otro valor. Un préstamo de otro prestamista responde `404` aunque el `:id` exista. Los usuarios `admin` mantienen acceso global y pueden especificar cualquier `lender_id`.
 
 `disbursed_at` debe incluir hora y acepta ISO 8601 (`2026-01-15T10:30:00Z`, con zona opcional) o formato MySQL (`2026-01-15 10:30:00`); sin zona se interpreta como hora local del servidor y la respuesta usa ISO UTC. `loan_amount` debe ser mayor que 0, tener máximo 2 decimales y llegar hasta `9999999999.99`; `interest_rate` va de 0 a `999.9999`.
 

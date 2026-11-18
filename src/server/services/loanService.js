@@ -7,7 +7,7 @@ import LoanInterestPayment from "../models/LoanInterestPayment.js";
 import LoanPayment from "../models/LoanPayment.js";
 import InstallmentPayment from "../models/InstallmentPayment.js";
 import Stakeholder from "../models/Stakeholder.js";
-import { ConflictError, NotFoundError } from "../utils/errors.js";
+import { ConflictError, ForbiddenError, NotFoundError } from "../utils/errors.js";
 import {
     buildCreateLoanPayload,
     buildPartialLoanPayload,
@@ -56,6 +56,56 @@ const loanIncludes = [
     }
 ];
 
+function isAdmin(user) {
+    return user?.role_name === "admin";
+}
+
+function lenderStakeholderId(user) {
+    const stakeholder_id = Number(user?.stakeholder_id);
+    console.log("stakeholder_id", stakeholder_id, user?.stakeholder_id);
+    console.log("User id", user?.user_id, "Role", user?.role_name);
+
+    if (!Number.isInteger(stakeholder_id) || stakeholder_id <= 0) {
+        throw new ForbiddenError("Lender account is not linked to a stakeholder");
+    }
+
+    return stakeholder_id;
+}
+
+function loanScope(user) {
+    if (isAdmin(user)) {
+        return {};
+    }
+
+    return { lender_id: lenderStakeholderId(user) };
+}
+
+function withLenderIdentity(data, user) {
+    if (isAdmin(user)) {
+        return data;
+    }
+
+    const stakeholder_id = lenderStakeholderId(user);
+
+    if (data.lender_id !== undefined && Number(data.lender_id) !== stakeholder_id) {
+        throw new ForbiddenError("lender_id must match the authenticated lender");
+    }
+
+    return { ...data, lender_id: stakeholder_id };
+}
+
+function assertLenderIdUnchanged(data, user) {
+    if (isAdmin(user)) {
+        return;
+    }
+
+    const stakeholder_id = lenderStakeholderId(user);
+
+    if (data.lender_id !== undefined && Number(data.lender_id) !== stakeholder_id) {
+        throw new ForbiddenError("lender_id cannot be changed by a lender");
+    }
+}
+
 function handleConstraintError(error) {
     if (error.name === "SequelizeForeignKeyConstraintError") {
         throw new ConflictError("Loan references an invalid or related record");
@@ -77,8 +127,9 @@ function handleConstraintError(error) {
     throw error;
 }
 
-async function findLoanOrThrow(loan_id, transaction) {
-    const loan = await Loan.findByPk(loan_id, {
+async function findLoanOrThrow(loan_id, user, transaction) {
+    const loan = await Loan.findOne({
+        where: { loan_id, ...loanScope(user) },
         include: loanIncludes,
         transaction
     });
@@ -209,20 +260,21 @@ async function writeChildren(loan_id, payload, transaction) {
     }
 }
 
-export async function getAllLoans() {
+export async function getAllLoans(user) {
     return await Loan.findAll({
+        where: loanScope(user),
         include: loanIncludes,
         order: [["loan_id", "DESC"]]
     });
 }
 
-export async function getLoanById(id) {
+export async function getLoanById(id, user) {
     const loan_id = parseLoanId(id);
-    return await findLoanOrThrow(loan_id);
+    return await findLoanOrThrow(loan_id, user);
 }
 
-export async function createLoan(data = {}) {
-    const payload = buildCreateLoanPayload(data);
+export async function createLoan(data = {}, user) {
+    const payload = buildCreateLoanPayload(withLenderIdentity(data, user));
 
     try {
         const loan_id = await connection.transaction(async (transaction) => {
@@ -231,33 +283,34 @@ export async function createLoan(data = {}) {
             return loan.loan_id;
         });
 
-        return await findLoanOrThrow(loan_id);
+        return await findLoanOrThrow(loan_id, user);
     } catch (error) {
         handleConstraintError(error);
     }
 }
 
-export async function replaceLoan(id, data = {}) {
+export async function replaceLoan(id, data = {}, user) {
     const loan_id = parseLoanId(id);
-    const payload = buildReplaceLoanPayload(data);
+    const payload = buildReplaceLoanPayload(withLenderIdentity(data, user));
 
     try {
         await connection.transaction(async (transaction) => {
-            const loan = await findLoanOrThrow(loan_id, transaction);
+            const loan = await findLoanOrThrow(loan_id, user, transaction);
             await assertNoPayments(loan_id, transaction);
             await loan.update(payload.loan, { transaction });
             await writeChildren(loan_id, payload, transaction);
         });
 
-        return await findLoanOrThrow(loan_id);
+        return await findLoanOrThrow(loan_id, user);
     } catch (error) {
         handleConstraintError(error);
     }
 }
 
-export async function updateLoan(id, data = {}) {
+export async function updateLoan(id, data = {}, user) {
     const loan_id = parseLoanId(id);
-    const currentLoan = await findLoanOrThrow(loan_id);
+    const currentLoan = await findLoanOrThrow(loan_id, user);
+    assertLenderIdUnchanged(data, user);
     const payload = buildPartialLoanPayload(data, currentLoan);
 
     try {
@@ -273,18 +326,18 @@ export async function updateLoan(id, data = {}) {
             await writeChildren(loan_id, payload, transaction);
         });
 
-        return await findLoanOrThrow(loan_id);
+        return await findLoanOrThrow(loan_id, user);
     } catch (error) {
         handleConstraintError(error);
     }
 }
 
-export async function deleteLoan(id) {
+export async function deleteLoan(id, user) {
     const loan_id = parseLoanId(id);
 
     try {
         await connection.transaction(async (transaction) => {
-            const loan = await findLoanOrThrow(loan_id, transaction);
+            const loan = await findLoanOrThrow(loan_id, user, transaction);
             await assertNoPayments(loan_id, transaction);
             await LoanInterestPayment.destroy({ where: { loan_id }, transaction });
             await LoanGuarantor.destroy({ where: { loan_id }, transaction });

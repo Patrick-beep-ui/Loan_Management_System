@@ -1,5 +1,19 @@
 # Changelog — loans
 
+## 2026-11-17 — Préstamos restringidos al prestamista autenticado
+
+- Change: los controllers pasan `req.user` a los seis services de préstamos.
+  `loanService` filtra por `lender_id = req.user.stakeholder_id` para cuentas
+  `lender`, deriva ese valor al crear y rechaza con `403` un `lender_id`
+  distinto o un intento de cambiarlo en PATCH. `admin` conserva acceso global.
+- Impact: un lender solo ve y modifica sus propios préstamos; un préstamo de
+  otro prestamista responde `404`. Se agregó `ForbiddenError` (`403`) a los
+  errores tipados. Los tokens incluyen `role_name` y `stakeholder_id`.
+- Verification: dos lenders vieron solo sus préstamos (`[29]` y `[30]`), admin
+  vio ambos; `lender_id` ajeno al crear → 403, préstamo ajeno al leer/borrar →
+  404, cambio de `lender_id` en PATCH → 403, admin creó con `lender_id: 5`.
+  Datos temporales eliminados; `node --check` sin errores.
+
 ## 2026-11-17 — Conflicto de `national_id` identificado por nombre de índice
 
 - Change: `handleConstraintError` reúne los caminos de `error.errors` y

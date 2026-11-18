@@ -20,23 +20,26 @@ sesiones con refresh tokens, todavía no implementado, está en
 
 ## Signup
 
-Recibe `{ email, password, role_id, stakeholder_id }`.
+Recibe `{ email, password, stakeholder_id }`.
 
-- Valida que los cuatro campos estén presentes; si falta alguno lanza
+- Valida que los tres campos estén presentes; si falta alguno lanza
   `ValidationError` (`400`) con la lista de campos faltantes.
 - Exige que `email` y `password` sean strings. El email se normaliza
   (`trim` + minúsculas) y debe tener formato básico `local@dominio`; una
   contraseña vacía o solo con espacios responde `400`.
-- `role_id` y `stakeholder_id` deben ser enteros positivos (`"2"` se acepta y
-  se normaliza a número).
+- `stakeholder_id` debe ser entero positivo (`"2"` se acepta y se normaliza a
+  número). El payload ya no recibe `role_id`: el service consulta `roles` por
+  `role_name = "lender"` y usa ese `role_id`, así que todas las cuentas
+  públicas son prestamistas. Si el rol no existe responde `500`.
 - Hashea `password` con `bcryptjs` (10 rondas) y lo guarda en `password_hash`.
 - Crea el usuario y responde `201`:
-  `{ message: "User created successfully", user }`, donde `user` solo incluye
-  `user_id`, `stakeholder_id`, `email` y `role_id` (nunca `password_hash`).
+  `{ message: "User created successfully", user }`, donde `user` incluye
+  `user_id`, `stakeholder_id`, `email`, `role_id` y `role_name: "lender"`
+  (nunca `password_hash`).
 - Si el email ya existe, `SequelizeUniqueConstraintError` se traduce a
-  `ConflictError` (`409`). Si `role_id` o `stakeholder_id` no existen,
+  `ConflictError` (`409`). Si `stakeholder_id` no existe,
   `SequelizeForeignKeyConstraintError` se traduce a `ConflictError` (`409`)
-  con `role_id or stakeholder_id does not exist`.
+  con `stakeholder_id does not exist`.
 
 ## Login
 
@@ -50,16 +53,19 @@ Recibe `{ email, password }`.
   (`401`) con el mensaje genérico `Invalid email or password` (no revela si el
   email existe).
 - Responde `200` con `{ token, user }`; `user` incluye `user_id`,
-  `stakeholder_id`, `email` y `role_id` (nunca `password_hash`).
+  `stakeholder_id`, `email`, `role_id` y `role_name` (nunca `password_hash`).
 - `token` es un JWT firmado por `generateToken` con el payload
-  `{ user_id, role_id }` y expiración `JWT_EXPIRES_IN` o `1h` por defecto.
+  `{ user_id, role_id, role_name, stakeholder_id }` y expiración
+  `JWT_EXPIRES_IN` o `1h` por defecto.
 
 ## Protección de rutas
 
 `checkAuth` (`src/server/middlewares/checkAuth.js`) exige el header
 `Authorization: Bearer <token>`. Si falta o es inválido responde `401`.
-En `api.js`, `/auth` se monta antes de `checkAuth`; todo lo que se registre
-después queda protegido.
+Deja `req.user = { user_id, role_id, role_name, stakeholder_id }`, usado por
+los services de préstamos para resolver permisos y propiedad. En `api.js`,
+`/auth` se monta antes de `checkAuth`; todo lo que se registre después queda
+protegido.
 
 ## Errores
 

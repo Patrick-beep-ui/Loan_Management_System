@@ -19,7 +19,7 @@ function handleError(res, error, context) {
 
 export async function getAllLoans(req, res) {
     try {
-        const loans = await getAllLoansService();
+        const loans = await getAllLoansService(req.user);
         return res.status(200).json(loans);
     } catch (error) {
         return handleError(res, error, "fetching loans");
@@ -28,7 +28,7 @@ export async function getAllLoans(req, res) {
 
 export async function getLoanById(req, res) {
     try {
-        const loan = await getLoanByIdService(req.params.id);
+        const loan = await getLoanByIdService(req.params.id, req.user);
         return res.status(200).json(loan);
     } catch (error) {
         return handleError(res, error, "fetching loan");
@@ -37,7 +37,7 @@ export async function getLoanById(req, res) {
 
 export async function createLoan(req, res) {
     try {
-        const loan = await createLoanService(req.body);
+        const loan = await createLoanService(req.body, req.user);
         return res.status(201).json(loan);
     } catch (error) {
         return handleError(res, error, "creating loan");
@@ -46,7 +46,7 @@ export async function createLoan(req, res) {
 
 export async function replaceLoan(req, res) {
     try {
-        const loan = await replaceLoanService(req.params.id, req.body);
+        const loan = await replaceLoanService(req.params.id, req.body, req.user);
         return res.status(200).json(loan);
     } catch (error) {
         return handleError(res, error, "replacing loan");
@@ -55,7 +55,7 @@ export async function replaceLoan(req, res) {
 
 export async function updateLoan(req, res) {
     try {
-        const loan = await updateLoanService(req.params.id, req.body);
+        const loan = await updateLoanService(req.params.id, req.body, req.user);
         return res.status(200).json(loan);
     } catch (error) {
         return handleError(res, error, "updating loan");
@@ -64,7 +64,7 @@ export async function updateLoan(req, res) {
 
 export async function deleteLoan(req, res) {
     try {
-        await deleteLoanService(req.params.id);
+        await deleteLoanService(req.params.id, req.user);
         return res.status(204).send();
     } catch (error) {
         return handleError(res, error, "deleting loan");

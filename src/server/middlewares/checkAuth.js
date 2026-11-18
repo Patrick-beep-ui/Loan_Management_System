@@ -12,7 +12,9 @@ export function checkAuth(req, res, next) {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         req.user = {
             user_id: payload.user_id,
-            role_id: payload.role_id
+            role_id: payload.role_id,
+            role_name: payload.role_name,
+            stakeholder_id: payload.stakeholder_id
         };
         return next();
     } catch (error) {

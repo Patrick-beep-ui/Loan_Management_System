@@ -1,5 +1,15 @@
 # Changelog — users
 
+## 2026-11-17 — Signup crea cuentas `lender`
+
+- Change: se documenta que `POST /api/auth/signup` asigna siempre el rol
+  `lender`, resuelto por nombre desde `roles`, y que el usuario queda vinculado
+  al `stakeholder_id` enviado.
+- Impact: `GET /api/users` puede mostrar cuentas `admin` aprovisionadas
+  manualmente y cuentas `lender` creadas públicamente; el listado no cambia.
+- Verification: dos signups temporales crearon usuarios con `role_id: 2` y
+  `role_name: "lender"`; se eliminaron al finalizar la prueba.
+
 ## 2026-11-13 — Ruta protegida con JWT
 
 - Change: `GET /api/users` ahora pasa por `checkAuth` en `api.js`.

@@ -32,4 +32,6 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 - `src/server/services/userService.js`
 
 La creación de usuarios no vive aquí: pertenece al módulo `auth` mediante
-`POST /api/auth/signup`.
+`POST /api/auth/signup`, que siempre crea cuentas `lender` (rol resuelto desde
+la base, no recibido en el payload). La lista de `/api/users` sigue siendo
+global y no filtra por rol.

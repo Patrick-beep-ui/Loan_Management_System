@@ -17,7 +17,7 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 | --- | --- | --- |
 | `Stakeholder.js` | `stakeholders` | Personas que participan en préstamos. |
 | `User.js` | `users` | Cuentas de acceso vinculadas a un stakeholder y un rol. |
-| `Role.js` | `roles` | Roles de acceso (`admin`, `operator`). |
+| `Role.js` | `roles` | Roles de acceso (`admin`, `lender`). |
 | `Loan.js` | `loans` | Préstamo con prestamista, cliente, monto, tasa, modo de interés y fecha de desembolso. |
 | `LoanInstallment.js` | `loan_installments` | Cuotas del préstamo con monto, vencimiento, tasa y estado. |
 | `LoanGuarantor.js` | `loan_guarantors` | Fiadores asociados a un préstamo. |

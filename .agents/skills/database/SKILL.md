@@ -16,10 +16,12 @@ run queries. Connection settings come from `.env` in the repository root.
 ## Schema migrations
 
 Schema changes are applied manually from `database/migrations/*.sql`; the models
-do not use `sequelize.sync()`. The current migration,
-`2026-11-16-loan-interest-payment-mode.sql`, adds `loans.interest_payment_mode`,
-makes `loan_interest_payments.payment_id` nullable, adds `status`, adds the
-unique key on `loan_id`, and adds `chk_loan_interest_payment_state`.
+do not use `sequelize.sync()`. `2026-11-16-loan-interest-payment-mode.sql`
+adds `loans.interest_payment_mode`, makes `loan_interest_payments.payment_id`
+nullable, adds `status`, adds the unique key on `loan_id`, and adds
+`chk_loan_interest_payment_state`.
+`2026-11-17-rename-operator-role-to-lender.sql` renames the `operator` role to
+`lender` in place, preserving `role_id` and therefore existing user assignments.
 
 Run a migration with the same `mysql2` connection method described below, then
 verify the affected columns, keys, and constraints with `information_schema`.

@@ -2,7 +2,7 @@ import { ValidationError } from "../errors.js";
 import { parsePositiveInteger } from "./common.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+$/;
-const SIGNUP_REQUIRED_FIELDS = ["email", "password", "role_id", "stakeholder_id"];
+const SIGNUP_REQUIRED_FIELDS = ["email", "password", "stakeholder_id"];
 const LOGIN_REQUIRED_FIELDS = ["email", "password"];
 
 function asObject(payload) {
@@ -65,7 +65,6 @@ export function validateSignupPayload(payload) {
     return {
         email: validateEmail(data.email),
         password: validatePassword(data.password),
-        role_id: parsePositiveInteger(data.role_id, "role_id"),
         stakeholder_id: parsePositiveInteger(data.stakeholder_id, "stakeholder_id")
     };
 }

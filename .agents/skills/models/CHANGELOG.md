@@ -1,5 +1,13 @@
 # Changelog — models
 
+## 2026-11-17 — Roles `admin` y `lender`
+
+- Change: se documenta que `roles` contiene `admin` y `lender` tras renombrar
+  `operator` con `database/migrations/2026-11-17-rename-operator-role-to-lender.sql`.
+- Impact: el modelo `Role` no cambia; el cambio es de datos y afecta al signup,
+  que resuelve el rol `lender` por nombre.
+- Verification: consulta a `roles` en MySQL devolvió `(1, admin), (2, lender)`.
+
 ## 2026-11-17 — Índice único de `national_id` declarado en `Stakeholder`
 
 - Change: `Stakeholder.js` declara `uq_stakeholders_national_id` como índice

@@ -7,7 +7,9 @@ description: Loans CRUD with a nested installment schedule, guarantors, collater
 
 CRUD de préstamos (`loans`) que vinculan a un prestamista (`lender_id`) y un
 cliente (`customer_id`) con el monto, la tasa de interés, la fecha de desembolso
-y el modo de pago del interés ordinario.
+y el modo de pago del interés ordinario. Las cuentas `lender` registran y
+gestionan solo los préstamos que ellas proporcionan; `admin` conserva acceso
+global.
 
 El alta y el reemplazo crean o reemplazan, en una sola transacción, el calendario
 de cuotas (`loan_installments`), los fiadores (`loan_guarantors`) y las garantías
@@ -36,19 +38,35 @@ Todas las rutas requieren `Authorization: Bearer <token>`.
 
 | Método | Ruta | Controller | Service | Acceso |
 | --- | --- | --- | --- | --- |
-| `GET` | `/api/loans` | `loanController.getAllLoans` | `loanService.getAllLoans` | token |
-| `GET` | `/api/loans/:id` | `loanController.getLoanById` | `loanService.getLoanById` | token |
-| `POST` | `/api/loans` | `loanController.createLoan` | `loanService.createLoan` | token |
-| `PUT` | `/api/loans/:id` | `loanController.replaceLoan` | `loanService.replaceLoan` | token |
-| `PATCH` | `/api/loans/:id` | `loanController.updateLoan` | `loanService.updateLoan` | token |
-| `DELETE` | `/api/loans/:id` | `loanController.deleteLoan` | `loanService.deleteLoan` | token |
+| `GET` | `/api/loans` | `loanController.getAllLoans` | `loanService.getAllLoans` | lender propio / admin |
+| `GET` | `/api/loans/:id` | `loanController.getLoanById` | `loanService.getLoanById` | lender propio / admin |
+| `POST` | `/api/loans` | `loanController.createLoan` | `loanService.createLoan` | lender / admin |
+| `PUT` | `/api/loans/:id` | `loanController.replaceLoan` | `loanService.replaceLoan` | lender propio / admin |
+| `PATCH` | `/api/loans/:id` | `loanController.updateLoan` | `loanService.updateLoan` | lender propio / admin |
+| `DELETE` | `/api/loans/:id` | `loanController.deleteLoan` | `loanService.deleteLoan` | lender propio / admin |
+
+## Permisos y propiedad
+
+Los controllers pasan `req.user` (`user_id`, `role_id`, `role_name`,
+`stakeholder_id`) a todos los services de préstamos.
+
+- `admin` (`role_name = "admin"`): acceso global; `lender_id` sigue siendo
+  configurable en creación, reemplazo y PATCH.
+- `lender`: sus consultas y mutaciones se filtran por
+  `lender_id = req.user.stakeholder_id`. Al crear, el service deriva
+  `lender_id` del usuario: si el payload envía otro valor responde `403`. En
+  PATCH tampoco puede cambiar `lender_id`. Si el usuario no tiene
+  `stakeholder_id`, responde `403`.
+- Un préstamo de otro prestamista responde `404` en cualquier ruta con `:id`,
+  aunque el registro exista; así no se revela su existencia.
+- Las rutas `/api/users`, `/api/roles` y `/api/stakeholders` no filtran por rol.
 
 ## Campos del préstamo
 
 | Campo | Tipo | Obligatorio | Reglas |
 | --- | --- | --- | --- |
 | `loan_id` | entero | — | PK autoincremental; en la URL debe ser entero positivo. |
-| `lender_id` | entero | sí | Entero positivo; referencia a `stakeholders.stakeholder_id`; debe ser distinto de `customer_id`. |
+| `lender_id` | entero | sí | Entero positivo; referencia a `stakeholders.stakeholder_id`; debe ser distinto de `customer_id`. Para `lender` se deriva del JWT (403 si se envía otro); `admin` puede elegirlo. |
 | `customer_id` | entero | sí | Entero positivo; referencia a `stakeholders.stakeholder_id`; debe ser distinto de `lender_id`. |
 | `loan_amount` | número/decimal | sí | Número finito mayor que 0 y hasta `9999999999.99`; máximo 2 decimales; acepta strings numéricos. |
 | `interest_rate` | número/decimal | no | Número finito entre 0 y `999.9999`; `""`/`null` se guarda como `null`. |
@@ -117,7 +135,8 @@ préstamo. Un `national_id` duplicado responde `409`.
 - `GET /:id`: devuelve el préstamo con las mismas relaciones o `404` si no existe.
 - `POST /`: crea el préstamo, sus cuotas, fiadores, garantías y la obligación de
   interés pendiente cuando corresponde (`201`). Devuelve el préstamo con todas
-  sus relaciones. Si `lender_id` o `customer_id` no existe, si un
+  sus relaciones. `lender_id` se toma del usuario autenticado para cuentas
+  `lender`; enviar otro valor responde `403`. Si `customer_id` no existe, si un
   `guarantor.stakeholder_id` no existe o si un `national_id` inline ya existe,
   responde `409`. Si prestamista y cliente son la misma persona responde `400`.
 - `PUT /:id`: reemplazo completo (`200`). Exige los campos del préstamo y los
@@ -154,7 +173,9 @@ responde `400`.
 - `400` campos obligatorios, formato/valor inválido, cuotas inconsistentes,
   prestamista igual al cliente o `:id` inválido.
 - `401` token ausente o inválido (lo aplica `checkAuth`).
-- `404` préstamo inexistente.
+- `403` prestamista no vinculado, `lender_id` distinto al del usuario `lender`
+  o intento de cambiarlo en PATCH.
+- `404` préstamo inexistente o perteneciente a otro prestamista.
 - `409` referencia inválida, `national_id` inline duplicado (mensaje `A stakeholder with that national ID already exists`), fiador duplicado
   (un `stakeholder_id` y un stakeholder inline que resuelve al mismo registro),
   pagos de cuotas, interés pagado o conflicto de unicidad al crear/reemplazar.
@@ -173,3 +194,4 @@ responde `400`.
 - `src/server/models/LoanCollateral.js`
 - `src/server/models/LoanInterestPayment.js`
 - `database/migrations/2026-11-16-loan-interest-payment-mode.sql`
+- `database/migrations/2026-11-17-rename-operator-role-to-lender.sql`
