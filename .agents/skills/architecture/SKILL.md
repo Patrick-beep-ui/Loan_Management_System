@@ -32,8 +32,9 @@ La validación vive en `src/server/utils/validators/`, separada por módulo:
 
 - `common.js`: helpers compartidos para enteros positivos, strings opcionales
   con longitud máxima y números finitos con límites.
-- `authValidation.js`, `stakeholderValidation.js` y `loanValidation.js`:
-  construyen los atributos validados/normalizados que reciben los services.
+- `authValidation.js`, `stakeholderValidation.js`, `loanValidation.js` y
+  `paymentValidation.js`: construyen los atributos validados/normalizados que
+  reciben los services.
 
 Los controllers no validan: pasan `req.body` al service (y `req.user` cuando la
 operación depende de permisos o propiedad), y el validador del dominio lanza
@@ -58,6 +59,7 @@ api.use("/users", UserRouter); // /api/users
 api.use("/roles", RoleRouter); // /api/roles
 api.use("/stakeholders", StakeholderRouter); // /api/stakeholders
 api.use("/loans", LoanRouter); // /api/loans
+api.use("/payments", PaymentRouter); // /api/payments
 ```
 
 El orden importa: cualquier router registrado después de `checkAuth` exige
@@ -73,7 +75,8 @@ El orden importa: cualquier router registrado después de `checkAuth` exige
 La firma de tokens vive en `src/server/utils/generateToken.js` (payload
 `{ user_id, role_id, role_name, stakeholder_id }`, expiración
 `JWT_EXPIRES_IN` o `1h`). Los services de préstamos usan `role_name` y
-`stakeholder_id` para autorizar y filtrar por propiedad.
+`stakeholder_id` para autorizar y filtrar por propiedad; el módulo `payments`
+reutiliza `loanScope` de `loanService` para aplicar el mismo filtro.
 
 ## Convención de rutas
 

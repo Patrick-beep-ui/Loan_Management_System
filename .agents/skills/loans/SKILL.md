@@ -14,7 +14,9 @@ global.
 El alta y el reemplazo crean o reemplazan, en una sola transacción, el calendario
 de cuotas (`loan_installments`), los fiadores (`loan_guarantors`) y las garantías
 (`loan_collaterals`). Cuando el interés se cobra por separado, también se crea
-una obligación pendiente en `loan_interest_payments`.
+una obligación pendiente en `loan_interest_payments`. Los abonos se registran en
+el módulo [`payments`](../payments/SKILL.md), que actualiza los estados de cuotas
+e interés y bloquea estos préstamos para cambios posteriores.
 
 El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -59,6 +61,8 @@ Los controllers pasan `req.user` (`user_id`, `role_id`, `role_name`,
   `stakeholder_id`, responde `403`.
 - Un préstamo de otro prestamista responde `404` en cualquier ruta con `:id`,
   aunque el registro exista; así no se revela su existencia.
+- `loanScope(user)` está exportado desde `loanService` y lo reutiliza el módulo
+  `payments` para aplicar el mismo filtro de propiedad.
 - Las rutas `/api/users`, `/api/roles` y `/api/stakeholders` no filtran por rol.
 
 ## Campos del préstamo

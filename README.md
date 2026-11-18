@@ -7,7 +7,7 @@ El propósito es **reemplazar el control manual de préstamos** por un registro 
 ## Alcance
 
 - Registrar préstamos con su monto, tasa de interés ordinario, fecha de desembolso, calendario de cuotas, fiadores, garantías y modo de interés (incluido en las cuotas o cobrado por separado).
-- Registrar uno o varios abonos por cuota y llevar por separado los pagos de interés ordinario.
+- Registrar el pago total de una cuota o de la obligación de interés ordinario cobrado por separado, con fecha y usuario que lo registró.
 - Identificar cuotas pendientes, pagadas, vencidas o reprogramadas, y calcular la mora diaria por cuota.
 - Consultar el historial de préstamos de una persona como cliente, prestamista o fiador.
 
@@ -23,7 +23,7 @@ El propósito es **reemplazar el control manual de préstamos** por un registro 
 | `loan_guarantors` | Personas que actúan como fiadoras de un préstamo específico. |
 | `loan_collaterals` | Bienes dados en garantía, con su descripción y valor estimado cuando se conoce. |
 | `loan_payments` | Pagos recibidos, con su monto, fecha y usuario que los registró. |
-| `installment_payments` | Vincula un pago con la cuota a la que se aplica. Una cuota puede recibir varios abonos. |
+| `installment_payments` | Vincula un pago con la cuota a la que se aplica. La API registra un pago total por cuota. |
 | `loan_interest_payments` | Obligación de interés ordinario por préstamo: pendiente (`payment_id` nulo) o pagada. |
 
 ## Tecnologías
@@ -80,7 +80,7 @@ La validación y normalización de payloads vive en `src/server/utils/validators
 
 Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
 
-`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`) exige `Authorization: Bearer <token>`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`; `checkAuth` los expone en `req.user`. El signup público solo crea cuentas `lender`. Las rutas de préstamos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista.
+`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) exige `Authorization: Bearer <token>`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`; `checkAuth` los expone en `req.user`. El signup público solo crea cuentas `lender`. Las rutas de préstamos y pagos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista al crear préstamos.
 
 ## Estructura del proyecto
 
@@ -98,7 +98,7 @@ src/
 │  └─ assets/
 └─ server/                  API Express
    ├─ main.js               servidor, monta /api y escucha en el puerto 3000
-   ├─ api.js                router global: monta /auth y luego checkAuth + /users, /roles, /stakeholders y /loans
+   ├─ api.js                router global: monta /auth y luego checkAuth + /users, /roles, /stakeholders, /loans y /payments
    ├─ config/
    │  ├─ connection.js      conexión Sequelize a MySQL
    │  └─ passport.js        estrategias local y JWT (no usado por la API actual)
@@ -113,8 +113,9 @@ src/
    │  └─ validators/
    │     ├─ common.js              helpers compartidos (enteros, strings opcionales, números)
    │     ├─ authValidation.js      validación/normalización de payloads de auth
-   │     ├─ loanValidation.js      validación/parseo de préstamos y sus relaciones
-   │     └─ stakeholderValidation.js validación/parseo de stakeholders
+    │     ├─ loanValidation.js      validación/parseo de préstamos y sus relaciones
+    │     ├─ paymentValidation.js   validación/parseo de pagos
+    │     └─ stakeholderValidation.js validación/parseo de stakeholders
    └─ models/
       ├─ Role.js               tabla roles
       ├─ User.js               tabla users
@@ -149,6 +150,10 @@ La documentación por módulo vive en [`.agents/skills/`](.agents/skills/); cada
 | `PUT` | `/api/loans/:id` | Reemplaza un préstamo propio y todas sus relaciones; exige los tres arreglos. Requiere token. |
 | `PATCH` | `/api/loans/:id` | Actualiza solo los campos o arreglos enviados; los cambios financieros requieren `installments`. Un `lender` no puede cambiar `lender_id`. Requiere token. |
 | `DELETE` | `/api/loans/:id` | Elimina un préstamo propio y sus relaciones; responde `409` si tiene pagos de cuotas o interés pagado. Requiere token. |
+| `GET` | `/api/payments` | Lista los pagos visibles para el usuario, con `?loan_id` opcional. Requiere token. |
+| `GET` | `/api/payments/:id` | Devuelve un pago con su cuota o interés aplicado. Requiere token. |
+| `POST` | `/api/payments/installment` | Registra el pago total de una cuota. Requiere token. |
+| `POST` | `/api/payments/interest` | Registra el pago del interés separado. Requiere token. |
 | `POST` | `/api/auth/signup` | Crea una cuenta `lender`; recibe `email`, `password` y `stakeholder_id`. El rol se asigna desde la base, no desde el payload; un stakeholder inexistente responde `409`. |
 | `POST` | `/api/auth/login` | Inicia sesión. Recibe `email` y `password`; responde `{ token, user }` con un JWT de 1 hora que incluye `role_name` y `stakeholder_id`. |
 | `GET` | `/hello` | Verificación simple de que el servidor responde. |
@@ -193,5 +198,32 @@ Para cuentas `lender`, `lender_id` debe ser el stakeholder vinculado al usuario:
 `disbursed_at` debe incluir hora y acepta ISO 8601 (`2026-01-15T10:30:00Z`, con zona opcional) o formato MySQL (`2026-01-15 10:30:00`); sin zona se interpreta como hora local del servidor y la respuesta usa ISO UTC. `loan_amount` debe ser mayor que 0, tener máximo 2 decimales y llegar hasta `9999999999.99`; `interest_rate` va de 0 a `999.9999`.
 
 `PATCH` reemplaza solo los arreglos enviados y exige `installments` cuando cambian `loan_amount`, `interest_rate` o `interest_payment_mode`. Los pagos de cuotas o un interés pagado bloquean los cambios y la eliminación con `409`.
+
+### Pagos
+
+Hay dos rutas explícitas y no existe un `POST /api/payments` genérico. Ambas reciben `loan_id` y `amount`; `paid_at` es opcional y debe ser ISO 8601 con zona; si se omite se usa la hora del servidor.
+
+`POST /api/payments/installment`:
+
+```json
+{
+  "loan_id": 35,
+  "installment_id": 161,
+  "amount": 200,
+  "paid_at": "2026-02-15T10:30:00Z"
+}
+```
+
+`POST /api/payments/interest` para un préstamo en modo `separate`:
+
+```json
+{
+  "loan_id": 35,
+  "loan_interest_payment_id": 17,
+  "amount": 200
+}
+```
+
+Cada ruta exige su propio identificador de destino; el campo de la otra ruta se ignora. El monto debe ser exactamente el pendiente (`amount_due` de la cuota o `interest_amount` del préstamo); no se aceptan abonos parciales. `recorded_by` se toma del usuario autenticado en el JWT, no del cuerpo, y se devuelve junto con `recordedBy` en la respuesta `201`. Un destino ajeno al préstamo responde `404`, un destino ya pagado responde `409` y un monto distinto responde `400`. Los listados y el detalle respetan el mismo filtro de prestamista que `/api/loans`.
 
 Passport sigue configurado en `src/server/config/passport.js` pero la API actual no lo usa; la autenticación se resuelve con JWT.

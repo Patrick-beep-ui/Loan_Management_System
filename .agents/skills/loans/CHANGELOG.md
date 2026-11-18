@@ -1,5 +1,15 @@
 # Changelog — loans
 
+## 2026-11-18 — `loanScope` compartido con payments
+
+- Change: `loanScope` se exportó desde `loanService` y los préstamos con pagos
+  siguen bloqueando cambios financieros, reemplazo y eliminación con `409`. La
+  documentación apunta al nuevo módulo `payments`.
+- Impact: el registro de pagos actualiza estados de cuotas e interés sin duplicar
+  la lógica de propiedad; el contrato de préstamos no cambia.
+- Verification: pago de cuota e interés en préstamo temporal, `DELETE` posterior
+  bloqueado con `409`, y limpieza manual de pagos para permitir la eliminación.
+
 ## 2026-11-17 — Préstamos restringidos al prestamista autenticado
 
 - Change: los controllers pasan `req.user` a los seis services de préstamos.

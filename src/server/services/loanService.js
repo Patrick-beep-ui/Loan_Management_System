@@ -62,8 +62,6 @@ function isAdmin(user) {
 
 function lenderStakeholderId(user) {
     const stakeholder_id = Number(user?.stakeholder_id);
-    console.log("stakeholder_id", stakeholder_id, user?.stakeholder_id);
-    console.log("User id", user?.user_id, "Role", user?.role_name);
 
     if (!Number.isInteger(stakeholder_id) || stakeholder_id <= 0) {
         throw new ForbiddenError("Lender account is not linked to a stakeholder");
@@ -72,7 +70,7 @@ function lenderStakeholderId(user) {
     return stakeholder_id;
 }
 
-function loanScope(user) {
+export function loanScope(user) {
     if (isAdmin(user)) {
         return {};
     }

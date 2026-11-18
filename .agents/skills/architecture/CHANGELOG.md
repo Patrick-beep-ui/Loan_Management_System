@@ -1,5 +1,17 @@
 # Changelog — architecture
 
+## 2026-11-18 — Router de pagos
+
+- Change: Se montó `PaymentRouter` en `/api/payments` después de `checkAuth` en
+  `src/server/api.js`. Se agregó `paymentValidation.js` a la capa de validación y
+  `paymentService` reutiliza `loanScope` de `loanService` para el filtro por
+  prestamista.
+- Impact: Nuevas rutas protegidas de lectura y registro de pagos. El patrón de
+  capas y el manejo de errores tipados no cambian.
+- Verification: `node --check` en los archivos nuevos y modificados; pruebas de
+  servicio con pagos de cuota e interés, scoping lender/admin y conflictos `409`.
+  Datos temporales eliminados.
+
 ## 2026-11-17 — Identidad del usuario y errores 403
 
 - Change: `generateToken` incluye `role_name` y `stakeholder_id`, `checkAuth`
