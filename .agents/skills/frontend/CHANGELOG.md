@@ -1,5 +1,18 @@
 # Changelog — frontend
 
+### 2026-11-18 — Listado de préstamos
+
+- Change: Se reemplazó el placeholder de `Loan` por una tabla que consume
+  `GET /api/loans` mediante `api.get("/loans")`. Muestra ID, prestamista,
+  cliente, monto, tasa, modo, fecha de desembolso y total a pagar, con importes
+  y fechas formateados y estados de carga, vacío y error con reintento. Un `401`
+  elimina el token y redirige a `/login`.
+- Impact: `/loans` pasa a ser una vista funcional que usa el servicio axios
+  compartido y los componentes `Table*`. `CreateLoan` sigue siendo placeholder.
+  El detalle está en [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente. No se probó contra un
+  servidor ni en navegador.
+
 ### 2026-11-18 — Servicio axios compartido
 
 - Change: Se añadió `src/lib/axiosService.js`, una instancia de axios con

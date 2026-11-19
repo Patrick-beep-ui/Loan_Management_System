@@ -30,8 +30,12 @@ una región `role="alert"` con tokens `destructive`. `Login` guarda el JWT en
 `localStorage` bajo la clave `token` y navega a `/loans`. `Signup` envía
 `email`, `password` y `stakeholder_id` como entero positivo y, tras el `201`,
 navega a `/login` con un estado que muestra un aviso de registro correcto.
-`Loan` y `CreateLoan` siguen siendo placeholders y no consumen `/api/loans` ni
-`/api/payments`. `App.jsx` continúa siendo el contador de ejemplo de Vite. La
+`Loan` consume `/api/loans` con `api.get("/loans")` y muestra un listado en
+tabla con ID, prestamista, cliente, monto, tasa, modo, fecha de desembolso y
+total a pagar; incluye estados de carga, vacío y error con reintento, y ante un
+`401` elimina el token y vuelve a `/login`. `CreateLoan` sigue siendo
+placeholder y no consume `/api/payments`. `App.jsx` continúa siendo el contador
+de ejemplo de Vite. La
 ruta `/test` usa `api.get("/roles")`; esa ruta del servidor está actualmente
 deshabilitada en `src/server/api.js`, por lo que no forma parte del flujo de
 autenticación.
@@ -136,6 +140,15 @@ header ni repetir el prefijo `/api`.
 - Las dos vistas comparten la misma composición: `Card`, `CardHeader`,
   `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Label`, `Input`
   y `Button`, sin colores fijos.
+
+## Listado de préstamos
+
+`src/client/views/Loans.jsx` usa `api.get("/loans")` y renderiza los resultados
+con los componentes `Table*`. Las columnas son ID, prestamista, cliente, monto,
+tasa, modo, fecha de desembolso y total a pagar. Los importes se formatean con
+dos decimales y separador de miles, la tasa con hasta cuatro decimales y `%`, y
+la fecha como `YYYY-MM-DD`; los valores ausentes se muestran como `—`. Un `401`
+borra `token` y redirige a `/login`.
 
 ## Convenciones
 
