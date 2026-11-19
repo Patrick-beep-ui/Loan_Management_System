@@ -13,6 +13,7 @@ import PaymentRouter from "./routes/paymentRoutes.js";
 const api = express.Router({ mergeParams: true });
 
 api.use("/auth", AuthRouter); // public: signup, login
+//api.use("/roles", RoleRouter); // /api/roles
 
 api.use(checkAuth); // every route registered below requires a valid token
 

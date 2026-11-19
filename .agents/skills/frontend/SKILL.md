@@ -18,13 +18,23 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 | --- | --- | --- |
 | `/` | `App` (demo inicial de Vite) | `src/client/App.jsx` |
 | `/login` | `Login` | `src/client/views/Login.jsx` |
+| `/signup` | `Signup` | `src/client/views/Signup.jsx` |
 | `/loans` | `Loan` | `src/client/views/Loans.jsx` |
 | `/create-loan` | `CreateLoan` | `src/client/views/CreateLoan.jsx` |
+| `/test` | `Test` (vista de prueba) | `src/client/Test.jsx` |
 
-Las tres vistas son todavía placeholders: solo renderizan un `section` con un
-título. No consumen la API ni almacenan el JWT; la integración con
-`/api/auth`, `/api/loans` y `/api/payments` queda para otro cambio. `App.jsx`
-sigue siendo el contador de ejemplo generado por Vite.
+`Login` y `Signup` consumen `/api/auth` a través del servicio compartido
+`src/lib/axiosService.js` (`api.post`): validan los campos, desactivan el botón
+mientras envían y muestran `error.response?.data?.error` o un mensaje de red en
+una región `role="alert"` con tokens `destructive`. `Login` guarda el JWT en
+`localStorage` bajo la clave `token` y navega a `/loans`. `Signup` envía
+`email`, `password` y `stakeholder_id` como entero positivo y, tras el `201`,
+navega a `/login` con un estado que muestra un aviso de registro correcto.
+`Loan` y `CreateLoan` siguen siendo placeholders y no consumen `/api/loans` ni
+`/api/payments`. `App.jsx` continúa siendo el contador de ejemplo de Vite. La
+ruta `/test` usa `api.get("/roles")`; esa ruta del servidor está actualmente
+deshabilitada en `src/server/api.js`, por lo que no forma parte del flujo de
+autenticación.
 
 ## Configuración y dependencias
 
@@ -40,6 +50,9 @@ sigue siendo el contador de ejemplo generado por Vite.
   `tailwindcss`, `@tailwindcss/vite` y `tw-animate-css`. `react-router-dom`
   provee el enrutamiento. La instalación de la CLI añadió también `shadcn` e
   `install` como dependencias; el código actual no las utiliza.
+- `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
+  `Signup` y `Test.jsx` importan esa instancia en lugar de crear clientes
+  propios.
 
 ## Componentes de UI
 
@@ -98,6 +111,31 @@ Montserrat y `--font-heading` como Playfair Display. La utilidad `font-heading`
 se usa en `CardTitle` y `DialogTitle`, y `@layer base` la aplica también a
 `h1`–`h6`. No se instala ninguna fuente local: el paquete
 `@fontsource-variable/geist` se eliminó del proyecto.
+
+## Servicio HTTP
+
+`src/lib/axiosService.js` exporta una instancia de axios con
+`baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"`.
+Un interceptor de petición lee el JWT de `localStorage` bajo la clave `token`
+y, si existe, añade `Authorization: Bearer <token>` a todas las peticiones.
+Por eso las vistas invocan métodos con rutas relativas a `/api`
+(`api.post("/auth/login")`, `api.get("/roles")`) y no necesitan construir el
+header ni repetir el prefijo `/api`.
+
+## Autenticación en el cliente
+
+- Las peticiones a `/auth/login` y `/auth/signup` usan `api.post` del servicio
+  compartido; la URL final se resuelve con el `baseURL` configurado.
+- El JWT se guarda en `localStorage` con la clave `token` y el interceptor lo
+  adjunta como `Authorization: Bearer <token>` a todas las peticiones, incluso
+  a las públicas cuando ya hay una sesión. Ese es el mecanismo que exige
+  `checkAuth`.
+- Los errores se leen de `error.response?.data?.error`; si no hay respuesta se
+  muestra un mensaje genérico. Ambos casos usan una región `role="alert"` con
+  `text-destructive` y `bg-destructive/10`.
+- Las dos vistas comparten la misma composición: `Card`, `CardHeader`,
+  `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Label`, `Input`
+  y `Button`, sin colores fijos.
 
 ## Convenciones
 

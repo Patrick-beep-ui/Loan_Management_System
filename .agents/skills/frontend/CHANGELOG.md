@@ -1,5 +1,34 @@
 # Changelog — frontend
 
+### 2026-11-18 — Servicio axios compartido
+
+- Change: Se añadió `src/lib/axiosService.js`, una instancia de axios con
+  `baseURL` desde `VITE_API_URL` (o `http://localhost:3000/api`) y un
+  interceptor que adjunta `Authorization: Bearer <token>` leyendo `token` de
+  `localStorage`. `Login`, `Signup` y `Test.jsx` ahora usan `api.post`/`api.get`
+  con rutas relativas a `/api`.
+- Impact: Todas las peticiones pasan por un único cliente y el token se envía
+  de forma centralizada; no hay que repetir el header ni el prefijo `/api`.
+  El detalle está en [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente. No se probó el flujo contra
+  un servidor ni en navegador; `/api/roles` sigue deshabilitado en
+  `src/server/api.js`.
+
+### 2026-11-18 — Vistas de login y signup
+
+- Change: Se reemplazó el placeholder de `Login` por un formulario conectado a
+  `POST /api/auth/login` y se añadió `Signup`, conectado a
+  `POST /api/auth/signup` mediante `axios.post`. Ambos usan `Card`, `Input`,
+  `Label` y `Button`,
+  validan los campos y muestran estados de carga y error. `Login` guarda el JWT
+  en `localStorage` como `token` y navega a `/loans`; `Signup` navega a
+  `/login` con un aviso de registro correcto.
+- Impact: El cliente ya puede autenticarse contra la API. `Loan` y
+  `CreateLoan` siguen siendo placeholders y todavía no envían el token a las
+  rutas protegidas. Los detalles están en [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente y `git diff --check` no
+  reportó errores. No se probó el flujo contra un servidor ni en navegador.
+
 ### 2026-11-18 — Tipografía de marca
 
 - Change: Se reemplazó Geist por Montserrat (texto) y Playfair Display

@@ -92,10 +92,12 @@ El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` d
 | --- | --- |
 | `/` | `App` (demo inicial de Vite) |
 | `/login` | `Login` |
+| `/signup` | `Signup` |
 | `/loans` | `Loan` |
 | `/create-loan` | `CreateLoan` |
+| `/test` | `Test` (vista de prueba) |
 
-Las vistas son todavía placeholders y no consumen la API; la integración con el JWT y los endpoints queda para otro cambio. Los estilos se definen en `src/client/index.css` con Tailwind 4, la paleta de marca (`263A69`, `B0C7DD`, `E8E3DD`, `EDECEA` y `0F0F0F`) en temas claro y oscuro, con Playfair Display para títulos y Montserrat para texto desde Google Fonts. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
+`Login` y `Signup` consumen `/api/auth` mediante `src/lib/axiosService.js` (`api.post`): validan los campos, muestran estados de carga y error y usan los componentes `Card`, `Input`, `Label` y `Button`. El servicio centraliza el `baseURL` (`VITE_API_URL` o `http://localhost:3000/api`) y un interceptor que envía `Authorization: Bearer <token>` leyendo `token` de `localStorage`. `Login` guarda el JWT y navega a `/loans`; `Signup` envía `email`, `password` y `stakeholder_id` y, tras el registro, navega a `/login` con un aviso de éxito. `Loan` y `CreateLoan` siguen siendo placeholders; `/test` usa `api.get("/roles")` del mismo servicio (ruta actualmente deshabilitada en `src/server/api.js`). Los estilos se definen en `src/client/index.css` con Tailwind 4, la paleta de marca (`263A69`, `B0C7DD`, `E8E3DD`, `EDECEA` y `0F0F0F`) en temas claro y oscuro, con Playfair Display para títulos y Montserrat para texto desde Google Fonts. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
 
 ## Estructura del proyecto
 
@@ -114,11 +116,13 @@ src/
 │  ├─ main.jsx              entrada de React y rutas (react-router-dom)
 │  ├─ App.jsx               componente principal (demo de Vite)
 │  ├─ App.css / index.css   estilos base y tokens de Tailwind/shadcn
-│  ├─ views/                vistas: Login, Loans, CreateLoan
+│  ├─ Test.jsx              vista de prueba (/test)
+│  ├─ views/                vistas: Login, Signup, Loans, CreateLoan
 │  └─ assets/
 ├─ components/
 │  └─ ui/                   componentes shadcn: button, card, dialog, input, label, table
 ├─ lib/
+│  ├─ axiosService.js       instancia de axios con interceptor de token
 │  └─ utils.js              reexporta `cn`
 └─ server/                  API Express
    ├─ main.js               servidor, monta /api y escucha en el puerto 3000

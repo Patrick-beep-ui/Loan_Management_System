@@ -8,8 +8,10 @@ import App from "./App";
 
 // Views
 import Login from "./views/Login";
+import Signup from "./views/Signup";
 import Loan from "./views/Loans";
 import CreateLoan from "./views/CreateLoan";
+import Test from "./Test";
 
 const router = createBrowserRouter([
   {
@@ -21,12 +23,20 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
+    path: "/signup",
+    element: <Signup />,
+  },
+  {
     path: "/loans",
     element: <Loan />,
   },
   {
     path: "/create-loan",
     element: <CreateLoan />,
+  },
+  {
+    path: "/test",
+    element: <Test />,
   },
 ]);
 
