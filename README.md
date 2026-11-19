@@ -31,6 +31,8 @@ El propósito es **reemplazar el control manual de préstamos** por un registro 
 React y Vite para la interfaz, Express para la API y MySQL con Sequelize para el acceso a datos. Vite Express permite servir la interfaz y la API desde el mismo servidor.
 
 - React 19 y Vite 6 (con `@vitejs/plugin-react`).
+- React Router 7 para el enrutamiento del cliente.
+- Tailwind CSS 4 (`@tailwindcss/vite`), componentes shadcn sobre primitivos de Base UI, `class-variance-authority`, `lucide-react` y la fuente Geist.
 - Express 5 con módulos ES (`"type": "module"`).
 - MySQL a través de Sequelize 6 y `mysql2`.
 - Autenticación con JWT (`jsonwebtoken`) y `bcryptjs`.
@@ -82,9 +84,26 @@ Cada router se registra en `src/server/api.js`. Los services lanzan errores tipa
 
 `/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) exige `Authorization: Bearer <token>`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`; `checkAuth` los expone en `req.user`. El signup público solo crea cuentas `lender`. Las rutas de préstamos y pagos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista al crear préstamos.
 
+## Frontend
+
+El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` define las rutas y `RouterProvider` monta la aplicación. Las vistas viven en `src/client/views/` y los componentes reutilizables en `src/components/ui/`.
+
+| Ruta | Vista |
+| --- | --- |
+| `/` | `App` (demo inicial de Vite) |
+| `/login` | `Login` |
+| `/loans` | `Loan` |
+| `/create-loan` | `CreateLoan` |
+
+Las vistas son todavía placeholders y no consumen la API; la integración con el JWT y los endpoints queda para otro cambio. Los estilos se definen en `src/client/index.css` con Tailwind 4, tokens de tema claro/oscuro y la fuente Geist. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
+
 ## Estructura del proyecto
 
 ```
+components.json             configuración de shadcn (alias, estilo, CSS)
+jsconfig.json               alias `@/*` → `./src/*`
+vite.config.js              plugins de Vite y alias `@` → `./src`
+
 database/
 └─ migrations/
    ├─ 2026-11-16-loan-interest-payment-mode.sql
@@ -92,10 +111,15 @@ database/
 
 src/
 ├─ client/                  interfaz React (Vite)
-│  ├─ main.jsx              punto de entrada de React
-│  ├─ App.jsx               componente principal
-│  ├─ App.css / index.css
+│  ├─ main.jsx              entrada de React y rutas (react-router-dom)
+│  ├─ App.jsx               componente principal (demo de Vite)
+│  ├─ App.css / index.css   estilos base y tokens de Tailwind/shadcn
+│  ├─ views/                vistas: Login, Loans, CreateLoan
 │  └─ assets/
+├─ components/
+│  └─ ui/                   componentes shadcn: button, card, dialog, input, label, table
+├─ lib/
+│  └─ utils.js              reexporta `cn`
 └─ server/                  API Express
    ├─ main.js               servidor, monta /api y escucha en el puerto 3000
    ├─ api.js                router global: monta /auth y luego checkAuth + /users, /roles, /stakeholders, /loans y /payments
