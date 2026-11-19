@@ -37,10 +37,9 @@ sigue siendo el contador de ejemplo generado por Vite.
   `@/components`, `@/lib/utils`, `@/components/ui`, `@/lib` y `@/hooks`.
 - Dependencias de UI: `@base-ui/react` (primitivos), `class-variance-authority`
   (variantes), `cn` (concatenación de clases), `lucide-react` (iconos),
-  `@fontsource-variable/geist` (tipografía), `tailwindcss`, `@tailwindcss/vite`
-  y `tw-animate-css`. `react-router-dom` provee el enrutamiento. La instalación
-  de la CLI añadió también `shadcn` e `install` como dependencias; el código
-  actual no las utiliza.
+  `tailwindcss`, `@tailwindcss/vite` y `tw-animate-css`. `react-router-dom`
+  provee el enrutamiento. La instalación de la CLI añadió también `shadcn` e
+  `install` como dependencias; el código actual no las utiliza.
 
 ## Componentes de UI
 
@@ -62,14 +61,43 @@ Conviene tenerlo presente al agregar componentes nuevos.
 
 ## Estilos
 
-`src/client/index.css` importa `tailwindcss`, `tw-animate-css`,
-`shadcn/tailwind.css` y la fuente Geist; declara `@custom-variant dark`,
-variables de color para tema claro y oscuro (`background`, `foreground`,
-`card`, `primary`, `muted`, `destructive`, `border`, `sidebar`, `chart-*`, etc.)
-y un bloque `@theme inline` que las expone como utilidades (`--color-*`,
-`--font-sans`, `--radius-*`). El bloque `@layer base` aplica `border-border`,
-`outline-ring/50`, `bg-background`, `text-foreground` y `font-sans` a los
-elementos base.
+`src/client/index.css` importa `tailwindcss`, `tw-animate-css` y
+`shadcn/tailwind.css`; declara `@custom-variant dark`, las variables de color de
+la paleta de marca y un bloque `@theme inline` que las expone como utilidades
+(`--color-*`, `--font-heading`, `--font-sans`, `--radius-*`). El bloque
+`@layer base` aplica `border-border`, `outline-ring/50`, `bg-background`,
+`text-foreground` y `font-sans` a los elementos base, y `font-heading` a
+los encabezados semánticos `h1` a `h6`.
+
+### Paleta de marca
+
+Los cinco colores se definen en formato `oklch` dentro de `:root` y `.dark`:
+
+| Hex | Uso | Tokens principales |
+| --- | --- | --- |
+| `263A69` | Color principal de la aplicación | `--primary`, `--ring` |
+| `B0C7DD` | Acciones secundarias relacionadas con el principal | `--secondary`, `--accent`, `--border`, `--input` |
+| `E8E3DD` | Fondos, objetos sutiles y tarjetas | `--background`, `--card` |
+| `EDECEA` | Notificaciones, popups y mensajes | `--popover`, `--muted`, `--primary-foreground` en tema claro |
+| `0F0F0F` | Texto | `--foreground`, `--card-foreground`, `--secondary-foreground` |
+
+En tema claro los textos sobre el azul oscuro usan `EDECEA`; en `.dark` el
+fondo es `0F0F0F`, las tarjetas y popups usan `263A69` y los acentos pasan a
+`B0C7DD`. `--destructive` conserva el rojo de shadcn y los tokens `chart-*` y
+`sidebar-*` mantienen sus valores por defecto. Los estilos heredados de Vite
+(colores fijos en `a`, `button` y `App.css`) se eliminaron o se reemplazaron por
+variables de la paleta.
+
+### Tipografía
+
+Las fuentes se cargan desde Google Fonts mediante los enlaces `preconnect` y
+`stylesheet` en `index.html`: Montserrat (rango variable `100..900`) para el
+texto y Playfair Display (`400..900`) para los títulos, ambas con
+`display=swap`. En `index.css`, `@theme inline` define `--font-sans` como
+Montserrat y `--font-heading` como Playfair Display. La utilidad `font-heading`
+se usa en `CardTitle` y `DialogTitle`, y `@layer base` la aplica también a
+`h1`–`h6`. No se instala ninguna fuente local: el paquete
+`@fontsource-variable/geist` se eliminó del proyecto.
 
 ## Convenciones
 

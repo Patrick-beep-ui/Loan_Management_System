@@ -32,7 +32,7 @@ React y Vite para la interfaz, Express para la API y MySQL con Sequelize para el
 
 - React 19 y Vite 6 (con `@vitejs/plugin-react`).
 - React Router 7 para el enrutamiento del cliente.
-- Tailwind CSS 4 (`@tailwindcss/vite`), componentes shadcn sobre primitivos de Base UI, `class-variance-authority`, `lucide-react` y la fuente Geist.
+- Tailwind CSS 4 (`@tailwindcss/vite`), componentes shadcn sobre primitivos de Base UI, `class-variance-authority`, `lucide-react` y las fuentes Playfair Display y Montserrat desde Google Fonts.
 - Express 5 con módulos ES (`"type": "module"`).
 - MySQL a través de Sequelize 6 y `mysql2`.
 - Autenticación con JWT (`jsonwebtoken`) y `bcryptjs`.
@@ -95,7 +95,7 @@ El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` d
 | `/loans` | `Loan` |
 | `/create-loan` | `CreateLoan` |
 
-Las vistas son todavía placeholders y no consumen la API; la integración con el JWT y los endpoints queda para otro cambio. Los estilos se definen en `src/client/index.css` con Tailwind 4, tokens de tema claro/oscuro y la fuente Geist. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
+Las vistas son todavía placeholders y no consumen la API; la integración con el JWT y los endpoints queda para otro cambio. Los estilos se definen en `src/client/index.css` con Tailwind 4, la paleta de marca (`263A69`, `B0C7DD`, `E8E3DD`, `EDECEA` y `0F0F0F`) en temas claro y oscuro, con Playfair Display para títulos y Montserrat para texto desde Google Fonts. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
 
 ## Estructura del proyecto
 
