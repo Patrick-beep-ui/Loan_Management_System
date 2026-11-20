@@ -1,5 +1,17 @@
 # Changelog — frontend
 
+### 2026-11-19 — Componentes por dominio para el listado de préstamos
+
+- Change: Se dividió `Loans.jsx` en componentes de `src/components/loans/`, se
+  extrajo la carga y las acciones a `useLoans` y el formato a
+  `src/client/utils/loanFormat.js`, manteniendo el mismo listado.
+- Impact: La vista queda como composición del encabezado, los avisos y la tabla;
+  no cambian columnas, estados, mensajes ni comportamiento. El detalle está en
+  [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente (2483 modules transformed).
+  No se probó en navegador ni contra un servidor; solo se ejecutó la
+  compilación, a pedido del usuario.
+
 ### 2026-11-19 — Componentes por dominio para CreateLoan
 
 - Change: Se dividió `CreateLoan.jsx` en componentes de `src/components/loans/`,

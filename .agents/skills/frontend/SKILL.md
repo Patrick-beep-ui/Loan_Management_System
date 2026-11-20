@@ -64,8 +64,8 @@ flujo de autenticación.
   provee el enrutamiento. La instalación de la CLI añadió también `shadcn` e
   `install` como dependencias; el código actual no las utiliza.
 - `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
-  `Signup`, `Test.jsx` y el hook `useCreateLoanForm` importan esa instancia en
-  lugar de crear clientes propios.
+  `Signup`, `Test.jsx` y los hooks `useLoans` y `useCreateLoanForm` importan esa
+  instancia en lugar de crear clientes propios.
 
 ## Componentes de UI
 
@@ -89,10 +89,15 @@ Conviene tenerlo presente al agregar componentes nuevos.
 
 ### Componentes por dominio
 
-`src/components/loans/` reúne la UI específica de la creación de préstamos:
+`src/components/loans/` reúne la UI específica de préstamos:
 
 | Archivo | Responsabilidad |
 | --- | --- |
+| `LoanListHeader.jsx` | título, descripción según el usuario y botón `New loan` |
+| `LoanCreatedAlert.jsx` | aviso descartable `role="status"` tras la creación |
+| `LoanLoadErrorAlert.jsx` | error de carga con acción `Retry` |
+| `LoanTable.jsx` | tabla del listado con estados de carga y vacío |
+| `LoanTableRow.jsx` | una fila con importes, tasa, modo y fecha formateados |
 | `CreateLoanForm.jsx` | formulario completo: datos, fiadores, garantías y envío de la vista previa |
 | `LoanDetailsFields.jsx` | campos de prestamista, cliente, monto, tasa, modo, desembolso y cuotas |
 | `GuarantorsFieldArray.jsx` | alta, baja y listado de fiadores |
@@ -190,15 +195,20 @@ ese evento y limpia el usuario.
 
 ## Listado de préstamos
 
-`src/client/views/Loans.jsx` usa `api.get("/loans")` y renderiza los resultados
-con los componentes `Table*`. Las columnas son ID, prestamista, cliente, monto,
-tasa, modo, fecha de desembolso y total a pagar. Los importes se formatean con
-dos decimales y separador de miles, la tasa con hasta cuatro decimales y `%`, y
-la fecha como `YYYY-MM-DD`; los valores ausentes se muestran como `—`. El
-encabezado incluye un botón `New loan` que navega a `/create-loan`; cuando la
-creación termina, la vista vuelve con `state.createdLoanId` y muestra un aviso
-`role="status"` descartable. Ante un `401`, el interceptor global limpia
-`token` y `RequireAuth` redirige a `/login`.
+La vista `src/client/views/Loans.jsx` arma el `Card` y compone `LoanListHeader`,
+`LoanCreatedAlert`, `LoanLoadErrorAlert` y `LoanTable`. El hook `useLoans`
+consume `api.get("/loans")` con el servicio compartido y mantiene los estados de
+carga, vacío y error, además de las acciones de reintento, cierre del aviso y
+navegación a `/create-loan`. Usa `useAuth().user` solo para construir la
+descripción con nombre y rol, porque el backend filtra los préstamos según el
+JWT. `LoanTable` muestra ID, prestamista, cliente, monto, tasa, modo, fecha de
+desembolso y total a pagar; los formatos viven en
+`src/client/utils/loanFormat.js`: importes con dos decimales y separador de
+miles, tasa con hasta cuatro decimales y `%`, fecha `YYYY-MM-DD` y `—` para
+valores ausentes. Cuando la creación termina, la vista vuelve con
+`state.createdLoanId` y `LoanCreatedAlert` muestra un aviso `role="status"`
+descartable. Ante un `401`, el interceptor global limpia `token` y
+`RequireAuth` redirige a `/login`.
 
 ## Creación de préstamos
 
@@ -240,7 +250,7 @@ validación y de API se muestran en una región `role="alert"` con tokens
 - El estado de sesión vive en `src/client/contexts/`; consumirlo con
   `useAuth()` desde cualquier vista.
 - Los helpers puros de dominio van en `src/client/utils/`, como
-  `loanSchedule.js` y `loanForm.js`.
+  `loanSchedule.js`, `loanForm.js` y `loanFormat.js`.
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en
