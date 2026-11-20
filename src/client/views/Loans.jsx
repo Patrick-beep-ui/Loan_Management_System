@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/client/contexts/AuthContext";
 import api from "@/lib/axiosService";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -57,6 +59,10 @@ function fullName(stakeholder) {
 
 export default function Loan() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const createdLoanId = location.state?.createdLoanId;
+  const [showCreated, setShowCreated] = useState(Boolean(createdLoanId));
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -95,8 +101,29 @@ export default function Loan() {
               ? `Loans for ${stakeholderName}${roleName ? ` (${roleName})` : ""}.`
               : "All loans available to your account."}
           </CardDescription>
+          <CardAction>
+            <Button type="button" onClick={() => navigate("/create-loan")}>
+              New loan
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent>
+          {showCreated && (
+            <div
+              role="status"
+              className="mb-4 flex flex-col gap-3 rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground sm:flex-row sm:items-center sm:justify-between"
+            >
+              <span>Loan #{createdLoanId} was created.</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCreated(false)}
+              >
+                Dismiss
+              </Button>
+            </div>
+          )}
           {error && (
             <div
               role="alert"

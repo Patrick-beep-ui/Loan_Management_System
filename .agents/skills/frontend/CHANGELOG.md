@@ -1,5 +1,19 @@
 # Changelog — frontend
 
+### 2026-11-19 — Creación de préstamos con vista previa
+
+- Change: Se reemplazó el placeholder de `CreateLoan` por un formulario que
+  carga stakeholders, admite fiadores existentes o inline, exige garantías y
+  calcula las cuotas con `src/client/utils/loanSchedule.js` antes de enviar
+  `POST /api/loans`. `Loan` añade el botón `New loan` y un aviso de créación
+  correcta. Se instalaron los componentes shadcn `select` y `textarea`.
+- Impact: `/create-loan` pasa a ser un flujo funcional de dos pasos (formulario
+  y revisión) y vuelve a `/loans` con `state.createdLoanId` tras la creación.
+  El backend sigue siendo el único validador definitivo y no se añadió ningún
+  endpoint nuevo. El detalle está en [`SKILL.md`](SKILL.md).
+- Verification: no se ejecutó `pnpm build` ni se probó en navegador o contra un
+  servidor, a pedido del usuario. Queda pendiente esa comprobación.
+
 ### 2026-11-19 — Contexto de autenticación y rutas protegidas
 
 - Change: Se reemplazó el wrapper de `AuthContext.jsx` por `AuthProvider`,

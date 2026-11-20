@@ -37,11 +37,15 @@ positivo y, tras el `201`, navega a `/login` con un aviso de registro correcto.
 tabla con ID, prestamista, cliente, monto, tasa, modo, fecha de desembolso y
 total a pagar; usa `useAuth().user` solo para mostrar nombre y rol, porque el
 backend ya filtra los préstamos según el JWT. Incluye estados de carga, vacío y
-error con reintento; un `401` global limpia la sesión y `RequireAuth` vuelve a
-`/login`. `CreateLoan` sigue siendo placeholder y no consume `/api/payments`.
-`App.jsx` continúa siendo el contador de ejemplo de Vite. La ruta `/test` usa
-`api.get("/roles")`; esa ruta del servidor está actualmente deshabilitada en
-`src/server/api.js`, por lo que no forma parte del flujo de autenticación.
+error con reintento, un botón `New loan` que navega a `/create-loan` y un aviso
+`role="status"` cuando vuelve con `state.createdLoanId`; un `401` global limpia
+la sesión y `RequireAuth` vuelve a `/login`. `CreateLoan` es un formulario
+funcional: carga `GET /api/stakeholders`, permite seleccionar o crear fiadores,
+genera una vista previa de cuotas y envía `POST /api/loans` tras la aprobación;
+no consume `/api/payments`. `App.jsx` continúa siendo el contador de ejemplo de
+Vite. La ruta `/test` usa `api.get("/roles")`; esa ruta del servidor está
+actualmente deshabilitada en `src/server/api.js`, por lo que no forma parte del
+flujo de autenticación.
 
 ## Configuración y dependencias
 
@@ -72,7 +76,9 @@ error con reintento; un `401` global limpia la sesión y `RequireAuth` vuelve a
 | `dialog.jsx` | `Dialog`, `DialogTrigger`, `DialogPortal`, `DialogClose`, `DialogOverlay`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription` | `Dialog` de `@base-ui/react/dialog` |
 | `input.jsx` | `Input` | `Input` de `@base-ui/react/input` |
 | `label.jsx` | `Label` | elemento `label` |
+| `select.jsx` | `Select`, `SelectContent`, `SelectGroup`, `SelectItem`, `SelectLabel`, `SelectScrollDownButton`, `SelectScrollUpButton`, `SelectSeparator`, `SelectTrigger`, `SelectValue` | `Select` de `@base-ui/react/select` |
 | `table.jsx` | `Table`, `TableHeader`, `TableBody`, `TableFooter`, `TableHead`, `TableRow`, `TableCell`, `TableCaption` | etiquetas HTML de tabla |
+| `textarea.jsx` | `Textarea` | elemento `textarea` |
 
 Los componentes con estilos combinan `className` mediante `cn`. Hoy importan
 `cn` directamente del paquete `cn`; `src/lib/utils.js` también lo reexporta y es
@@ -126,8 +132,9 @@ se usa en `CardTitle` y `DialogTitle`, y `@layer base` la aplica también a
 Un interceptor de petición lee el JWT de `localStorage` bajo la clave `token`
 y, si existe, añade `Authorization: Bearer <token>` a todas las peticiones.
 Por eso las vistas invocan métodos con rutas relativas a `/api`
-(`api.post("/auth/login")`, `api.get("/roles")`) y no necesitan construir el
-header ni repetir el prefijo `/api`. El interceptor de respuesta elimina
+(`api.post("/auth/login")`, `api.get("/roles")`, `api.get("/stakeholders")`,
+`api.post("/loans")`) y no necesitan construir el header ni repetir el prefijo
+`/api`. El interceptor de respuesta elimina
 `token` y emite `auth:unauthorized` ante un `401`, salvo en `/auth/login` y
 `/auth/signup` para no ocultar errores de credenciales. `AuthProvider` escucha
 ese evento y limpia el usuario.
@@ -148,8 +155,9 @@ ese evento y limpia el usuario.
   `logout()` borra el token y el usuario. Ambos están disponibles vía
   `useAuth()`.
 - El usuario expuesto conserva las claves de Sequelize `Stakeholder` y `Role`
-  (`user.Stakeholder.first_name`, `user.Role.role_name`, etc.). Para un futuro
-  formulario, `lender_id` se toma de `user.stakeholder_id`.
+  (`user.Stakeholder.first_name`, `user.Role.role_name`, etc.). `CreateLoan`
+  toma `lender_id` de `user.stakeholder_id` para cuentas `lender`; `admin` lo
+  selecciona en el formulario.
 - Las peticiones a `/auth/login` y `/auth/signup` usan `api.post` del servicio
   compartido; la URL final se resuelve con el `baseURL` configurado. El JWT se
   guarda en `localStorage` con la clave `token` y el interceptor lo adjunta como
@@ -168,8 +176,38 @@ ese evento y limpia el usuario.
 con los componentes `Table*`. Las columnas son ID, prestamista, cliente, monto,
 tasa, modo, fecha de desembolso y total a pagar. Los importes se formatean con
 dos decimales y separador de miles, la tasa con hasta cuatro decimales y `%`, y
-la fecha como `YYYY-MM-DD`; los valores ausentes se muestran como `—`. Ante un
-`401`, el interceptor global limpia `token` y `RequireAuth` redirige a `/login`.
+la fecha como `YYYY-MM-DD`; los valores ausentes se muestran como `—`. El
+encabezado incluye un botón `New loan` que navega a `/create-loan`; cuando la
+creación termina, la vista vuelve con `state.createdLoanId` y muestra un aviso
+`role="status"` descartable. Ante un `401`, el interceptor global limpia
+`token` y `RequireAuth` redirige a `/login`.
+
+## Creación de préstamos
+
+`src/client/views/CreateLoan.jsx` tiene dos pasos. El formulario carga
+`GET /api/stakeholders` con `api.get("/stakeholders")` para elegir cliente,
+prestamista (solo `admin`) y fiadores existentes; también permite crear fiadores
+inline con `first_name`, `last_name`, `national_id`, `marital_status`,
+`occupation` y `date_of_birth`. Exige al menos un fiador y una garantía con
+`description` y `estimated_value` opcional. `lender_id` se deriva de
+`useAuth().user.stakeholder_id` para cuentas `lender`.
+
+El botón `Preview installments` valida los datos y usa
+`src/client/utils/loanSchedule.js` para generar el calendario antes de enviar
+nada. El helper trabaja en centavos: calcula
+`interest = round(loan_amount * interest_rate / 100)`, reparte el total en
+cuotas iguales con el resto en la última y produce fechas mensuales desde la
+primera fecha de vencimiento, ajustando al último día del mes. El total de las
+cuotas es capital + interés en modo `included` y solo capital en `separate`; en
+ese modo el interés se muestra como una obligación aparte. Los vencimientos son
+`YYYY-MM-DD` y el primer vencimiento no puede ser anterior al desembolso.
+
+La etapa de revisión muestra un resumen y una `Table` con número, vencimiento e
+importe de cada cuota. `Back to edit` conserva los datos; `Approve & create`
+envía `api.post("/loans", payload)` con todos los campos y arreglos normalizados
+y, tras el `201`, vuelve a `/loans` con `state.createdLoanId`. Los errores de
+validación y de API se muestran en una región `role="alert"` con tokens
+`destructive`.
 
 ## Convenciones
 
@@ -179,6 +217,8 @@ la fecha como `YYYY-MM-DD`; los valores ausentes se muestran como `—`. Ante un
   para importar desde `src/`.
 - El estado de sesión vive en `src/client/contexts/`; consumirlo con
   `useAuth()` desde cualquier vista.
+- Los helpers puros de dominio van en `src/client/utils/`, como
+  `loanSchedule.js`.
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en
