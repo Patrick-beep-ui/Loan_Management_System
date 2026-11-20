@@ -17,6 +17,8 @@ export default function InstallmentPreview({
   interestPaymentMode,
   error,
   submitting,
+  approveLabel = "Approve & create",
+  creatingLabel = "Creating loan...",
   onBack,
   onApprove,
 }) {
@@ -95,7 +97,7 @@ export default function InstallmentPreview({
           Back to edit
         </Button>
         <Button type="button" onClick={onApprove} disabled={submitting}>
-          {submitting ? "Creating loan..." : "Approve & create"}
+          {submitting ? creatingLabel : approveLabel}
         </Button>
       </CardFooter>
     </>

@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import LoanCreatedAlert from "@/components/loans/list/LoanCreatedAlert";
+import LoanDeletedAlert from "@/components/loans/list/LoanDeletedAlert";
 import LoanListHeader from "@/components/loans/list/LoanListHeader";
 import LoanLoadErrorAlert from "@/components/loans/list/LoanLoadErrorAlert";
 import LoanTable from "@/components/loans/list/LoanTable";
@@ -21,6 +22,11 @@ export default function Loan() {
             visible={loanList.showCreated}
             createdLoanId={loanList.createdLoanId}
             onDismiss={loanList.dismissCreated}
+          />
+          <LoanDeletedAlert
+            visible={loanList.showDeleted}
+            deletedLoanId={loanList.deletedLoanId}
+            onDismiss={loanList.dismissDeleted}
           />
           <LoanLoadErrorAlert
             message={loanList.error}

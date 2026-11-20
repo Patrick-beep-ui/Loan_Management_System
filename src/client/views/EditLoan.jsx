@@ -1,0 +1,64 @@
+import { useNavigate } from "react-router-dom";
+
+import { Card, CardContent } from "@/components/ui/card";
+import CreateLoanForm from "@/components/loans/create/CreateLoanForm";
+import InstallmentPreview from "@/components/loans/create/InstallmentPreview";
+import EditLoanError from "@/components/loans/edit/EditLoanError";
+import EditLoanHeader from "@/components/loans/edit/EditLoanHeader";
+import EditLockedAlert from "@/components/loans/edit/EditLockedAlert";
+import { useEditLoanForm } from "@/client/hooks/useEditLoanForm";
+
+export default function EditLoan() {
+  const navigate = useNavigate();
+  const edit = useEditLoanForm();
+
+  return (
+    <main className="min-h-screen bg-background px-4 py-10">
+      <Card className="mx-auto w-full max-w-4xl">
+        <EditLoanHeader
+          loanId={edit.id}
+          locked={edit.locked}
+          onBack={() => navigate(`/loans/${edit.id}`)}
+        />
+
+        <CardContent>
+          <EditLoanError
+            error={edit.loadError}
+            notFound={edit.notFound}
+            onRetry={edit.fetchLoan}
+            onBack={() => navigate("/loans")}
+          />
+
+          {edit.loadingLoan ? (
+            <p className="text-muted-foreground">Loading loan...</p>
+          ) : (
+            !edit.notFound && (
+              <div className="space-y-6">
+                {edit.locked && <EditLockedAlert />}
+
+                {!edit.locked &&
+                  (edit.preview ? (
+                    <InstallmentPreview
+                      preview={edit.preview}
+                      interestPaymentMode={edit.form.interest_payment_mode}
+                      error={edit.error}
+                      submitting={edit.submitting}
+                      approveLabel="Save changes"
+                      creatingLabel="Saving..."
+                      onBack={edit.backToEdit}
+                      onApprove={edit.handleApprove}
+                    />
+                  ) : (
+                    <CreateLoanForm
+                      {...edit}
+                      submitLabel="Preview changes"
+                    />
+                  ))}
+              </div>
+            )
+          )}
+        </CardContent>
+      </Card>
+    </main>
+  );
+}

@@ -15,8 +15,9 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 
 `src/client/main.jsx` crea el router con `createBrowserRouter` y monta
 `RouterProvider` dentro de `React.StrictMode`. Una ruta sin `path` monta
-`AuthProvider` como layout raíz; dentro de ella, `RequireAuth` protege solo
-`/loans` y `/create-loan`. El resto de las rutas son públicas:
+`AuthProvider` como layout raíz; dentro de ella, `RequireAuth` protege
+`/loans`, `/create-loan`, `/loans/:id` y `/loans/:id/edit`. El resto de las
+rutas son públicas:
 
 | Ruta | Vista | Archivo | Acceso |
 | --- | --- | --- | --- |
@@ -25,6 +26,8 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 | `/signup` | `Signup` | `src/client/views/Signup.jsx` | público |
 | `/loans` | `Loan` | `src/client/views/Loans.jsx` | protegido |
 | `/create-loan` | `CreateLoan` | `src/client/views/CreateLoan.jsx` | protegido |
+| `/loans/:id` | `LoanDetails` | `src/client/views/LoanDetails.jsx` | protegido |
+| `/loans/:id/edit` | `EditLoan` | `src/client/views/EditLoan.jsx` | protegido |
 | `/test` | `Test` (vista de prueba) | `src/client/Test.jsx` | público |
 
 `Login` y `Signup` consumen `/api/auth` a través del servicio compartido
@@ -44,7 +47,12 @@ error con reintento, un botón `New loan` que navega a `/create-loan` y un aviso
 la sesión y `RequireAuth` vuelve a `/login`. `CreateLoan` es un formulario
 funcional: carga `GET /api/stakeholders`, permite seleccionar o crear fiadores,
 genera una vista previa de cuotas y envía `POST /api/loans` tras la aprobación;
-no consume `/api/payments`. `App.jsx` continúa siendo el contador de ejemplo de
+no consume `/api/payments`. `LoanDetails` consume `GET /api/loans/:id` y muestra
+el resumen, el calendario, fiadores, garantías y el estado del interés; desde
+ahí se navega a `/loans/:id/edit` o se elimina el préstamo con `Dialog`, siempre
+que no haya pagos registrados. `EditLoan` recupera el mismo préstamo, rellena el
+formulario compartido y envía `PUT /api/loans/:id` con todos los arreglos.
+`App.jsx` continúa siendo el contador de ejemplo de
 Vite. La ruta `/test` usa `api.get("/roles")`; esa ruta del servidor está
 actualmente deshabilitada en `src/server/api.js`, por lo que no forma parte del
 flujo de autenticación.
@@ -64,7 +72,8 @@ flujo de autenticación.
   provee el enrutamiento. La instalación de la CLI añadió también `shadcn` e
   `install` como dependencias; el código actual no las utiliza.
 - `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
-  `Signup`, `Test.jsx` y los hooks `useLoans` y `useCreateLoanForm` importan esa
+  `Signup`, `Test.jsx` y los hooks `useLoans`, `useLoanFormState`,
+  `useCreateLoanForm`, `useLoanDetails` y `useEditLoanForm` importan esa
   instancia en lugar de crear clientes propios.
 
 ## Componentes de UI
@@ -90,8 +99,8 @@ Conviene tenerlo presente al agregar componentes nuevos.
 ### Componentes por dominio
 
 `src/components/loans/` reúne la UI específica de préstamos, separada por
-propósito en `create/` y `list/`. Los nombres de archivo se conservan y las
-vistas importan desde la carpeta correspondiente con el alias `@/`.
+propósito en `create/`, `list/`, `details/` y `edit/`. Las vistas importan desde
+la carpeta correspondiente con el alias `@/`.
 
 #### `src/components/loans/create/`
 
@@ -113,9 +122,33 @@ vistas importan desde la carpeta correspondiente con el alias `@/`.
 | --- | --- |
 | `LoanListHeader.jsx` | título, descripción según el usuario y botón `New loan` |
 | `LoanCreatedAlert.jsx` | aviso descartable `role="status"` tras la creación |
+| `LoanDeletedAlert.jsx` | aviso descartable `role="status"` tras la eliminación |
 | `LoanLoadErrorAlert.jsx` | error de carga con acción `Retry` |
 | `LoanTable.jsx` | tabla del listado con estados de carga y vacío |
-| `LoanTableRow.jsx` | una fila con importes, tasa, modo y fecha formateados |
+| `LoanTableRow.jsx` | una fila con importes, tasa, modo y fecha formateados; el ID enlaza al detalle |
+
+#### `src/components/loans/details/`
+
+| Archivo | Responsabilidad |
+| --- | --- |
+| `LoanDetailsHeader.jsx` | título, acciones `Back to loans`, `Edit` y `Delete` |
+| `LoanSummary.jsx` | resumen de prestamista, cliente, importes y condiciones |
+| `LoanInstallmentsTable.jsx` | calendario ordenado por número de cuota |
+| `LoanGuarantorsList.jsx` | fiadores y sus IDs de stakeholder |
+| `LoanCollateralsList.jsx` | garantías con valor estimado |
+| `LoanInterestStatus.jsx` | estado del interés ordinario y su pago separado |
+| `LoanLockedAlert.jsx` | aviso cuando hay pagos que bloquean editar o eliminar |
+| `LoanUpdatedAlert.jsx` | aviso descartable tras volver de la edición |
+| `LoanDetailsError.jsx` | error de carga, `404` y reintento |
+| `DeleteLoanDialog.jsx` | confirmación de eliminación con `Dialog` |
+
+#### `src/components/loans/edit/`
+
+| Archivo | Responsabilidad |
+| --- | --- |
+| `EditLoanHeader.jsx` | título de la edición y acción para volver al detalle |
+| `EditLoanError.jsx` | error de carga, `404` y reintento |
+| `EditLockedAlert.jsx` | aviso cuando los pagos bloquean la edición |
 
 ## Estilos
 
@@ -205,9 +238,9 @@ ese evento y limpia el usuario.
 ## Listado de préstamos
 
 La vista `src/client/views/Loans.jsx` arma el `Card` y compone `LoanListHeader`,
-`LoanCreatedAlert`, `LoanLoadErrorAlert` y `LoanTable`. El hook `useLoans`
-consume `api.get("/loans")` con el servicio compartido y mantiene los estados de
-carga, vacío y error, además de las acciones de reintento, cierre del aviso y
+`LoanCreatedAlert`, `LoanDeletedAlert`, `LoanLoadErrorAlert` y `LoanTable`. El
+hook `useLoans` consume `api.get("/loans")` con el servicio compartido y
+mantiene los estados de carga, vacío y error, además de las acciones de reintento, cierre del aviso y
 navegación a `/create-loan`. Usa `useAuth().user` solo para construir la
 descripción con nombre y rol, porque el backend filtra los préstamos según el
 JWT. `LoanTable` muestra ID, prestamista, cliente, monto, tasa, modo, fecha de
@@ -216,15 +249,18 @@ desembolso y total a pagar; los formatos viven en
 miles, tasa con hasta cuatro decimales y `%`, fecha `YYYY-MM-DD` y `—` para
 valores ausentes. Cuando la creación termina, la vista vuelve con
 `state.createdLoanId` y `LoanCreatedAlert` muestra un aviso `role="status"`
-descartable. Ante un `401`, el interceptor global limpia `token` y
+descartable. Tras una eliminación, la vista vuelve con `state.deletedLoanId` y
+`LoanDeletedAlert` muestra el aviso correspondiente; el ID de cada fila enlaza
+a `/loans/:id`. Ante un `401`, el interceptor global limpia `token` y
 `RequireAuth` redirige a `/login`.
 
 ## Creación de préstamos
 
 La vista `src/client/views/CreateLoan.jsx` solo arma el encabezado y alterna
-entre `CreateLoanForm` e `InstallmentPreview`. El hook `useCreateLoanForm`
+entre `CreateLoanForm` e `InstallmentPreview`. El hook `useLoanFormState`
 mantiene el estado, carga `GET /api/stakeholders` con `api.get("/stakeholders")`
-y valida con `buildLoanPayload` de `src/client/utils/loanForm.js`. El formulario
+y valida con `buildLoanPayload` de `src/client/utils/loanForm.js`;
+`useCreateLoanForm` solo envía `POST /api/loans`. El formulario
 permite elegir cliente, prestamista (solo `admin`) y fiadores existentes;
 también permite crear fiadores inline con `first_name`, `last_name`,
 `national_id`, `marital_status`, `occupation` y `date_of_birth`. Exige al menos
@@ -248,6 +284,28 @@ y, tras el `201`, vuelve a `/loans` con `state.createdLoanId`. Los errores de
 validación y de API se muestran en una región `role="alert"` con tokens
 `destructive`.
 
+## Detalle y edición de préstamos
+
+La vista `src/client/views/LoanDetails.jsx` compone los componentes de
+`src/components/loans/details/` alrededor del hook `useLoanDetails`, que consume
+`api.get("/loans/:id")` y mantiene estados de carga, error, `404`, aviso de
+actualización y confirmación de eliminación. Muestra los datos del préstamo, las
+cuotas, fiadores, garantías y la obligación de interés. `loanHasPayments` de
+`src/client/utils/loanEdit.js` detecta cuotas pagadas o interés pagado para
+desactivar `Edit` y `Delete`; el backend sigue siendo la autoridad y responde
+`409` ante intentos directos. `DeleteLoanDialog` usa `Dialog` y, tras
+`api.delete("/loans/:id")`, vuelve a `/loans` con `state.deletedLoanId`.
+
+La edición vive en `src/client/views/EditLoan.jsx`. El hook `useEditLoanForm`
+carga el préstamo, convierte la respuesta al estado del formulario con
+`loanToFormState` y reutiliza `useLoanFormState`, por lo que comparte la
+validación, carga de stakeholders y generación de vista previa con la creación.
+La vista reutiliza `CreateLoanForm` y `InstallmentPreview` con etiquetas opcionales
+(`Preview changes`, `Save changes`, `Saving...`). `handleApprove` envía
+`api.put("/loans/:id", payload)` con todos los arreglos y vuelve al detalle
+con `state.updatedLoanId`. No se envían IDs de relaciones hijas: el backend
+recrea cuotas, fiadores y garantías en cada `PUT`.
+
 ## Convenciones
 
 - Las vistas nuevas van en `src/client/views/` y se registran en
@@ -260,7 +318,7 @@ validación y de API se muestran en una región `role="alert"` con tokens
 - El estado de sesión vive en `src/client/contexts/`; consumirlo con
   `useAuth()` desde cualquier vista.
 - Los helpers puros de dominio van en `src/client/utils/`, como
-  `loanSchedule.js`, `loanForm.js` y `loanFormat.js`.
+  `loanSchedule.js`, `loanForm.js`, `loanFormat.js` y `loanEdit.js`.
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en

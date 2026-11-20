@@ -1,5 +1,19 @@
 # Changelog — frontend
 
+### 2026-11-19 — Detalle, edición y eliminación de préstamos
+
+- Change: Se añadieron las rutas protegidas `/loans/:id` y `/loans/:id/edit`, el
+  hook compartido `useLoanFormState`, los helpers `loanEdit.js` y los
+  componentes de `details/` y `edit/`. La creación y la edición reutilizan el
+  mismo formulario y vista previa; la eliminación usa `Dialog`.
+- Impact: El listado enlaza cada ID al detalle, muestra avisos de creación y
+  eliminación, y bloquea editar o eliminar cuando hay pagos registrados. La
+  edición envía un `PUT` completo y vuelve al detalle con un aviso. El detalle
+  está en [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente (2529 modules transformed).
+  No se probó en navegador ni contra un servidor; solo se ejecutó la
+  compilación, a pedido del usuario.
+
 ### 2026-11-19 — Componentes de préstamos agrupados por propósito
 
 - Change: Se movieron los componentes de `src/components/loans/` a

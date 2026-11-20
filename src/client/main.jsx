@@ -12,6 +12,8 @@ import Login from "./views/Login";
 import Signup from "./views/Signup";
 import Loan from "./views/Loans";
 import CreateLoan from "./views/CreateLoan";
+import LoanDetails from "./views/LoanDetails";
+import EditLoan from "./views/EditLoan";
 import Test from "./Test";
 
 const router = createBrowserRouter([
@@ -40,6 +42,14 @@ const router = createBrowserRouter([
           {
             path: "/create-loan",
             element: <CreateLoan />,
+          },
+          {
+            path: "/loans/:id",
+            element: <LoanDetails />,
+          },
+          {
+            path: "/loans/:id/edit",
+            element: <EditLoan />,
           },
         ],
       },

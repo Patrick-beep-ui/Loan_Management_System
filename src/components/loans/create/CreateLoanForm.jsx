@@ -24,6 +24,7 @@ export default function CreateLoanForm({
   addCollateral,
   removeCollateral,
   handlePreview,
+  submitLabel = "Preview installments",
 }) {
   return (
     <form onSubmit={handlePreview}>
@@ -61,7 +62,7 @@ export default function CreateLoanForm({
 
       <CardFooter>
         <Button type="submit" className="w-full">
-          Preview installments
+          {submitLabel}
         </Button>
       </CardFooter>
     </form>

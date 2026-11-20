@@ -1,5 +1,16 @@
 import { buildLoanSchedule } from "@/client/utils/loanSchedule";
 
+export const EMPTY_LOAN_FORM = {
+  customer_id: "",
+  lender_id: "",
+  loan_amount: "",
+  interest_rate: "",
+  interest_payment_mode: "included",
+  disbursed_at: "",
+  installment_count: "12",
+  first_due_date: "",
+};
+
 export const EMPTY_GUARANTOR = {
   mode: "existing",
   stakeholder_id: "",

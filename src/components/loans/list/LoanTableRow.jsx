@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { TableCell, TableRow } from "@/components/ui/table";
 import {
   formatAmount,
@@ -9,7 +11,14 @@ import {
 export default function LoanTableRow({ loan }) {
   return (
     <TableRow>
-      <TableCell>{loan.loan_id}</TableCell>
+      <TableCell>
+        <Link
+          to={`/loans/${loan.loan_id}`}
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          {loan.loan_id}
+        </Link>
+      </TableCell>
       <TableCell>{fullName(loan.lender)}</TableCell>
       <TableCell>{fullName(loan.customer)}</TableCell>
       <TableCell>{formatAmount(loan.loan_amount)}</TableCell>

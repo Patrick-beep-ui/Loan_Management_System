@@ -10,7 +10,9 @@ export function useLoans() {
   const location = useLocation();
   const navigate = useNavigate();
   const createdLoanId = location.state?.createdLoanId;
+  const deletedLoanId = location.state?.deletedLoanId;
   const [showCreated, setShowCreated] = useState(Boolean(createdLoanId));
+  const [showDeleted, setShowDeleted] = useState(Boolean(deletedLoanId));
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -40,6 +42,10 @@ export function useLoans() {
     setShowCreated(false);
   }
 
+  function dismissDeleted() {
+    setShowDeleted(false);
+  }
+
   function goToCreateLoan() {
     navigate("/create-loan");
   }
@@ -55,11 +61,14 @@ export function useLoans() {
     description,
     createdLoanId,
     showCreated,
+    deletedLoanId,
+    showDeleted,
     loans,
     loading,
     error,
     fetchLoans,
     dismissCreated,
+    dismissDeleted,
     goToCreateLoan,
   };
 }
