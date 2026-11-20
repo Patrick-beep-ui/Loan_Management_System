@@ -89,7 +89,25 @@ Conviene tenerlo presente al agregar componentes nuevos.
 
 ### Componentes por dominio
 
-`src/components/loans/` reúne la UI específica de préstamos:
+`src/components/loans/` reúne la UI específica de préstamos, separada por
+propósito en `create/` y `list/`. Los nombres de archivo se conservan y las
+vistas importan desde la carpeta correspondiente con el alias `@/`.
+
+#### `src/components/loans/create/`
+
+| Archivo | Responsabilidad |
+| --- | --- |
+| `CreateLoanForm.jsx` | formulario completo: datos, fiadores, garantías y envío de la vista previa |
+| `LoanDetailsFields.jsx` | campos de prestamista, cliente, monto, tasa, modo, desembolso y cuotas |
+| `GuarantorsFieldArray.jsx` | alta, baja y listado de fiadores |
+| `GuarantorRow.jsx` | un fiador existente o inline |
+| `CollateralsFieldArray.jsx` | alta, baja y listado de garantías |
+| `CollateralRow.jsx` | una garantía con descripción y valor estimado |
+| `InstallmentPreview.jsx` | resumen, tabla de cuotas y acciones de aprobación |
+| `FormField.jsx` | envoltorio de etiqueta y control, usado por el formulario |
+| `ErrorAlert.jsx` | mensaje de error con `role="alert"`, usado por el formulario y la vista previa |
+
+#### `src/components/loans/list/`
 
 | Archivo | Responsabilidad |
 | --- | --- |
@@ -98,15 +116,6 @@ Conviene tenerlo presente al agregar componentes nuevos.
 | `LoanLoadErrorAlert.jsx` | error de carga con acción `Retry` |
 | `LoanTable.jsx` | tabla del listado con estados de carga y vacío |
 | `LoanTableRow.jsx` | una fila con importes, tasa, modo y fecha formateados |
-| `CreateLoanForm.jsx` | formulario completo: datos, fiadores, garantías y envío de la vista previa |
-| `LoanDetailsFields.jsx` | campos de prestamista, cliente, monto, tasa, modo, desembolso y cuotas |
-| `GuarantorsFieldArray.jsx` | alta, baja y listado de fiadores |
-| `GuarantorRow.jsx` | un fiador existente o inline |
-| `CollateralsFieldArray.jsx` | alta, baja y listado de garantías |
-| `CollateralRow.jsx` | una garantía con descripción y valor estimado |
-| `InstallmentPreview.jsx` | resumen, tabla de cuotas y acciones de aprobación |
-| `FormField.jsx` | envoltorio de etiqueta y control |
-| `ErrorAlert.jsx` | mensaje de error con `role="alert"` |
 
 ## Estilos
 
@@ -244,7 +253,8 @@ validación y de API se muestran en una región `role="alert"` con tokens
 - Las vistas nuevas van en `src/client/views/` y se registran en
   `src/client/main.jsx`.
 - Los primitivos reutilizables van en `src/components/ui/` y los componentes
-  compuestos por dominio en `src/components/<dominio>/`.
+  compuestos por dominio en `src/components/<dominio>/`, agrupados por propósito
+  cuando hay más de un flujo (por ejemplo, `loans/create/` y `loans/list/`).
 - Los hooks de las vistas van en `src/client/hooks/`; usar el alias `@/` para
   importar desde `src/`.
 - El estado de sesión vive en `src/client/contexts/`; consumirlo con

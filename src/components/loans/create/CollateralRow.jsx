@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import FormField from "@/components/loans/FormField";
+import FormField from "@/components/loans/create/FormField";
 
 export default function CollateralRow({
   value,

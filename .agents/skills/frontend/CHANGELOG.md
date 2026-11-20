@@ -1,5 +1,17 @@
 # Changelog — frontend
 
+### 2026-11-19 — Componentes de préstamos agrupados por propósito
+
+- Change: Se movieron los componentes de `src/components/loans/` a
+  `create/` y `list/` según el flujo que atienden y se actualizaron todas las
+  importaciones. No cambia ningún componente ni su comportamiento.
+- Impact: Las vistas `CreateLoan` y `Loan` importan desde
+  `src/components/loans/create/` y `src/components/loans/list/`
+  respectivamente. El detalle está en [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente (2483 modules transformed).
+  No se probó en navegador ni contra un servidor; solo se ejecutó la
+  compilación, a pedido del usuario.
+
 ### 2026-11-19 — Componentes por dominio para el listado de préstamos
 
 - Change: Se dividió `Loans.jsx` en componentes de `src/components/loans/`, se

@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { stakeholderName } from "@/client/utils/loanForm";
-import FormField from "@/components/loans/FormField";
+import FormField from "@/components/loans/create/FormField";
 
 export default function LoanDetailsFields({
   form,

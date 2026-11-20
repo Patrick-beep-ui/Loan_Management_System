@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
-import LoanCreatedAlert from "@/components/loans/LoanCreatedAlert";
-import LoanListHeader from "@/components/loans/LoanListHeader";
-import LoanLoadErrorAlert from "@/components/loans/LoanLoadErrorAlert";
-import LoanTable from "@/components/loans/LoanTable";
+import LoanCreatedAlert from "@/components/loans/list/LoanCreatedAlert";
+import LoanListHeader from "@/components/loans/list/LoanListHeader";
+import LoanLoadErrorAlert from "@/components/loans/list/LoanLoadErrorAlert";
+import LoanTable from "@/components/loans/list/LoanTable";
 import { useLoans } from "@/client/hooks/useLoans";
 
 export default function Loan() {

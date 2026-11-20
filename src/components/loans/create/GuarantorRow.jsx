@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { stakeholderName } from "@/client/utils/loanForm";
-import FormField from "@/components/loans/FormField";
+import FormField from "@/components/loans/create/FormField";
 
 export default function GuarantorRow({
   value,

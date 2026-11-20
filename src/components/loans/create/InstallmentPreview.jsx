@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatMoney } from "@/client/utils/loanForm";
-import ErrorAlert from "@/components/loans/ErrorAlert";
+import ErrorAlert from "@/components/loans/create/ErrorAlert";
 
 export default function InstallmentPreview({
   preview,

@@ -4,8 +4,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import CreateLoanForm from "@/components/loans/CreateLoanForm";
-import InstallmentPreview from "@/components/loans/InstallmentPreview";
+import CreateLoanForm from "@/components/loans/create/CreateLoanForm";
+import InstallmentPreview from "@/components/loans/create/InstallmentPreview";
 import { useCreateLoanForm } from "@/client/hooks/useCreateLoanForm";
 
 export default function CreateLoan() {

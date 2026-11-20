@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
-import CollateralsFieldArray from "@/components/loans/CollateralsFieldArray";
-import ErrorAlert from "@/components/loans/ErrorAlert";
-import GuarantorsFieldArray from "@/components/loans/GuarantorsFieldArray";
-import LoanDetailsFields from "@/components/loans/LoanDetailsFields";
+import CollateralsFieldArray from "@/components/loans/create/CollateralsFieldArray";
+import ErrorAlert from "@/components/loans/create/ErrorAlert";
+import GuarantorsFieldArray from "@/components/loans/create/GuarantorsFieldArray";
+import LoanDetailsFields from "@/components/loans/create/LoanDetailsFields";
 
 export default function CreateLoanForm({
   error,

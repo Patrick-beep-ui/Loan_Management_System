@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import LoanTableRow from "@/components/loans/LoanTableRow";
+import LoanTableRow from "@/components/loans/list/LoanTableRow";
 
 export default function LoanTable({ loans, loading }) {
   return (
