@@ -12,33 +12,36 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 ## Entrada y rutas
 
 `src/client/main.jsx` crea el router con `createBrowserRouter` y monta
-`RouterProvider` dentro de `React.StrictMode`. Las rutas definidas hoy son:
+`RouterProvider` dentro de `React.StrictMode`. Una ruta sin `path` monta
+`AuthProvider` como layout raíz; dentro de ella, `RequireAuth` protege solo
+`/loans` y `/create-loan`. El resto de las rutas son públicas:
 
-| Ruta | Vista | Archivo |
-| --- | --- | --- |
-| `/` | `App` (demo inicial de Vite) | `src/client/App.jsx` |
-| `/login` | `Login` | `src/client/views/Login.jsx` |
-| `/signup` | `Signup` | `src/client/views/Signup.jsx` |
-| `/loans` | `Loan` | `src/client/views/Loans.jsx` |
-| `/create-loan` | `CreateLoan` | `src/client/views/CreateLoan.jsx` |
-| `/test` | `Test` (vista de prueba) | `src/client/Test.jsx` |
+| Ruta | Vista | Archivo | Acceso |
+| --- | --- | --- | --- |
+| `/` | `App` (demo inicial de Vite) | `src/client/App.jsx` | público |
+| `/login` | `Login` | `src/client/views/Login.jsx` | público |
+| `/signup` | `Signup` | `src/client/views/Signup.jsx` | público |
+| `/loans` | `Loan` | `src/client/views/Loans.jsx` | protegido |
+| `/create-loan` | `CreateLoan` | `src/client/views/CreateLoan.jsx` | protegido |
+| `/test` | `Test` (vista de prueba) | `src/client/Test.jsx` | público |
 
 `Login` y `Signup` consumen `/api/auth` a través del servicio compartido
 `src/lib/axiosService.js` (`api.post`): validan los campos, desactivan el botón
 mientras envían y muestran `error.response?.data?.error` o un mensaje de red en
-una región `role="alert"` con tokens `destructive`. `Login` guarda el JWT en
-`localStorage` bajo la clave `token` y navega a `/loans`. `Signup` envía
-`email`, `password` y `stakeholder_id` como entero positivo y, tras el `201`,
-navega a `/login` con un estado que muestra un aviso de registro correcto.
+una región `role="alert"` con tokens `destructive`. `Login` usa
+`useAuth().login(token)` para guardar el JWT en `localStorage`, cargar el
+usuario con `/users/auth` y navegar a la ruta de origen (`state.from`) o
+`/loans`. `Signup` envía `email`, `password` y `stakeholder_id` como entero
+positivo y, tras el `201`, navega a `/login` con un aviso de registro correcto.
 `Loan` consume `/api/loans` con `api.get("/loans")` y muestra un listado en
 tabla con ID, prestamista, cliente, monto, tasa, modo, fecha de desembolso y
-total a pagar; incluye estados de carga, vacío y error con reintento, y ante un
-`401` elimina el token y vuelve a `/login`. `CreateLoan` sigue siendo
-placeholder y no consume `/api/payments`. `App.jsx` continúa siendo el contador
-de ejemplo de Vite. La
-ruta `/test` usa `api.get("/roles")`; esa ruta del servidor está actualmente
-deshabilitada en `src/server/api.js`, por lo que no forma parte del flujo de
-autenticación.
+total a pagar; usa `useAuth().user` solo para mostrar nombre y rol, porque el
+backend ya filtra los préstamos según el JWT. Incluye estados de carga, vacío y
+error con reintento; un `401` global limpia la sesión y `RequireAuth` vuelve a
+`/login`. `CreateLoan` sigue siendo placeholder y no consume `/api/payments`.
+`App.jsx` continúa siendo el contador de ejemplo de Vite. La ruta `/test` usa
+`api.get("/roles")`; esa ruta del servidor está actualmente deshabilitada en
+`src/server/api.js`, por lo que no forma parte del flujo de autenticación.
 
 ## Configuración y dependencias
 
@@ -124,16 +127,34 @@ Un interceptor de petición lee el JWT de `localStorage` bajo la clave `token`
 y, si existe, añade `Authorization: Bearer <token>` a todas las peticiones.
 Por eso las vistas invocan métodos con rutas relativas a `/api`
 (`api.post("/auth/login")`, `api.get("/roles")`) y no necesitan construir el
-header ni repetir el prefijo `/api`.
+header ni repetir el prefijo `/api`. El interceptor de respuesta elimina
+`token` y emite `auth:unauthorized` ante un `401`, salvo en `/auth/login` y
+`/auth/signup` para no ocultar errores de credenciales. `AuthProvider` escucha
+ese evento y limpia el usuario.
 
 ## Autenticación en el cliente
 
+`src/client/contexts/AuthContext.jsx` exporta `AuthProvider`, `useAuth()` y
+`RequireAuth`:
+
+- `AuthProvider` es el layout raíz: al montar hidrata el usuario con
+  `api.get("/users/auth")` si hay `token`, expone `{ user, isAuthenticated,
+  loading, login, logout }` y renderiza `<Outlet />`.
+- `useAuth()` permite leer el usuario y las acciones de sesión desde cualquier
+  vista; falla si se usa fuera del provider.
+- `RequireAuth` muestra "Checking session..." mientras hidrata y redirige a
+  `/login` con `state.from` si no hay sesión; si la hay, renderiza `<Outlet />`.
+- `login(token)` guarda el JWT, carga `/users/auth` y actualiza el estado;
+  `logout()` borra el token y el usuario. Ambos están disponibles vía
+  `useAuth()`.
+- El usuario expuesto conserva las claves de Sequelize `Stakeholder` y `Role`
+  (`user.Stakeholder.first_name`, `user.Role.role_name`, etc.). Para un futuro
+  formulario, `lender_id` se toma de `user.stakeholder_id`.
 - Las peticiones a `/auth/login` y `/auth/signup` usan `api.post` del servicio
-  compartido; la URL final se resuelve con el `baseURL` configurado.
-- El JWT se guarda en `localStorage` con la clave `token` y el interceptor lo
-  adjunta como `Authorization: Bearer <token>` a todas las peticiones, incluso
-  a las públicas cuando ya hay una sesión. Ese es el mecanismo que exige
-  `checkAuth`.
+  compartido; la URL final se resuelve con el `baseURL` configurado. El JWT se
+  guarda en `localStorage` con la clave `token` y el interceptor lo adjunta como
+  `Authorization: Bearer <token>` a todas las peticiones, incluso a las públicas
+  cuando ya hay una sesión. Ese es el mecanismo que exige `checkAuth`.
 - Los errores se leen de `error.response?.data?.error`; si no hay respuesta se
   muestra un mensaje genérico. Ambos casos usan una región `role="alert"` con
   `text-destructive` y `bg-destructive/10`.
@@ -147,8 +168,8 @@ header ni repetir el prefijo `/api`.
 con los componentes `Table*`. Las columnas son ID, prestamista, cliente, monto,
 tasa, modo, fecha de desembolso y total a pagar. Los importes se formatean con
 dos decimales y separador de miles, la tasa con hasta cuatro decimales y `%`, y
-la fecha como `YYYY-MM-DD`; los valores ausentes se muestran como `—`. Un `401`
-borra `token` y redirige a `/login`.
+la fecha como `YYYY-MM-DD`; los valores ausentes se muestran como `—`. Ante un
+`401`, el interceptor global limpia `token` y `RequireAuth` redirige a `/login`.
 
 ## Convenciones
 
@@ -156,6 +177,8 @@ borra `token` y redirige a `/login`.
   `src/client/main.jsx`.
 - Los componentes reutilizables van en `src/components/ui/`; usar el alias `@/`
   para importar desde `src/`.
+- El estado de sesión vive en `src/client/contexts/`; consumirlo con
+  `useAuth()` desde cualquier vista.
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en

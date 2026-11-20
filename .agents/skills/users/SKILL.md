@@ -14,16 +14,24 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 | Método | Ruta | Controller | Service |
 | --- | --- | --- | --- |
 | `GET` | `/api/users` | `userController.getAllUsers` | `userService.getAllUsers` |
+| `GET` | `/api/users/auth` | `userController.authUser` | `userService.authUser` |
 
 ## Comportamiento
 
-- Requiere autenticación: `Authorization: Bearer <token>`; sin token o con
-  token inválido responde `401`. Lo aplica `checkAuth` en `api.js`.
-- Devuelve todos los usuarios con su `Stakeholder` (`stakeholder_id`,
-  `first_name`, `last_name`) y su `Role` (`role_id`, `role_name`).
-- Excluye `password_hash` de la respuesta.
-- Responde `200` con el arreglo de usuarios.
-- Ante un error inesperado responde `500` con `{ error: "Internal Server Error" }`.
+- Ambas rutas requieren autenticación: `Authorization: Bearer <token>`; sin
+  token o con token inválido responde `401`. Lo aplica `checkAuth` en `api.js`.
+- Excluyen `password_hash` de la respuesta y ante un error inesperado responden
+  `500` con `{ error: "Internal Server Error" }`.
+- `GET /api/users` devuelve `200` con el arreglo de todos los usuarios, con su
+  `Stakeholder` (`stakeholder_id`, `first_name`, `last_name`) y su `Role`
+  (`role_id`, `role_name`).
+- `GET /api/users/auth` devuelve `200` con el usuario actual, resuelto desde
+  `req.user.user_id`. Incluye `Stakeholder` (`stakeholder_id`, `first_name`,
+  `last_name`, `national_id`, `marital_status`, `occupation`, `date_of_birth`) y
+  `Role` (`role_id`, `role_name`). Las claves de Sequelize se mantienen como
+  `Stakeholder` y `Role` (inicial mayúscula). Si no hay `user_id` responde `401`;
+  si el usuario no existe responde `404` con `{ error: "User not found" }`.
+  Es la ruta que usa `AuthProvider` en el cliente para hidratar la sesión.
 
 ## Archivos
 

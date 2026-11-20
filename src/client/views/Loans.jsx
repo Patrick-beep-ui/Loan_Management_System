@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
+import { useAuth } from "@/client/contexts/AuthContext";
 import api from "@/lib/axiosService";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,7 +56,7 @@ function fullName(stakeholder) {
 }
 
 export default function Loan() {
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,12 +69,6 @@ export default function Loan() {
       const { data } = await api.get("/loans");
       setLoans(Array.isArray(data) ? data : []);
     } catch (requestError) {
-      if (requestError.response?.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
       setError(
         requestError.response?.data?.error ||
           "Unable to load loans. Please try again.",
@@ -88,12 +82,19 @@ export default function Loan() {
     fetchLoans();
   }, []);
 
+  const stakeholderName = fullName(user?.Stakeholder);
+  const roleName = user?.Role?.role_name;
+
   return (
     <main className="min-h-screen bg-background px-4 py-10">
       <Card className="mx-auto w-full max-w-6xl">
         <CardHeader>
           <CardTitle className="text-2xl">Loans</CardTitle>
-          <CardDescription>All loans available to your account.</CardDescription>
+          <CardDescription>
+            {stakeholderName !== "—"
+              ? `Loans for ${stakeholderName}${roleName ? ` (${roleName})` : ""}.`
+              : "All loans available to your account."}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {error && (

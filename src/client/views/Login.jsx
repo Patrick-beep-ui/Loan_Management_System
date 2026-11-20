@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import { useAuth } from "@/client/contexts/AuthContext";
 import api from "@/lib/axiosService";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,12 +18,14 @@ import { Label } from "@/components/ui/label";
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const registered = location.state?.registered;
+  const from = location.state?.from?.pathname || "/loans";
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -39,8 +42,8 @@ export default function Login() {
       const response = await api.post("/auth/login", { email, password });
       const { data } = response;
 
-      localStorage.setItem("token", data.token);
-      navigate("/loans"); // redirection
+      await login(data.token);
+      navigate(from, { replace: true }); // redirection
     } catch (error) {
       setError(
         error.response?.data?.error ||

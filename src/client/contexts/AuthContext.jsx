@@ -1,0 +1,105 @@
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+
+import api from "@/lib/axiosService";
+
+const AuthContext = createContext(null);
+
+export function AuthProvider() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      setUser(null);
+    }
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () =>
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function hydrate() {
+      if (!localStorage.getItem("token")) {
+        if (active) setLoading(false);
+        return;
+      }
+
+      try {
+        const { data } = await api.get("/users/auth");
+        if (active) setUser(data);
+      } catch {
+        localStorage.removeItem("token");
+        if (active) setUser(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    hydrate();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function login(token) {
+    localStorage.setItem("token", token);
+
+    try {
+      const { data } = await api.get("/users/auth");
+      setUser(data);
+    } catch (error) {
+      localStorage.removeItem("token");
+      setUser(null);
+      throw error;
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("token");
+    setUser(null);
+  }
+
+  const value = useMemo(
+    () => ({ user, isAuthenticated: Boolean(user), loading, login, logout }),
+    [user, loading],
+  );
+
+  return (
+    <AuthContext.Provider value={value}>
+      <Outlet />
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+
+  return context;
+}
+
+export function RequireAuth() {
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+        Checking session...
+      </main>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  return <Outlet />;
+}

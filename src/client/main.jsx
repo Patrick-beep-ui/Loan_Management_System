@@ -5,6 +5,7 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import App from "./App";
+import { AuthProvider, RequireAuth } from "./contexts/AuthContext";
 
 // Views
 import Login from "./views/Login";
@@ -15,28 +16,38 @@ import Test from "./Test";
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <App />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/signup",
-    element: <Signup />,
-  },
-  {
-    path: "/loans",
-    element: <Loan />,
-  },
-  {
-    path: "/create-loan",
-    element: <CreateLoan />,
-  },
-  {
-    path: "/test",
-    element: <Test />,
+    element: <AuthProvider />,
+    children: [
+      {
+        path: "/",
+        element: <App />,
+      },
+      {
+        path: "/login",
+        element: <Login />,
+      },
+      {
+        path: "/signup",
+        element: <Signup />,
+      },
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            path: "/loans",
+            element: <Loan />,
+          },
+          {
+            path: "/create-loan",
+            element: <CreateLoan />,
+          },
+        ],
+      },
+      {
+        path: "/test",
+        element: <Test />,
+      },
+    ],
   },
 ]);
 

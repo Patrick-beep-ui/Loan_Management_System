@@ -1,5 +1,15 @@
 # Changelog — users
 
+## 2026-11-19 — Documentado `GET /api/users/auth`
+
+- Change: se documentó el endpoint existente que devuelve el usuario actual
+  desde `req.user.user_id`, con su proyección de `Stakeholder` y `Role`, y su
+  uso desde `AuthProvider` en el cliente.
+- Impact: no cambió el backend; se aclara la hidratación de sesión y la
+  diferencia de proyección frente a `GET /api/users`.
+- Verification: implementación revisada en `userRoutes.js`, `userController.js`
+  y `userService.js`; `pnpm build` del cliente compiló correctamente.
+
 ## 2026-11-17 — Signup crea cuentas `lender`
 
 - Change: se documenta que `POST /api/auth/signup` asigna siempre el rol

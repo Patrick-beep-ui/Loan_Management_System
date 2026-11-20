@@ -1,5 +1,19 @@
 # Changelog — frontend
 
+### 2026-11-19 — Contexto de autenticación y rutas protegidas
+
+- Change: Se reemplazó el wrapper de `AuthContext.jsx` por `AuthProvider`,
+  `useAuth()` y `RequireAuth`, con hidratación desde `GET /api/users/auth`.
+  El servicio axios añade un interceptor de `401` que limpia el token y emite
+  `auth:unauthorized`. `/loans` y `/create-loan` quedan tras el guard; `Login`
+  usa `login(token)` y redirige a la ruta de origen; `Loan` muestra nombre y rol
+  desde `useAuth().user` sin filtrar en cliente.
+- Impact: Las rutas de préstamos exigen sesión y el usuario está disponible en
+  cualquier vista. El filtrado de préstamos sigue siendo responsabilidad del
+  backend por JWT. El detalle está en [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente (220 modules transformed).
+  No se probó contra un servidor ni en navegador.
+
 ### 2026-11-18 — Listado de préstamos
 
 - Change: Se reemplazó el placeholder de `Loan` por una tabla que consume

@@ -17,4 +17,20 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const url = error.config?.url || "";
+    const isAuthRequest =
+      url.includes("/auth/login") || url.includes("/auth/signup");
+
+    if (error.response?.status === 401 && !isAuthRequest) {
+      localStorage.removeItem("token");
+      window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 export default api;
