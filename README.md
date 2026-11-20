@@ -86,7 +86,7 @@ Cada router se registra en `src/server/api.js`. Los services lanzan errores tipa
 
 ## Frontend
 
-El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` define las rutas y `RouterProvider` monta la aplicación. `AuthProvider` es el layout raíz y `RequireAuth` protege las rutas de préstamos. Las vistas viven en `src/client/views/` y los componentes reutilizables en `src/components/ui/`.
+El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` define las rutas y `RouterProvider` monta la aplicación. `AuthProvider` es el layout raíz y `RequireAuth` protege las rutas de préstamos. Las vistas viven en `src/client/views/`, los componentes reutilizables en `src/components/ui/` y los componentes por dominio en `src/components/<dominio>/`.
 
 | Ruta | Vista | Acceso |
 | --- | --- | --- |
@@ -97,7 +97,7 @@ El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` d
 | `/create-loan` | `CreateLoan` | protegido |
 | `/test` | `Test` (vista de prueba) | público |
 
-`Login` y `Signup` consumen `/api/auth` mediante `src/lib/axiosService.js` (`api.post`): validan los campos, muestran estados de carga y error y usan los componentes `Card`, `Input`, `Label` y `Button`. El servicio centraliza el `baseURL` (`VITE_API_URL` o `http://localhost:3000/api`), un interceptor que envía `Authorization: Bearer <token>` leyendo `token` de `localStorage` y un interceptor de respuesta que ante un `401` limpia el token y emite `auth:unauthorized` (excepto en `/auth/login` y `/auth/signup`). `src/client/contexts/AuthContext.jsx` expone `AuthProvider`, `useAuth()` y `RequireAuth`: la sesión se hidrata con `GET /api/users/auth`, `/loans` y `/create-loan` están protegidos y el resto de rutas son públicas. `Login` usa `useAuth().login(token)` y navega a la ruta de origen o `/loans`; `Signup` envía `email`, `password` y `stakeholder_id` y, tras el registro, navega a `/login` con un aviso de éxito. `Loan` muestra los préstamos en una tabla con `api.get("/loans")` (ID, prestamista, cliente, monto, tasa, modo, fecha y total), con estados de carga, vacío y error; usa `useAuth().user` solo para mostrar nombre y rol, porque el backend filtra por JWT. `CreateLoan` es un formulario de dos pasos que carga stakeholders, permite fiadores existentes o inline, exige garantías y muestra las cuotas calculadas por `src/client/utils/loanSchedule.js` antes de enviar `POST /api/loans`; `Loan` incluye el botón `New loan` y un aviso de creación correcta. `/test` usa `api.get("/roles")` del mismo servicio (ruta actualmente deshabilitada en `src/server/api.js`). Los estilos se definen en `src/client/index.css` con Tailwind 4, la paleta de marca (`263A69`, `B0C7DD`, `E8E3DD`, `EDECEA` y `0F0F0F`) en temas claro y oscuro, con Playfair Display para títulos y Montserrat para texto desde Google Fonts. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
+`Login` y `Signup` consumen `/api/auth` mediante `src/lib/axiosService.js` (`api.post`): validan los campos, muestran estados de carga y error y usan los componentes `Card`, `Input`, `Label` y `Button`. El servicio centraliza el `baseURL` (`VITE_API_URL` o `http://localhost:3000/api`), un interceptor que envía `Authorization: Bearer <token>` leyendo `token` de `localStorage` y un interceptor de respuesta que ante un `401` limpia el token y emite `auth:unauthorized` (excepto en `/auth/login` y `/auth/signup`). `src/client/contexts/AuthContext.jsx` expone `AuthProvider`, `useAuth()` y `RequireAuth`: la sesión se hidrata con `GET /api/users/auth`, `/loans` y `/create-loan` están protegidos y el resto de rutas son públicas. `Login` usa `useAuth().login(token)` y navega a la ruta de origen o `/loans`; `Signup` envía `email`, `password` y `stakeholder_id` y, tras el registro, navega a `/login` con un aviso de éxito. `Loan` muestra los préstamos en una tabla con `api.get("/loans")` (ID, prestamista, cliente, monto, tasa, modo, fecha y total), con estados de carga, vacío y error; usa `useAuth().user` solo para mostrar nombre y rol, porque el backend filtra por JWT. `CreateLoan` es un formulario de dos pasos compuesto desde `src/components/loans/`: el hook `useCreateLoanForm` carga stakeholders, administra el estado y valida con `src/client/utils/loanForm.js`, `CreateLoanForm` reúne los campos, fiadores y garantías, e `InstallmentPreview` muestra las cuotas calculadas por `src/client/utils/loanSchedule.js` antes de enviar `POST /api/loans`; `Loan` incluye el botón `New loan` y un aviso de creación correcta. `/test` usa `api.get("/roles")` del mismo servicio (ruta actualmente deshabilitada en `src/server/api.js`). Los estilos se definen en `src/client/index.css` con Tailwind 4, la paleta de marca (`263A69`, `B0C7DD`, `E8E3DD`, `EDECEA` y `0F0F0F`) en temas claro y oscuro, con Playfair Display para títulos y Montserrat para texto desde Google Fonts. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
 
 ## Estructura del proyecto
 
@@ -117,11 +117,13 @@ src/
 │  ├─ App.jsx               componente principal (demo de Vite)
 │  ├─ App.css / index.css   estilos base y tokens de Tailwind/shadcn
 │  ├─ contexts/             AuthContext: provider, hook y guard
+│  ├─ hooks/                hooks de cliente: useCreateLoanForm
 │  ├─ Test.jsx              vista de prueba (/test)
 │  ├─ views/                vistas: Login, Signup, Loans, CreateLoan
-│  ├─ utils/                helpers de cliente: loanSchedule
+│  ├─ utils/                helpers de cliente: loanForm, loanSchedule
 │  └─ assets/
 ├─ components/
+│  ├─ loans/                componentes de creación de préstamos
 │  └─ ui/                   componentes shadcn: button, card, dialog, input, label, select, table, textarea
 ├─ lib/
 │  ├─ axiosService.js       instancia de axios con interceptor de token

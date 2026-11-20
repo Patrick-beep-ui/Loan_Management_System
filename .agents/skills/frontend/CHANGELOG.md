@@ -1,5 +1,17 @@
 # Changelog — frontend
 
+### 2026-11-19 — Componentes por dominio para CreateLoan
+
+- Change: Se dividió `CreateLoan.jsx` en componentes de `src/components/loans/`,
+  se extrajo el estado a `useCreateLoanForm` y la validación a
+  `src/client/utils/loanForm.js`, manteniendo el mismo flujo de dos pasos.
+- Impact: La vista queda como composición del formulario y la vista previa; no
+  cambian rutas, payload ni comportamiento. El detalle está en
+  [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente (2476 modules transformed).
+  No se probó en navegador ni contra un servidor; solo se ejecutó la
+  compilación, a pedido del usuario.
+
 ### 2026-11-19 — Creación de préstamos con vista previa
 
 - Change: Se reemplazó el placeholder de `CreateLoan` por un formulario que

@@ -5,8 +5,10 @@ description: Frontend React con Vite: entrada, rutas, componentes de UI, estilos
 
 # Frontend
 
-La interfaz vive en `src/client/` y usa React 19 con Vite 6. Los componentes
-compartidos están en `src/components/ui/` y las utilidades en `src/lib/`.
+La interfaz vive en `src/client/` y usa React 19 con Vite 6. Los primitivos
+compartidos están en `src/components/ui/`, los componentes por dominio en
+`src/components/<dominio>/`, los hooks de cliente en `src/client/hooks/` y las
+utilidades en `src/lib/` y `src/client/utils/`.
 El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Entrada y rutas
@@ -62,8 +64,8 @@ flujo de autenticación.
   provee el enrutamiento. La instalación de la CLI añadió también `shadcn` e
   `install` como dependencias; el código actual no las utiliza.
 - `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
-  `Signup` y `Test.jsx` importan esa instancia en lugar de crear clientes
-  propios.
+  `Signup`, `Test.jsx` y el hook `useCreateLoanForm` importan esa instancia en
+  lugar de crear clientes propios.
 
 ## Componentes de UI
 
@@ -84,6 +86,22 @@ Los componentes con estilos combinan `className` mediante `cn`. Hoy importan
 `cn` directamente del paquete `cn`; `src/lib/utils.js` también lo reexporta y es
 el alias declarado en `components.json`, pero los componentes aún no lo usan.
 Conviene tenerlo presente al agregar componentes nuevos.
+
+### Componentes por dominio
+
+`src/components/loans/` reúne la UI específica de la creación de préstamos:
+
+| Archivo | Responsabilidad |
+| --- | --- |
+| `CreateLoanForm.jsx` | formulario completo: datos, fiadores, garantías y envío de la vista previa |
+| `LoanDetailsFields.jsx` | campos de prestamista, cliente, monto, tasa, modo, desembolso y cuotas |
+| `GuarantorsFieldArray.jsx` | alta, baja y listado de fiadores |
+| `GuarantorRow.jsx` | un fiador existente o inline |
+| `CollateralsFieldArray.jsx` | alta, baja y listado de garantías |
+| `CollateralRow.jsx` | una garantía con descripción y valor estimado |
+| `InstallmentPreview.jsx` | resumen, tabla de cuotas y acciones de aprobación |
+| `FormField.jsx` | envoltorio de etiqueta y control |
+| `ErrorAlert.jsx` | mensaje de error con `role="alert"` |
 
 ## Estilos
 
@@ -184,15 +202,17 @@ creación termina, la vista vuelve con `state.createdLoanId` y muestra un aviso
 
 ## Creación de préstamos
 
-`src/client/views/CreateLoan.jsx` tiene dos pasos. El formulario carga
-`GET /api/stakeholders` con `api.get("/stakeholders")` para elegir cliente,
-prestamista (solo `admin`) y fiadores existentes; también permite crear fiadores
-inline con `first_name`, `last_name`, `national_id`, `marital_status`,
-`occupation` y `date_of_birth`. Exige al menos un fiador y una garantía con
-`description` y `estimated_value` opcional. `lender_id` se deriva de
-`useAuth().user.stakeholder_id` para cuentas `lender`.
+La vista `src/client/views/CreateLoan.jsx` solo arma el encabezado y alterna
+entre `CreateLoanForm` e `InstallmentPreview`. El hook `useCreateLoanForm`
+mantiene el estado, carga `GET /api/stakeholders` con `api.get("/stakeholders")`
+y valida con `buildLoanPayload` de `src/client/utils/loanForm.js`. El formulario
+permite elegir cliente, prestamista (solo `admin`) y fiadores existentes;
+también permite crear fiadores inline con `first_name`, `last_name`,
+`national_id`, `marital_status`, `occupation` y `date_of_birth`. Exige al menos
+un fiador y una garantía con `description` y `estimated_value` opcional.
+`lender_id` se deriva de `useAuth().user.stakeholder_id` para cuentas `lender`.
 
-El botón `Preview installments` valida los datos y usa
+El botón `Preview installments` valida los datos con `buildLoanPayload` y usa
 `src/client/utils/loanSchedule.js` para generar el calendario antes de enviar
 nada. El helper trabaja en centavos: calcula
 `interest = round(loan_amount * interest_rate / 100)`, reparte el total en
@@ -213,12 +233,14 @@ validación y de API se muestran en una región `role="alert"` con tokens
 
 - Las vistas nuevas van en `src/client/views/` y se registran en
   `src/client/main.jsx`.
-- Los componentes reutilizables van en `src/components/ui/`; usar el alias `@/`
-  para importar desde `src/`.
+- Los primitivos reutilizables van en `src/components/ui/` y los componentes
+  compuestos por dominio en `src/components/<dominio>/`.
+- Los hooks de las vistas van en `src/client/hooks/`; usar el alias `@/` para
+  importar desde `src/`.
 - El estado de sesión vive en `src/client/contexts/`; consumirlo con
   `useAuth()` desde cualquier vista.
 - Los helpers puros de dominio van en `src/client/utils/`, como
-  `loanSchedule.js`.
+  `loanSchedule.js` y `loanForm.js`.
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en
