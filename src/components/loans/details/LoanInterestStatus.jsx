@@ -1,7 +1,8 @@
+import { Button } from "@/components/ui/button";
 import { formatAmount, formatDate } from "@/client/utils/loanFormat";
 import { interestPaymentRecord } from "@/client/utils/loanEdit";
 
-export default function LoanInterestStatus({ loan }) {
+export default function LoanInterestStatus({ loan, onPay, paymentDisabled }) {
   const isSeparate = loan.interest_payment_mode === "separate";
   const obligation = loan.interestPayment;
   const payment = interestPaymentRecord(loan);
@@ -10,11 +11,17 @@ export default function LoanInterestStatus({ loan }) {
     : isSeparate
       ? "Missing obligation"
       : "Not applicable";
+  const canPay =
+    isSeparate &&
+    Boolean(obligation) &&
+    String(status).toLowerCase() !== "paid" &&
+    !payment &&
+    !paymentDisabled;
 
   return (
     <section className="space-y-3">
       <h3 className="font-medium">Ordinary interest</h3>
-      <div className="grid gap-3 rounded-lg border border-border bg-muted/40 p-4 sm:grid-cols-3">
+      <div className="grid gap-3 rounded-lg border border-border bg-muted/40 p-4 sm:grid-cols-4">
         <div>
           <p className="text-xs text-muted-foreground">Interest amount</p>
           <p className="font-medium tabular-nums">
@@ -32,6 +39,18 @@ export default function LoanInterestStatus({ loan }) {
               ? `${formatAmount(payment.amount)} on ${formatDate(payment.paid_at)}`
               : "—"}
           </p>
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Action</p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => onPay(loan)}
+            disabled={!canPay}
+          >
+            Pay interest
+          </Button>
         </div>
       </div>
     </section>

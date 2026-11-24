@@ -47,7 +47,7 @@ error con reintento, un botón `New loan` que navega a `/create-loan` y un aviso
 la sesión y `RequireAuth` vuelve a `/login`. `CreateLoan` es un formulario
 funcional: carga `GET /api/stakeholders`, permite seleccionar o crear fiadores,
 genera una vista previa de cuotas y envía `POST /api/loans` tras la aprobación;
-no consume `/api/payments`. `LoanDetails` consume `GET /api/loans/:id` y muestra
+no registra pagos; esa acción ocurre desde `LoanDetails`. `LoanDetails` consume `GET /api/loans/:id` y muestra
 el resumen, el calendario, fiadores, garantías y el estado del interés; desde
 ahí se navega a `/loans/:id/edit` o se elimina el préstamo con `Dialog`, siempre
 que no haya pagos registrados. `EditLoan` recupera el mismo préstamo, rellena el
@@ -73,8 +73,8 @@ flujo de autenticación.
   `install` como dependencias; el código actual no las utiliza.
 - `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
   `Signup`, `Test.jsx` y los hooks `useLoans`, `useLoanFormState`,
-  `useCreateLoanForm`, `useLoanDetails` y `useEditLoanForm` importan esa
-  instancia en lugar de crear clientes propios.
+  `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm` y `useLoanPayment`
+  importan esa instancia en lugar de crear clientes propios.
 
 ## Componentes de UI
 
@@ -150,6 +150,18 @@ la carpeta correspondiente con el alias `@/`.
 | `EditLoanError.jsx` | error de carga, `404` y reintento |
 | `EditLockedAlert.jsx` | aviso cuando los pagos bloquean la edición |
 
+### Modales de pago
+
+`src/components/payments/` reúne la UI de registro de pagos, separada de los
+flujos de préstamos:
+
+| Archivo | Responsabilidad |
+| --- | --- |
+| `InstallmentPaymentModal.jsx` | confirma el pago de una cuota contra `/payments/installment` |
+| `InterestPaymentModal.jsx` | confirma el pago del interés separado contra `/payments/interest` |
+| `PaymentModalFields.jsx` | monto bloqueado y `paid_at` opcional compartidos |
+| `PaymentSuccessAlert.jsx` | aviso descartable `role="status"` tras registrar un pago |
+
 ## Estilos
 
 `src/client/index.css` importa `tailwindcss`, `tw-animate-css` y
@@ -198,7 +210,8 @@ Un interceptor de petición lee el JWT de `localStorage` bajo la clave `token`
 y, si existe, añade `Authorization: Bearer <token>` a todas las peticiones.
 Por eso las vistas invocan métodos con rutas relativas a `/api`
 (`api.post("/auth/login")`, `api.get("/roles")`, `api.get("/stakeholders")`,
-`api.post("/loans")`) y no necesitan construir el header ni repetir el prefijo
+`api.post("/loans")`, `api.post("/payments/installment")`,
+`api.post("/payments/interest")`) y no necesitan construir el header ni repetir el prefijo
 `/api`. El interceptor de respuesta elimina
 `token` y emite `auth:unauthorized` ante un `401`, salvo en `/auth/login` y
 `/auth/signup` para no ocultar errores de credenciales. `AuthProvider` escucha
@@ -296,6 +309,17 @@ desactivar `Edit` y `Delete`; el backend sigue siendo la autoridad y responde
 `409` ante intentos directos. `DeleteLoanDialog` usa `Dialog` y, tras
 `api.delete("/loans/:id")`, vuelve a `/loans` con `state.deletedLoanId`.
 
+El registro de pagos se abre desde las acciones `Pay` de cada cuota pendiente y
+`Pay interest` de la obligación separada pendiente. `useLoanPayment` administra
+el destino, la fecha opcional y el envío; `src/components/payments/` contiene
+`InstallmentPaymentModal`, `InterestPaymentModal`, `PaymentModalFields` y
+`PaymentSuccessAlert`. El monto aparece bloqueado con el valor exacto exigido
+por el backend. Si `paid_at` se deja vacío se omite del payload y el servidor
+usa la hora actual; si se completa, `buildPaymentPayload` lo convierte a ISO con
+zona antes de enviarlo. Tras el `201` se cierra el modal, se llama a
+`refreshLoan()` y se muestra un aviso `role="status"`; por eso el detalle
+distingue entre `loading` inicial y `refreshing` posterior.
+
 La edición vive en `src/client/views/EditLoan.jsx`. El hook `useEditLoanForm`
 carga el préstamo, convierte la respuesta al estado del formulario con
 `loanToFormState` y reutiliza `useLoanFormState`, por lo que comparte la
@@ -318,7 +342,8 @@ recrea cuotas, fiadores y garantías en cada `PUT`.
 - El estado de sesión vive en `src/client/contexts/`; consumirlo con
   `useAuth()` desde cualquier vista.
 - Los helpers puros de dominio van en `src/client/utils/`, como
-  `loanSchedule.js`, `loanForm.js`, `loanFormat.js` y `loanEdit.js`.
+  `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanEdit.js` y
+  `loanPayment.js`.
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en

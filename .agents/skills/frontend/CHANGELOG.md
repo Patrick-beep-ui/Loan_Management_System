@@ -1,5 +1,17 @@
 # Changelog — frontend
 
+### 2026-11-23 — Registro de pagos desde el detalle del préstamo
+
+- Change: Se añadieron `useLoanPayment`, helpers de payload y modales separados
+  para pagar cuotas e interés separado. El monto queda bloqueado, `paid_at` es
+  opcional y se convierte a ISO con zona. Tras registrar un pago se refresca el
+  detalle sin recargar la página.
+- Impact: `/loans/:id` muestra acciones `Pay` por cuota pendiente y
+  `Pay interest` para la obligación separada pendiente, con aviso de éxito y
+  estados actualizados. El detalle está en [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-19 — Detalle, edición y eliminación de préstamos
 
 - Change: Se añadieron las rutas protegidas `/loans/:id` y `/loans/:id/edit`, el

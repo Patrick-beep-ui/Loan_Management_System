@@ -12,16 +12,18 @@ export function useLoanDetails() {
   const [showUpdated, setShowUpdated] = useState(Boolean(updatedLoanId));
   const [loan, setLoan] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [notFound, setNotFound] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  const fetchLoan = useCallback(async () => {
+  const fetchLoan = useCallback(async ({ initial = false } = {}) => {
     setError("");
     setNotFound(false);
-    setLoading(true);
+    if (initial) setLoading(true);
+    else setRefreshing(true);
 
     try {
       const { data } = await api.get(`/loans/${id}`);
@@ -35,12 +37,15 @@ export function useLoanDetails() {
       );
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [id]);
 
   useEffect(() => {
-    fetchLoan();
+    fetchLoan({ initial: true });
   }, [fetchLoan]);
+
+  const refreshLoan = useCallback(() => fetchLoan(), [fetchLoan]);
 
   const locked = loanHasPayments(loan);
 
@@ -92,10 +97,12 @@ export function useLoanDetails() {
     id,
     loan,
     loading,
+    refreshing,
     error,
     notFound,
     locked,
     fetchLoan,
+    refreshLoan,
     showUpdated,
     updatedLoanId,
     dismissUpdated,

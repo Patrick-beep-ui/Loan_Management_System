@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,7 +10,11 @@ import {
 } from "@/components/ui/table";
 import { formatAmount, formatDate } from "@/client/utils/loanFormat";
 
-export default function LoanInstallmentsTable({ installments }) {
+export default function LoanInstallmentsTable({
+  installments,
+  onPay,
+  paymentDisabled,
+}) {
   const rows = Array.isArray(installments)
     ? [...installments].sort(
         (left, right) =>
@@ -28,29 +33,50 @@ export default function LoanInstallmentsTable({ installments }) {
             <TableHead>Due date</TableHead>
             <TableHead className="text-right">Amount due</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead className="text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={4}
+                colSpan={5}
                 className="text-center text-muted-foreground"
               >
                 No installments found.
               </TableCell>
             </TableRow>
           ) : (
-            rows.map((installment) => (
-              <TableRow key={installment.installment_id ?? installment.installment_number}>
-                <TableCell>{installment.installment_number}</TableCell>
-                <TableCell>{formatDate(installment.due_date)}</TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {formatAmount(installment.amount_due)}
-                </TableCell>
-                <TableCell>{installment.status || "—"}</TableCell>
-              </TableRow>
-            ))
+            rows.map((installment) => {
+              const isPaid =
+                String(installment.status).toLowerCase() === "paid";
+
+              return (
+                <TableRow
+                  key={
+                    installment.installment_id ?? installment.installment_number
+                  }
+                >
+                  <TableCell>{installment.installment_number}</TableCell>
+                  <TableCell>{formatDate(installment.due_date)}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatAmount(installment.amount_due)}
+                  </TableCell>
+                  <TableCell>{installment.status || "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onPay(installment)}
+                      disabled={isPaid || paymentDisabled}
+                    >
+                      Pay
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>
