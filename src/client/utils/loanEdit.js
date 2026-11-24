@@ -1,4 +1,11 @@
-import { EMPTY_COLLATERAL, EMPTY_GUARANTOR, EMPTY_LOAN_FORM } from "@/client/utils/loanForm";
+import {
+  EMPTY_COLLATERAL,
+  EMPTY_GUARANTOR,
+  EMPTY_LOAN_FORM,
+  normalizeCollaterals,
+  normalizeGuarantors,
+  parsePositiveInteger,
+} from "@/client/utils/loanForm";
 
 function pad(value) {
   return String(value).padStart(2, "0");
@@ -78,4 +85,29 @@ export function interestPaymentRecord(loan) {
   if (!obligation) return null;
 
   return obligation.LoanPayment ?? obligation.payment ?? null;
+}
+
+export function buildRestrictedLoanPatchPayload({
+  form,
+  guarantors,
+  collaterals,
+  isAdmin,
+}) {
+  const payload = {
+    guarantors: normalizeGuarantors(guarantors),
+    collaterals: normalizeCollaterals(collaterals),
+  };
+
+  if (isAdmin) {
+    const lenderId = parsePositiveInteger(form.lender_id, "Lender");
+    const customerId = parsePositiveInteger(form.customer_id, "Customer");
+
+    if (lenderId === customerId) {
+      throw new Error("Lender and customer must be different.");
+    }
+
+    payload.lender_id = lenderId;
+  }
+
+  return payload;
 }

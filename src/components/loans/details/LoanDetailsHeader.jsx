@@ -18,7 +18,7 @@ export default function LoanDetailsHeader({
       <CardTitle className="text-2xl">Loan #{loanId}</CardTitle>
       <CardDescription>
         {locked
-          ? "This loan has recorded payments and can no longer be edited or deleted."
+          ? "This loan has recorded payments. Support details can be edited; deletion is unavailable."
           : "Review the loan details, edit its terms, or delete the record."}
       </CardDescription>
       <CardAction>
@@ -26,12 +26,7 @@ export default function LoanDetailsHeader({
           <Button type="button" variant="outline" onClick={onBack}>
             Back to loans
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onEdit}
-            disabled={locked}
-          >
+          <Button type="button" variant="outline" onClick={onEdit}>
             Edit
           </Button>
           <Button

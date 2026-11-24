@@ -49,9 +49,11 @@ funcional: carga `GET /api/stakeholders`, permite seleccionar o crear fiadores,
 genera una vista previa de cuotas y envía `POST /api/loans` tras la aprobación;
 no registra pagos; esa acción ocurre desde `LoanDetails`. `LoanDetails` consume `GET /api/loans/:id` y muestra
 el resumen, el calendario, fiadores, garantías y el estado del interés; desde
-ahí se navega a `/loans/:id/edit` o se elimina el préstamo con `Dialog`, siempre
-que no haya pagos registrados. `EditLoan` recupera el mismo préstamo, rellena el
-formulario compartido y envía `PUT /api/loans/:id` con todos los arreglos.
+ahí se navega a `/loans/:id/edit` y se elimina el préstamo con `Dialog` solo si
+no hay pagos registrados. `EditLoan` recupera el mismo préstamo: sin pagos
+rellena el formulario compartido y envía `PUT /api/loans/:id` con todos los
+arreglos; con pagos muestra un formulario reducido y envía `PATCH /api/loans/:id`
+solo con fiadores, garantías y, para `admin`, `lender_id`.
 `App.jsx` continúa siendo el contador de ejemplo de
 Vite. La ruta `/test` usa `api.get("/roles")`; esa ruta del servidor está
 actualmente deshabilitada en `src/server/api.js`, por lo que no forma parte del
@@ -138,7 +140,7 @@ la carpeta correspondiente con el alias `@/`.
 | `LoanGuarantorsList.jsx` | fiadores y sus IDs de stakeholder |
 | `LoanCollateralsList.jsx` | garantías con valor estimado |
 | `LoanInterestStatus.jsx` | estado del interés ordinario y sus acciones `Pay interest` y `Revert interest` |
-| `LoanLockedAlert.jsx` | aviso que indica revertir pagos para volver a editar o eliminar |
+| `LoanLockedAlert.jsx` | aviso que explica qué campos quedan bloqueados con pagos y que la eliminación requiere revertirlos |
 | `LoanUpdatedAlert.jsx` | aviso descartable tras volver de la edición |
 | `LoanDetailsError.jsx` | error de carga, `404` y reintento |
 | `DeleteLoanDialog.jsx` | confirmación de eliminación con `Dialog` |
@@ -149,7 +151,8 @@ la carpeta correspondiente con el alias `@/`.
 | --- | --- |
 | `EditLoanHeader.jsx` | título de la edición y acción para volver al detalle |
 | `EditLoanError.jsx` | error de carga, `404` y reintento |
-| `EditLockedAlert.jsx` | aviso cuando los pagos bloquean la edición |
+| `EditLockedAlert.jsx` | aviso que explica la edición reducida cuando hay pagos |
+| `RestrictedLoanEditForm.jsx` | formulario de edición con pagos: fiadores, garantías y selección de prestamista solo para `admin` |
 
 ### Pagos y reversión
 
@@ -212,9 +215,9 @@ Un interceptor de petición lee el JWT de `localStorage` bajo la clave `token`
 y, si existe, añade `Authorization: Bearer <token>` a todas las peticiones.
 Por eso las vistas invocan métodos con rutas relativas a `/api`
 (`api.post("/auth/login")`, `api.get("/roles")`, `api.get("/stakeholders")`,
-`api.post("/loans")`, `api.post("/payments/installment")`,
-`api.post("/payments/interest")`, `api.get("/payments")`,
-`api.delete("/payments/:id")`) y no necesitan construir el header ni repetir el prefijo
+`api.post("/loans")`, `api.put("/loans/:id")`, `api.patch("/loans/:id")`,
+`api.post("/payments/installment")`, `api.post("/payments/interest")`,
+`api.get("/payments")`, `api.delete("/payments/:id")`) y no necesitan construir el header ni repetir el prefijo
 `/api`. El interceptor de respuesta elimina
 `token` y emite `auth:unauthorized` ante un `401`, salvo en `/auth/login` y
 `/auth/signup` para no ocultar errores de credenciales. `AuthProvider` escucha
@@ -276,7 +279,9 @@ La vista `src/client/views/CreateLoan.jsx` solo arma el encabezado y alterna
 entre `CreateLoanForm` e `InstallmentPreview`. El hook `useLoanFormState`
 mantiene el estado, carga `GET /api/stakeholders` con `api.get("/stakeholders")`
 y valida con `buildLoanPayload` de `src/client/utils/loanForm.js`;
-`useCreateLoanForm` solo envía `POST /api/loans`. El formulario
+`normalizeGuarantors` y `normalizeCollaterals` son helpers exportados del mismo
+archivo y se reutilizan en la edición con pagos. `useCreateLoanForm` solo envía
+`POST /api/loans`. El formulario
 permite elegir cliente, prestamista (solo `admin`) y fiadores existentes;
 también permite crear fiadores inline con `first_name`, `last_name`,
 `national_id`, `marital_status`, `occupation` y `date_of_birth`. Exige al menos
@@ -307,9 +312,10 @@ La vista `src/client/views/LoanDetails.jsx` compone los componentes de
 `api.get("/loans/:id")` y mantiene estados de carga, error, `404`, aviso de
 actualización y confirmación de eliminación. Muestra los datos del préstamo, las
 cuotas, fiadores, garantías y la obligación de interés. `loanHasPayments` de
-`src/client/utils/loanEdit.js` detecta cuotas pagadas o interés pagado para
-desactivar `Edit` y `Delete`; el backend sigue siendo la autoridad y responde
-`409` ante intentos directos. `DeleteLoanDialog` usa `Dialog` y, tras
+`src/client/utils/loanEdit.js` detecta cuotas pagadas o interés pagado:
+`Delete` queda desactivado y `Edit` abre el formulario reducido. El backend
+sigue siendo la autoridad y responde `409` ante intentos directos.
+`DeleteLoanDialog` usa `Dialog` y, tras
 `api.delete("/loans/:id")`, vuelve a `/loans` con `state.deletedLoanId`.
 
 El registro de pagos se abre desde las acciones `Pay` de cada cuota pendiente y
@@ -327,17 +333,24 @@ La reversión es independiente del registro de pagos: `usePayments` carga
 `/api/payments?loan_id=...`, `paymentHistory.js` asocia cada pago con su cuota o
 interés y `usePaymentRevert` envía `DELETE /api/payments/:id` usando solo el
 `payment_id`. `RevertPaymentDialog` pide confirmación; tras el `204` se recargan
-el préstamo y el historial, se muestra un aviso y se habilitan `Edit` y `Delete`.
+el préstamo y el historial, se muestra un aviso, `Delete` vuelve a estar
+disponible y `Edit` pasa al formulario completo.
 
 La edición vive en `src/client/views/EditLoan.jsx`. El hook `useEditLoanForm`
 carga el préstamo, convierte la respuesta al estado del formulario con
 `loanToFormState` y reutiliza `useLoanFormState`, por lo que comparte la
 validación, carga de stakeholders y generación de vista previa con la creación.
-La vista reutiliza `CreateLoanForm` y `InstallmentPreview` con etiquetas opcionales
-(`Preview changes`, `Save changes`, `Saving...`). `handleApprove` envía
-`api.put("/loans/:id", payload)` con todos los arreglos y vuelve al detalle
-con `state.updatedLoanId`. No se envían IDs de relaciones hijas: el backend
-recrea cuotas, fiadores y garantías en cada `PUT`.
+Sin pagos, la vista reutiliza `CreateLoanForm` e `InstallmentPreview` con
+etiquetas opcionales (`Preview changes`, `Save changes`, `Saving...`) y
+`handleApprove` envía `api.put("/loans/:id", payload)` con todos los arreglos;
+el backend recrea cuotas, fiadores y garantías y no se envían IDs de relaciones
+hijas. Con pagos, `EditLockedAlert` explica las restricciones y
+`RestrictedLoanEditForm` muestra solo fiadores, garantías y, para `admin`, el
+prestamista. `buildRestrictedLoanPatchPayload` reutiliza `normalizeGuarantors` y
+`normalizeCollaterals` de `loanForm.js`, valida que prestamista y cliente difieran
+cuando corresponde y omite `lender_id` para cuentas `lender`. `handleApprove`
+envía `api.patch("/loans/:id", payload)` y vuelve al detalle con
+`state.updatedLoanId`.
 
 ## Convenciones
 

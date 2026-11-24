@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useLoanFormState } from "@/client/hooks/useLoanFormState";
-import { loanHasPayments, loanToFormState } from "@/client/utils/loanEdit";
+import {
+  buildRestrictedLoanPatchPayload,
+  loanHasPayments,
+  loanToFormState,
+} from "@/client/utils/loanEdit";
 import api from "@/lib/axiosService";
 
 export function useEditLoanForm() {
@@ -12,7 +16,7 @@ export function useEditLoanForm() {
   const [loadingLoan, setLoadingLoan] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [notFound, setNotFound] = useState(false);
-  const [locked, setLocked] = useState(false);
+  const [hasPayments, setHasPayments] = useState(false);
 
   const fetchLoan = useCallback(async () => {
     setLoadingLoan(true);
@@ -22,7 +26,7 @@ export function useEditLoanForm() {
     try {
       const { data } = await api.get(`/loans/${id}`);
       formState.applyInitialState(loanToFormState(data));
-      setLocked(loanHasPayments(data));
+      setHasPayments(loanHasPayments(data));
     } catch (requestError) {
       setNotFound(requestError.response?.status === 404);
       setLoadError(
@@ -41,16 +45,16 @@ export function useEditLoanForm() {
   async function handleApprove() {
     formState.setFormError("");
 
-    if (locked) {
-      formState.setFormError(
-        "This loan has recorded payments and can no longer be edited.",
-      );
-      return;
-    }
-
     let payload;
     try {
-      ({ payload } = formState.buildCurrentPayload());
+      payload = hasPayments
+        ? buildRestrictedLoanPatchPayload({
+            form: formState.form,
+            guarantors: formState.guarantors,
+            collaterals: formState.collaterals,
+            isAdmin: formState.isAdmin,
+          })
+        : formState.buildCurrentPayload().payload;
     } catch (validationError) {
       formState.clearPreview();
       formState.setFormError(
@@ -62,7 +66,12 @@ export function useEditLoanForm() {
     formState.setSubmitting(true);
 
     try {
-      await api.put(`/loans/${id}`, payload);
+      if (hasPayments) {
+        await api.patch(`/loans/${id}`, payload);
+      } else {
+        await api.put(`/loans/${id}`, payload);
+      }
+
       navigate(`/loans/${id}`, {
         replace: true,
         state: { updatedLoanId: Number(id) },
@@ -83,7 +92,7 @@ export function useEditLoanForm() {
     loadingLoan,
     loadError,
     notFound,
-    locked,
+    hasPayments,
     fetchLoan,
     handleApprove,
   };

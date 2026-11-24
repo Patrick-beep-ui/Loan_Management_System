@@ -4,8 +4,8 @@ export default function EditLockedAlert() {
       role="status"
       className="mb-6 rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground"
     >
-      This loan has installment or interest payments. Editing is unavailable
-      while payments are recorded.
+      This loan has recorded payments. You can update guarantors and collateral;
+      admins can also change the lender.
     </div>
   );
 }

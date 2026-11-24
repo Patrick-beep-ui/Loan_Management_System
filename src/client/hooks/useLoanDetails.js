@@ -58,7 +58,7 @@ export function useLoanDetails() {
   }
 
   function goToEdit() {
-    if (!locked) navigate(`/loans/${id}/edit`);
+    navigate(`/loans/${id}/edit`);
   }
 
   function openDelete() {

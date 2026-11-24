@@ -44,7 +44,7 @@ export function formatMoney(value) {
   });
 }
 
-function parsePositiveInteger(value, label) {
+export function parsePositiveInteger(value, label) {
   const text = String(value).trim();
 
   if (!/^\d+$/.test(text)) {
@@ -92,6 +92,78 @@ function parseDateOnly(value, label) {
   }
 
   return value;
+}
+
+export function normalizeGuarantors(guarantors) {
+  if (!Array.isArray(guarantors) || guarantors.length === 0) {
+    throw new Error("Add at least one guarantor.");
+  }
+
+  return guarantors.map((row, index) => {
+    if (row.mode === "existing") {
+      return {
+        stakeholder_id: parsePositiveInteger(
+          row.stakeholder_id,
+          `Guarantor ${index + 1}`,
+        ),
+      };
+    }
+
+    const firstName = row.first_name.trim();
+    const lastName = row.last_name.trim();
+    const nationalId = row.national_id.trim();
+    const occupation = row.occupation.trim();
+
+    if (!firstName || !lastName) {
+      throw new Error(`Guarantor ${index + 1} requires first and last name.`);
+    }
+
+    if (row.marital_status && !["single", "married"].includes(row.marital_status)) {
+      throw new Error(`Guarantor ${index + 1} has an invalid marital status.`);
+    }
+
+    if (row.date_of_birth) {
+      parseDateOnly(
+        row.date_of_birth,
+        `Guarantor ${index + 1} date of birth`,
+      );
+    }
+
+    return {
+      first_name: firstName,
+      last_name: lastName,
+      ...(nationalId ? { national_id: nationalId } : {}),
+      ...(row.marital_status ? { marital_status: row.marital_status } : {}),
+      ...(occupation ? { occupation } : {}),
+      ...(row.date_of_birth ? { date_of_birth: row.date_of_birth } : {}),
+    };
+  });
+}
+
+export function normalizeCollaterals(collaterals) {
+  if (!Array.isArray(collaterals) || collaterals.length === 0) {
+    throw new Error("Add at least one collateral.");
+  }
+
+  return collaterals.map((row, index) => {
+    const description = row.description.trim();
+    if (!description) {
+      throw new Error(`Collateral ${index + 1} requires a description.`);
+    }
+
+    return {
+      description,
+      ...(row.estimated_value.trim() !== ""
+        ? {
+            estimated_value: parseMoney(
+              row.estimated_value,
+              `Collateral ${index + 1} estimated value`,
+              true,
+            ),
+          }
+        : {}),
+    };
+  });
 }
 
 export function buildLoanPayload({
@@ -162,76 +234,8 @@ export function buildLoanPayload({
     throw new Error("First due date cannot be before disbursement date.");
   }
 
-  if (guarantors.length === 0) {
-    throw new Error("Add at least one guarantor.");
-  }
-
-  const normalizedGuarantors = guarantors.map((row, index) => {
-    if (row.mode === "existing") {
-      return {
-        stakeholder_id: parsePositiveInteger(
-          row.stakeholder_id,
-          `Guarantor ${index + 1}`,
-        ),
-      };
-    }
-
-    const firstName = row.first_name.trim();
-    const lastName = row.last_name.trim();
-    const nationalId = row.national_id.trim();
-    const occupation = row.occupation.trim();
-
-    if (!firstName || !lastName) {
-      throw new Error(`Guarantor ${index + 1} requires first and last name.`);
-    }
-
-    if (
-      row.marital_status &&
-      !["single", "married"].includes(row.marital_status)
-    ) {
-      throw new Error(`Guarantor ${index + 1} has an invalid marital status.`);
-    }
-
-    if (row.date_of_birth) {
-      parseDateOnly(
-        row.date_of_birth,
-        `Guarantor ${index + 1} date of birth`,
-      );
-    }
-
-    return {
-      first_name: firstName,
-      last_name: lastName,
-      ...(nationalId ? { national_id: nationalId } : {}),
-      ...(row.marital_status ? { marital_status: row.marital_status } : {}),
-      ...(occupation ? { occupation } : {}),
-      ...(row.date_of_birth ? { date_of_birth: row.date_of_birth } : {}),
-    };
-  });
-
-  if (collaterals.length === 0) {
-    throw new Error("Add at least one collateral.");
-  }
-
-  const normalizedCollaterals = collaterals.map((row, index) => {
-    const description = row.description.trim();
-    if (!description) {
-      throw new Error(`Collateral ${index + 1} requires a description.`);
-    }
-
-    return {
-      description,
-      ...(row.estimated_value.trim() !== ""
-        ? {
-            estimated_value: parseMoney(
-              row.estimated_value,
-              `Collateral ${index + 1} estimated value`,
-              true,
-            ),
-          }
-        : {}),
-    };
-  });
+  const normalizedGuarantors = normalizeGuarantors(guarantors);
+  const normalizedCollaterals = normalizeCollaterals(collaterals);
 
   const schedule = buildLoanSchedule({
     loanAmount,

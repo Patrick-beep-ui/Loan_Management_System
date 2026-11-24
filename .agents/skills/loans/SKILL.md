@@ -25,9 +25,10 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 Toda la validación y normalización del payload vive en
 `src/server/utils/validators/loanValidation.js`. El service no valida datos de
 entrada: recibe los atributos y arreglos ya normalizados y solo ejecuta la
-persistencia transaccional y los bloqueos por pagos existentes. En `PATCH`, el
-validador recibe el préstamo almacenado para resolver las reglas que dependen
-del estado actual (términos efectivos, cambios financieros y totales de cuotas).
+persistencia transaccional, los bloqueos por pagos existentes y la lista blanca
+de `PATCH` cuando hay pagos. En `PATCH`, el validador recibe el préstamo
+almacenado para resolver las reglas que dependen del estado actual (términos
+efectivos, cambios financieros y totales de cuotas).
 
 Cuando una petición tiene errores de entrada y además el préstamo tiene pagos,
 responde el error de validación (`400`); el conflicto por pagos (`409`) se
@@ -151,8 +152,13 @@ préstamo. Un `national_id` duplicado responde `409`.
   enviados; con un cuerpo vacío responde `400`. Los arreglos enviados reemplazan
   su relación completa. Si cambia `loan_amount`, `interest_rate` o
   `interest_payment_mode`, exige `installments` para recalcular y validar el
-  calendario. Si el préstamo tiene pagos de cuotas o interés pagado, cualquier
-  cambio financiero o de calendario responde `409`.
+  calendario. Si el préstamo tiene pagos de cuotas o interés pagado, solo se
+  permiten `guarantors` y `collaterals` para cualquier usuario, y `lender_id`
+  adicionalmente para `admin`; cualquier otro campo o arreglo (incluidos
+  `customer_id`, `disbursed_at`, campos financieros, `installments` y
+  `lender_id` de un `lender`) responde `409` con
+  `A loan with payments can only update ...`. Los campos no permitidos se
+  rechazan incluso si se envían con el mismo valor almacenado.
 - `DELETE /:id`: elimina el préstamo (`204`, sin cuerpo). Si tiene pagos de
   cuotas o interés pagado responde `409`. En caso contrario elimina primero la
   obligación de interés pendiente, los vínculos de fiadores, las garantías, las
@@ -167,7 +173,8 @@ préstamo. Un `national_id` duplicado responde `409`.
 - Al cambiar de `separate` a `included`, se elimina la obligación pendiente. Al
   cambiar de `included` a `separate`, se crea una nueva obligación pendiente.
 - Una obligación con `status = "paid"` bloquea los cambios financieros y la
-  eliminación del préstamo.
+  eliminación del préstamo; la edición parcial de fiadores, garantías y, para
+  `admin`, prestamista continúa disponible según la regla de `PATCH`.
 
 Los campos desconocidos se ignoran. Un `:id` no numérico o menor o igual a cero
 responde `400`.
@@ -182,7 +189,8 @@ responde `400`.
 - `404` préstamo inexistente o perteneciente a otro prestamista.
 - `409` referencia inválida, `national_id` inline duplicado (mensaje `A stakeholder with that national ID already exists`), fiador duplicado
   (un `stakeholder_id` y un stakeholder inline que resuelve al mismo registro),
-  pagos de cuotas, interés pagado o conflicto de unicidad al crear/reemplazar.
+  pagos de cuotas, interés pagado, campo no permitido en `PATCH` con pagos o
+  conflicto de unicidad al crear/reemplazar.
 - `500` error inesperado.
 
 ## Archivos

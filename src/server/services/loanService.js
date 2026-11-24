@@ -139,13 +139,15 @@ async function findLoanOrThrow(loan_id, user, transaction) {
     return loan;
 }
 
-async function assertNoPayments(loan_id, transaction) {
+async function findLoanPaymentConflicts(loan_id, transaction) {
     const installments = await LoanInstallment.findAll({
         where: { loan_id },
         attributes: ["installment_id"],
         raw: true,
         transaction
     });
+
+    let hasInstallmentPayments = false;
 
     if (installments.length > 0) {
         const paymentCount = await InstallmentPayment.count({
@@ -155,9 +157,7 @@ async function assertNoPayments(loan_id, transaction) {
             transaction
         });
 
-        if (paymentCount > 0) {
-            throw new ConflictError("Loan has installment payments and cannot be changed");
-        }
+        hasInstallmentPayments = paymentCount > 0;
     }
 
     const paidInterest = await LoanInterestPayment.findOne({
@@ -165,8 +165,49 @@ async function assertNoPayments(loan_id, transaction) {
         transaction
     });
 
-    if (paidInterest) {
+    return {
+        hasInstallmentPayments,
+        hasPaidInterest: Boolean(paidInterest)
+    };
+}
+
+async function loanHasPayments(loan_id, transaction) {
+    const conflicts = await findLoanPaymentConflicts(loan_id, transaction);
+    return conflicts.hasInstallmentPayments || conflicts.hasPaidInterest;
+}
+
+async function assertNoPayments(loan_id, transaction) {
+    const conflicts = await findLoanPaymentConflicts(loan_id, transaction);
+
+    if (conflicts.hasInstallmentPayments) {
+        throw new ConflictError("Loan has installment payments and cannot be changed");
+    }
+
+    if (conflicts.hasPaidInterest) {
         throw new ConflictError("Loan has paid interest and cannot be changed");
+    }
+}
+
+function assertPaidLoanPatchAllowed(payload, user) {
+    const allowedLoanFields = new Set(isAdmin(user) ? ["lender_id"] : []);
+    const loanFields = Object.keys(payload.loan || {});
+    const invalidLoanFields = loanFields.filter(
+        (field) => !allowedLoanFields.has(field)
+    );
+    const relationFields = ["installments", "guarantors", "collaterals"].filter(
+        (field) => payload[field] !== undefined
+    );
+    const invalidRelations = relationFields.filter(
+        (field) => field !== "guarantors" && field !== "collaterals"
+    );
+
+    if (invalidLoanFields.length > 0 || invalidRelations.length > 0) {
+        const allowed = isAdmin(user)
+            ? "guarantors, collaterals or lender_id"
+            : "guarantors or collaterals";
+        throw new ConflictError(
+            `A loan with payments can only update ${allowed}`
+        );
     }
 }
 
@@ -313,8 +354,8 @@ export async function updateLoan(id, data = {}, user) {
 
     try {
         await connection.transaction(async (transaction) => {
-            if (payload.financialChanges || payload.installments !== undefined) {
-                await assertNoPayments(loan_id, transaction);
+            if (await loanHasPayments(loan_id, transaction)) {
+                assertPaidLoanPatchAllowed(payload, user);
             }
 
             if (Object.keys(payload.loan).length > 0) {

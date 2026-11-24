@@ -1,5 +1,21 @@
 # Changelog — loans
 
+### 2026-11-23 — Edición parcial de préstamos con pagos
+
+- Change: `updateLoan` ahora consulta si existen pagos y aplica una lista blanca:
+  con pagos solo acepta `guarantors` y `collaterals`, y `lender_id`
+  adicionalmente para `admin`. `assertNoPayments` se dividió en
+  `findLoanPaymentConflicts`, `loanHasPayments` y `assertNoPayments`, por lo que
+  `PUT` y `DELETE` siguen bloqueados con `409`. Cualquier otro campo en `PATCH`
+  con pagos responde `409` aunque repita el valor almacenado.
+- Impact: los préstamos pagados pueden actualizar fiadores, garantías y, solo
+  administradores, el prestamista mediante `PATCH /api/loans/:id`. Los cambios
+  financieros, de cliente, fecha de desembolso y calendario requieren revertir
+  los pagos. El detalle está en [`SKILL.md`](SKILL.md).
+- Verification: no se ejecutaron pruebas de API; solo se revisó el código. El
+  comportamiento en base de datos y los códigos `409`/`403` siguen sin
+  verificación en tiempo de ejecución.
+
 ## 2026-11-18 — `loanScope` compartido con payments
 
 - Change: `loanScope` se exportó desde `loanService` y los préstamos con pagos

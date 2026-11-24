@@ -1,13 +1,25 @@
 # Changelog — payments
 
+### 2026-11-23 — Relación con edición parcial de préstamos
+
+- Change: se documentó que, con pagos registrados, `PATCH /api/loans/:id` sigue
+  permitiendo fiadores, garantías y, para `admin`, el prestamista. La reversión
+  de pagos restaura la edición financiera completa y la eliminación.
+- Impact: no cambia el contrato de `/api/payments`; aclara cuándo el detalle
+  muestra el formulario reducido frente al completo. El detalle está en
+  [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ## 2026-11-23 — Reversión expuesta en el cliente
 
 - Change: La interfaz del detalle consume `GET /api/payments?loan_id=...` y
   `DELETE /api/payments/:id` mediante hooks propios, separados del registro de
   pagos. El borrado sigue siendo la reversión transaccional ya implementada.
 - Impact: Los pagos de cuota e interés se pueden revertir desde `/loans/:id` con
-  confirmación; la vista recarga el préstamo y el historial, y se habilitan
-  edición y eliminación. El flujo está en [`SKILL.md`](SKILL.md).
+   confirmación; la vista recarga el préstamo y el historial, habilita la
+   eliminación y restaura la edición financiera completa. El flujo está en
+   [`SKILL.md`](SKILL.md).
 - Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
   contra un servidor, a pedido del usuario.
 

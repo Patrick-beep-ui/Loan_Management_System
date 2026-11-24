@@ -131,8 +131,9 @@ registro de pagos. `usePayments` consulta `GET /api/payments?loan_id=...`,
 `paymentHistory.js` asocia cada `payment_id` con su cuota o interés y
 `usePaymentRevert` envía `DELETE /api/payments/:id` sin enviar `loan_id` ni el
 destino. `RevertPaymentDialog` confirma la acción antes de borrar el registro.
-Después del `204`, la vista vuelve a cargar el préstamo y el historial, por lo
-que el préstamo deja de estar bloqueado para edición o eliminación.
+Después del `204`, la vista vuelve a cargar el préstamo y el historial:
+`Delete` vuelve a estar disponible y `Edit` pasa del formulario reducido al
+formulario completo.
 
 ## Permisos y propiedad
 
@@ -144,7 +145,9 @@ conserva acceso global. Un usuario `lender` sin `stakeholder_id` responde `403`.
 
 La existencia de pagos bloquea los cambios financieros, el reemplazo y la
 eliminación del préstamo con `409` (regla implementada en `loanService`).
-Pagar una cuota cambia su `status` a `paid`; pagar el interés cambia su `status`
+`PATCH /api/loans/:id` sigue permitiendo solo `guarantors` y `collaterals`, más
+`lender_id` para `admin`, cuando hay pagos registrados. Pagar una cuota cambia
+su `status` a `paid`; pagar el interés cambia su `status`
 a `paid` y asigna `payment_id`, cumpliendo la restricción
 `chk_loan_interest_payment_state`. `DELETE /api/payments/:id` invierte estos
 cambios y restaura ambos destinos a `pending`.

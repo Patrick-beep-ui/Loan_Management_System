@@ -1,5 +1,19 @@
 # Changelog — frontend
 
+### 2026-11-23 — Edición reducida de préstamos con pagos
+
+- Change: `Edit` ya no se desactiva cuando el préstamo tiene pagos. `useEditLoanForm`
+  distingue ese caso, usa `buildRestrictedLoanPatchPayload` y envía
+  `PATCH /api/loans/:id` con fiadores, garantías y, solo para `admin`,
+  `lender_id`. Se añadió `RestrictedLoanEditForm` y se ajustaron los avisos de
+  detalle y edición.
+- Impact: los préstamos pagados siguen sin poder eliminarse ni editar términos
+  financieros, cliente, desembolso o cuotas, pero sí actualizan fiadores y
+  garantías; los administradores también pueden cambiar el prestamista. El
+  detalle está en [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-23 — Reversión independiente de pagos
 
 - Change: Se añadieron `usePayments`, `usePaymentRevert`, `paymentHistory.js` y
