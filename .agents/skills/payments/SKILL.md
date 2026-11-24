@@ -124,6 +124,16 @@ Un pago inexistente o ajeno responde `404`. La reversión elimina el registro en
 `loan_payments` en ambos casos, así que el préstamo vuelve a aceptar cambios
 financieros y eliminación.
 
+## Cliente
+
+El detalle de préstamo expone la reversión como una operación independiente del
+registro de pagos. `usePayments` consulta `GET /api/payments?loan_id=...`,
+`paymentHistory.js` asocia cada `payment_id` con su cuota o interés y
+`usePaymentRevert` envía `DELETE /api/payments/:id` sin enviar `loan_id` ni el
+destino. `RevertPaymentDialog` confirma la acción antes de borrar el registro.
+Después del `204`, la vista vuelve a cargar el préstamo y el historial, por lo
+que el préstamo deja de estar bloqueado para edición o eliminación.
+
 ## Permisos y propiedad
 
 `paymentService` reutiliza `loanScope` de `loanService`: los préstamos de un

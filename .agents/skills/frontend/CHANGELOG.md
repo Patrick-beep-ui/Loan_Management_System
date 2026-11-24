@@ -1,5 +1,18 @@
 # Changelog — frontend
 
+### 2026-11-23 — Reversión independiente de pagos
+
+- Change: Se añadieron `usePayments`, `usePaymentRevert`, `paymentHistory.js` y
+  `RevertPaymentDialog`. La reversión consume `GET /api/payments?loan_id=...` y
+  `DELETE /api/payments/:id` por `payment_id`, sin acoplarse al registro de
+  pagos ni a la edición del préstamo.
+- Impact: `/loans/:id` muestra `Revert` en cuotas pagadas y `Revert interest` en
+  la obligación separada pagada. Tras confirmar se eliminan los pagos, se
+  recargan el préstamo y el historial, se muestra un aviso y vuelven a estar
+  disponibles `Edit` y `Delete`. El detalle está en [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-23 — Registro de pagos desde el detalle del préstamo
 
 - Change: Se añadieron `useLoanPayment`, helpers de payload y modales separados

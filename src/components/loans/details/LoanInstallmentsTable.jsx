@@ -9,10 +9,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatAmount, formatDate } from "@/client/utils/loanFormat";
+import { findInstallmentPayment } from "@/client/utils/paymentHistory";
 
 export default function LoanInstallmentsTable({
   installments,
+  payments = [],
   onPay,
+  onRevert,
   paymentDisabled,
 }) {
   const rows = Array.isArray(installments)
@@ -50,6 +53,10 @@ export default function LoanInstallmentsTable({
             rows.map((installment) => {
               const isPaid =
                 String(installment.status).toLowerCase() === "paid";
+              const recordedPayment = findInstallmentPayment(
+                payments,
+                installment.installment_id,
+              );
 
               return (
                 <TableRow
@@ -64,15 +71,28 @@ export default function LoanInstallmentsTable({
                   </TableCell>
                   <TableCell>{installment.status || "—"}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onPay(installment)}
-                      disabled={isPaid || paymentDisabled}
-                    >
-                      Pay
-                    </Button>
+                    {isPaid ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive"
+                        onClick={() => onRevert(recordedPayment, installment)}
+                        disabled={!recordedPayment || paymentDisabled}
+                      >
+                        Revert
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onPay(installment)}
+                        disabled={paymentDisabled}
+                      >
+                        Pay
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );

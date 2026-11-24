@@ -73,8 +73,9 @@ flujo de autenticación.
   `install` como dependencias; el código actual no las utiliza.
 - `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
   `Signup`, `Test.jsx` y los hooks `useLoans`, `useLoanFormState`,
-  `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm` y `useLoanPayment`
-  importan esa instancia en lugar de crear clientes propios.
+  `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
+  `usePayments` y `usePaymentRevert` importan esa instancia en lugar de crear
+  clientes propios.
 
 ## Componentes de UI
 
@@ -133,11 +134,11 @@ la carpeta correspondiente con el alias `@/`.
 | --- | --- |
 | `LoanDetailsHeader.jsx` | título, acciones `Back to loans`, `Edit` y `Delete` |
 | `LoanSummary.jsx` | resumen de prestamista, cliente, importes y condiciones |
-| `LoanInstallmentsTable.jsx` | calendario ordenado por número de cuota |
+| `LoanInstallmentsTable.jsx` | calendario ordenado por número de cuota, con acciones `Pay` y `Revert` |
 | `LoanGuarantorsList.jsx` | fiadores y sus IDs de stakeholder |
 | `LoanCollateralsList.jsx` | garantías con valor estimado |
-| `LoanInterestStatus.jsx` | estado del interés ordinario y su pago separado |
-| `LoanLockedAlert.jsx` | aviso cuando hay pagos que bloquean editar o eliminar |
+| `LoanInterestStatus.jsx` | estado del interés ordinario y sus acciones `Pay interest` y `Revert interest` |
+| `LoanLockedAlert.jsx` | aviso que indica revertir pagos para volver a editar o eliminar |
 | `LoanUpdatedAlert.jsx` | aviso descartable tras volver de la edición |
 | `LoanDetailsError.jsx` | error de carga, `404` y reintento |
 | `DeleteLoanDialog.jsx` | confirmación de eliminación con `Dialog` |
@@ -150,17 +151,18 @@ la carpeta correspondiente con el alias `@/`.
 | `EditLoanError.jsx` | error de carga, `404` y reintento |
 | `EditLockedAlert.jsx` | aviso cuando los pagos bloquean la edición |
 
-### Modales de pago
+### Pagos y reversión
 
-`src/components/payments/` reúne la UI de registro de pagos, separada de los
-flujos de préstamos:
+`src/components/payments/` reúne la UI de registro y reversión de pagos,
+separada de los flujos de préstamos:
 
 | Archivo | Responsabilidad |
 | --- | --- |
 | `InstallmentPaymentModal.jsx` | confirma el pago de una cuota contra `/payments/installment` |
 | `InterestPaymentModal.jsx` | confirma el pago del interés separado contra `/payments/interest` |
 | `PaymentModalFields.jsx` | monto bloqueado y `paid_at` opcional compartidos |
-| `PaymentSuccessAlert.jsx` | aviso descartable `role="status"` tras registrar un pago |
+| `PaymentSuccessAlert.jsx` | aviso descartable `role="status"` tras registrar o revertir un pago |
+| `RevertPaymentDialog.jsx` | confirmación de reversión con `Dialog` y botón destructivo |
 
 ## Estilos
 
@@ -211,7 +213,8 @@ y, si existe, añade `Authorization: Bearer <token>` a todas las peticiones.
 Por eso las vistas invocan métodos con rutas relativas a `/api`
 (`api.post("/auth/login")`, `api.get("/roles")`, `api.get("/stakeholders")`,
 `api.post("/loans")`, `api.post("/payments/installment")`,
-`api.post("/payments/interest")`) y no necesitan construir el header ni repetir el prefijo
+`api.post("/payments/interest")`, `api.get("/payments")`,
+`api.delete("/payments/:id")`) y no necesitan construir el header ni repetir el prefijo
 `/api`. El interceptor de respuesta elimina
 `token` y emite `auth:unauthorized` ante un `401`, salvo en `/auth/login` y
 `/auth/signup` para no ocultar errores de credenciales. `AuthProvider` escucha
@@ -320,6 +323,12 @@ zona antes de enviarlo. Tras el `201` se cierra el modal, se llama a
 `refreshLoan()` y se muestra un aviso `role="status"`; por eso el detalle
 distingue entre `loading` inicial y `refreshing` posterior.
 
+La reversión es independiente del registro de pagos: `usePayments` carga
+`/api/payments?loan_id=...`, `paymentHistory.js` asocia cada pago con su cuota o
+interés y `usePaymentRevert` envía `DELETE /api/payments/:id` usando solo el
+`payment_id`. `RevertPaymentDialog` pide confirmación; tras el `204` se recargan
+el préstamo y el historial, se muestra un aviso y se habilitan `Edit` y `Delete`.
+
 La edición vive en `src/client/views/EditLoan.jsx`. El hook `useEditLoanForm`
 carga el préstamo, convierte la respuesta al estado del formulario con
 `loanToFormState` y reutiliza `useLoanFormState`, por lo que comparte la
@@ -342,8 +351,8 @@ recrea cuotas, fiadores y garantías en cada `PUT`.
 - El estado de sesión vive en `src/client/contexts/`; consumirlo con
   `useAuth()` desde cualquier vista.
 - Los helpers puros de dominio van en `src/client/utils/`, como
-  `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanEdit.js` y
-  `loanPayment.js`.
+  `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanEdit.js`,
+  `loanPayment.js` y `paymentHistory.js`.
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en

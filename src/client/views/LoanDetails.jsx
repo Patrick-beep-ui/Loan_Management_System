@@ -1,7 +1,9 @@
+import LoanErrorAlert from "@/components/loans/create/ErrorAlert";
 import { Card, CardContent } from "@/components/ui/card";
 import InstallmentPaymentModal from "@/components/payments/InstallmentPaymentModal";
 import InterestPaymentModal from "@/components/payments/InterestPaymentModal";
 import PaymentSuccessAlert from "@/components/payments/PaymentSuccessAlert";
+import RevertPaymentDialog from "@/components/payments/RevertPaymentDialog";
 import DeleteLoanDialog from "@/components/loans/details/DeleteLoanDialog";
 import LoanCollateralsList from "@/components/loans/details/LoanCollateralsList";
 import LoanDetailsError from "@/components/loans/details/LoanDetailsError";
@@ -14,13 +16,27 @@ import LoanSummary from "@/components/loans/details/LoanSummary";
 import LoanUpdatedAlert from "@/components/loans/details/LoanUpdatedAlert";
 import { useLoanDetails } from "@/client/hooks/useLoanDetails";
 import { useLoanPayment } from "@/client/hooks/useLoanPayment";
+import { usePaymentRevert } from "@/client/hooks/usePaymentRevert";
+import { usePayments } from "@/client/hooks/usePayments";
 
 export default function LoanDetails() {
   const details = useLoanDetails();
+  const payments = usePayments({ loanId: details.id });
+
+  async function refreshAll() {
+    await Promise.all([details.refreshLoan(), payments.reload()]);
+  }
+
   const payment = useLoanPayment({
     loanId: details.id,
-    onPaid: details.refreshLoan,
+    onPaid: refreshAll,
   });
+  const revert = usePaymentRevert({ onReverted: refreshAll });
+  const actionsDisabled =
+    details.refreshing ||
+    payments.loading ||
+    payment.submitting ||
+    revert.reverting;
 
   return (
     <main className="min-h-screen bg-background px-4 py-10">
@@ -44,6 +60,12 @@ export default function LoanDetails() {
             message={payment.success}
             onDismiss={payment.dismissSuccess}
           />
+          <PaymentSuccessAlert
+            visible={Boolean(revert.success)}
+            message={revert.success}
+            onDismiss={revert.dismissSuccess}
+          />
+          <LoanErrorAlert message={payments.error} />
           <LoanDetailsError
             error={details.error}
             notFound={details.notFound}
@@ -60,8 +82,17 @@ export default function LoanDetails() {
                 <LoanSummary loan={details.loan} />
                 <LoanInstallmentsTable
                   installments={details.loan.installments}
+                  payments={payments.payments}
                   onPay={payment.openInstallment}
-                  paymentDisabled={details.refreshing}
+                  onRevert={(recordedPayment, installment) =>
+                    revert.open({
+                      paymentId: recordedPayment.payment_id,
+                      label: `Installment #${installment.installment_number}`,
+                      amount: recordedPayment.amount,
+                      paidAt: recordedPayment.paid_at,
+                    })
+                  }
+                  paymentDisabled={actionsDisabled}
                 />
                 <div className="grid gap-8 lg:grid-cols-2">
                   <LoanGuarantorsList
@@ -73,8 +104,17 @@ export default function LoanDetails() {
                 </div>
                 <LoanInterestStatus
                   loan={details.loan}
+                  payments={payments.payments}
                   onPay={payment.openInterest}
-                  paymentDisabled={details.refreshing}
+                  onRevert={(recordedPayment) =>
+                    revert.open({
+                      paymentId: recordedPayment.payment_id,
+                      label: "Ordinary interest",
+                      amount: recordedPayment.amount,
+                      paidAt: recordedPayment.paid_at,
+                    })
+                  }
+                  paymentDisabled={actionsDisabled}
                 />
               </div>
             )
@@ -113,6 +153,15 @@ export default function LoanDetails() {
         error={payment.error}
         submitting={payment.submitting}
         onConfirm={payment.confirmPayment}
+      />
+
+      <RevertPaymentDialog
+        open={revert.isOpen}
+        target={revert.target}
+        error={revert.error}
+        reverting={revert.reverting}
+        onClose={revert.close}
+        onConfirm={revert.confirmRevert}
       />
     </main>
   );
