@@ -22,7 +22,7 @@ El historial de cambios está en [`CHANGELOG.md`](CHANGELOG.md).
 | `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | stub |
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | implementado |
 | `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | implementado |
-| `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | stub |
+| `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | implementado |
 | `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | stub |
 
 ## Permisos
@@ -53,8 +53,15 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
   `/api/stakeholders` para crear, editar y eliminar; `StakeholderFormFields` se
   reutiliza también en el diálogo de usuarios. La tabla oculta las personas
   vinculadas a cuentas.
+- `src/client/hooks/useAdminLoans.js` y `src/components/admin/loans/`
+  (`AdminLoansHeader`, `AdminLoansAlerts`, `AdminLoansTable`, `AdminLoanRow` y
+  `ReassignLenderDialog`): listan préstamos con `GET /api/loans` y reasignan el
+  prestamista con `PATCH /api/loans/:id`. Las opciones del diálogo vienen de
+  `GET /api/users` filtrado a cuentas con rol `lender`; se excluye al cliente
+  del préstamo y se muestran estados de carga, error y éxito.
 - `src/client/views/admin/*.jsx`: las fases de dominio reemplazan solo el
-  contenido de su archivo; `/admin/users` y `/admin/stakeholders` ya no son stubs.
+  contenido de su archivo; `/admin/users`, `/admin/stakeholders` y
+  `/admin/loans` ya no son stubs.
 - `src/components/loans/list/LoanListHeader.jsx`: enlace `Admin` para admins.
 
 ## Contrato de fases posteriores
@@ -70,8 +77,12 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
   para cualquier cuenta autenticada y los formularios de préstamos no cambian.
   La vista oculta las personas referenciadas por `user.stakeholder_id`, sin
   filtrar la API.
-- P5 loans: las rutas de préstamos aplican `requireAdminForLenderChange`; la
-  vista admin reutiliza los componentes de `loans`.
+- P5 loans: `POST`, `PUT` y `PATCH` de `/api/loans` aplican
+  `requireAdminForLenderChange`; la vista admin lista con `GET /api/loans` y
+  reasigna prestamistas con `PATCH /api/loans/:id`, sin endpoints bajo
+  `/api/admin`. El desplegable solo ofrece cuentas con rol `lender` leídas de
+  `GET /api/users`; el listado y el diálogo reutilizan los helpers de formato de
+  `loans` y los primitivos shadcn existentes.
 - P6 payments: historial, registro y reversión con los endpoints existentes.
 - P7 dashboard: métricas calculadas en el cliente desde `GET /api/loans` y
   `GET /api/payments`, sin un endpoint propio.
@@ -87,8 +98,10 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
 - `src/components/admin/AdminPlaceholder.jsx`
 - `src/components/admin/users/`
 - `src/components/admin/stakeholders/`
+- `src/components/admin/loans/`
 - `src/client/hooks/useAdminUsers.js`
 - `src/client/hooks/useAdminStakeholders.js`
+- `src/client/hooks/useAdminLoans.js`
 - `src/client/utils/userForm.js`
 - `src/client/utils/stakeholderForm.js`
 - `src/client/views/admin/`

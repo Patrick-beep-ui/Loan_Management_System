@@ -1,5 +1,28 @@
 # Changelog — frontend
 
+### 2026-11-25 — Opciones de prestamista para reasignación
+
+- Change: `useAdminLoans` construye el desplegable de `Reassign lender` desde
+  `GET /api/users`, filtrando cuentas con `Role.role_name = "lender"` en lugar de
+  usar todos los stakeholders. Las opciones se deduplican por
+  `stakeholder_id`, muestran nombre y email y conservan las cuentas inactivas.
+- Impact: solo se puede reasignar un préstamo a personas vinculadas a una cuenta
+  de prestamista. Si el prestamista actual ya no tiene ese rol, el diálogo no lo
+  preselecciona y exige elegir una opción válida.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
+### 2026-11-25 — P5 administración de préstamos
+
+- Change: `AdminLoans` dejó de ser stub. Se añadieron `useAdminLoans` y cinco
+  componentes bajo `src/components/admin/loans/` para listar préstamos y
+  reasignar el prestamista con `PATCH /api/loans/:id`.
+- Impact: el panel usa `GET /api/loans` y `GET /api/stakeholders`, reutiliza los
+  formatos de `loanFormat.js` y muestra estados de carga, vacío, error y éxito.
+  El diálogo excluye al cliente actual y valida el prestamista elegido.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-25 — Edición conjunta de usuarios y filtro de stakeholders
 
 - Change: se extrajo `StakeholderFormFields` y se reutilizó en el diálogo de

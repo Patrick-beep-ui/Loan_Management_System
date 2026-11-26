@@ -55,6 +55,14 @@ Los controllers pasan `req.user` (`user_id`, `role_id`, `role_name`,
 
 - `admin` (`role_name = "admin"`): acceso global; `lender_id` sigue siendo
   configurable en creación, reemplazo y PATCH.
+- `requireAdminForLenderChange` se aplica en `POST`, `PUT` y `PATCH` desde
+  `loanRoutes.js`: rechaza con `403 Only admins can change the lender` cualquier
+  `lender_id` distinto del propio `stakeholder_id` de una cuenta `lender`. Los
+  services mantienen sus reglas de propiedad y validación.
+- El panel `/admin/loans` reutiliza `GET /api/loans` para listar y
+  `PATCH /api/loans/:id` con `{ "lender_id" }` para reasignar el prestamista; no
+  hay endpoints nuevos bajo `/api/admin`. El desplegable toma sus opciones de
+  `GET /api/users` filtrando cuentas con rol `lender`.
 - `lender`: sus consultas y mutaciones se filtran por
   `lender_id = req.user.stakeholder_id`. Al crear, el service deriva
   `lender_id` del usuario: si el payload envía otro valor responde `403`. En
@@ -185,7 +193,8 @@ responde `400`.
   prestamista igual al cliente o `:id` inválido.
 - `401` token ausente o inválido (lo aplica `checkAuth`).
 - `403` prestamista no vinculado, `lender_id` distinto al del usuario `lender`
-  o intento de cambiarlo en PATCH.
+  en cualquier mutación (`Only admins can change the lender` cuando lo detecta
+  el guard) o intento de cambiarlo en PATCH.
 - `404` préstamo inexistente o perteneciente a otro prestamista.
 - `409` referencia inválida, `national_id` inline duplicado (mensaje `A stakeholder with that national ID already exists`), fiador duplicado
   (un `stakeholder_id` y un stakeholder inline que resuelve al mismo registro),
@@ -196,6 +205,7 @@ responde `400`.
 ## Archivos
 
 - `src/server/routes/loanRoutes.js` (montado en `/api/loans`)
+- `src/server/middlewares/requireAdminForLenderChange.js`
 - `src/server/controllers/loanController.js`
 - `src/server/services/loanService.js`
 - `src/server/utils/validators/loanValidation.js`

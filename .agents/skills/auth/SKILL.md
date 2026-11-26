@@ -86,7 +86,8 @@ guard para los formularios de préstamos.
 (`src/server/middlewares/requireAdminForLenderChange.js`) permite enviar
 `lender_id` solo a `admin` o cuando el valor coincide con el `stakeholder_id`
 de la cuenta autenticada; cualquier otro valor responde `403 Only admins can
-change the lender`. Los validadores de dominio mantienen sus reglas habituales.
+change the lender`. Se aplica en `POST`, `PUT` y `PATCH` de `loanRoutes.js`. Los
+validadores de dominio mantienen sus reglas habituales.
 
 En el cliente, `RequireAdmin` (`src/client/contexts/AuthContext.jsx`) usa
 `user.Role.role_name` para mostrar el panel `/admin` solo a admins; es una

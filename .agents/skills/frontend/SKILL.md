@@ -32,7 +32,7 @@ protege `/admin` y sus hijos. El resto de las rutas son públicas:
 | `/admin/dashboard` | `AdminDashboard` (stub) | `src/client/views/admin/AdminDashboard.jsx` | admin |
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | admin |
-| `/admin/loans` | `AdminLoans` (stub) | `src/client/views/admin/AdminLoans.jsx` | admin |
+| `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | admin |
 | `/admin/payments` | `AdminPayments` (stub) | `src/client/views/admin/AdminPayments.jsx` | admin |
 | `/test` | `Test` (vista de prueba) | `src/client/Test.jsx` | público |
 
@@ -82,8 +82,8 @@ flujo de autenticación.
 - `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
   `Signup`, `Test.jsx` y los hooks `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
-  `usePayments`, `usePaymentRevert`, `useAdminUsers` y `useAdminStakeholders`
-  importan esa instancia en lugar de crear clientes propios.
+  `usePayments`, `usePaymentRevert`, `useAdminUsers`, `useAdminStakeholders` y
+  `useAdminLoans` importan esa instancia en lugar de crear clientes propios.
 
 ## Componentes de UI
 
@@ -125,6 +125,11 @@ Conviene tenerlo presente al agregar componentes nuevos.
 | `stakeholders/StakeholderFormFields.jsx` | campos reutilizables de persona con validación por campo |
 | `stakeholders/AdminStakeholderFormDialog.jsx` | formulario de alta y edición que reutiliza `StakeholderFormFields` |
 | `stakeholders/DeleteStakeholderDialog.jsx` | confirmación de eliminación con `Dialog` |
+| `loans/AdminLoansHeader.jsx` | título, descripción y botón de actualización |
+| `loans/AdminLoansAlerts.jsx` | avisos de error y éxito del flujo de préstamos |
+| `loans/AdminLoansTable.jsx` | tabla con estados de carga y vacío |
+| `loans/AdminLoanRow.jsx` | fila con importes formateados y acción `Reassign lender` |
+| `loans/ReassignLenderDialog.jsx` | selección de prestamista y envío de `PATCH /api/loans/:id` |
 
 `src/components/loans/` reúne la UI específica de préstamos, separada por
 propósito en `create/`, `list/`, `details/` y `edit/`. Las vistas importan desde
@@ -298,8 +303,14 @@ más `PUT /api/stakeholders/:id`; si no hay persona vinculada solo se muestran
 rol y estado. `/admin/stakeholders` usa `useAdminStakeholders` sobre el CRUD
 existente de `/api/stakeholders`: lista con `GET`, crea con `POST`, edita con
 `PUT` y elimina con `DELETE`, con validación local y confirmación antes de
-borrar; oculta en cliente las personas vinculadas a cuentas. `LoanListHeader`
-muestra el enlace `Admin` solo cuando `user.Role.role_name === "admin"`. El
+borrar; oculta en cliente las personas vinculadas a cuentas. `/admin/loans` usa
+`useAdminLoans` sobre `GET /api/loans` y `GET /api/users`; el diálogo
+`Reassign lender` toma sus opciones de las cuentas con `Role.role_name =
+"lender"`, excluye al cliente del préstamo, envía `PATCH /api/loans/:id` con
+`lender_id` y recarga el listado tras guardar. Las cuentas inactivas con rol
+`lender` siguen apareciendo.
+`LoanListHeader` muestra el enlace `Admin` solo cuando
+`user.Role.role_name === "admin"`. El
 contrato completo, incluido el orden de las fases posteriores, vive en el módulo
 `admin`.
 

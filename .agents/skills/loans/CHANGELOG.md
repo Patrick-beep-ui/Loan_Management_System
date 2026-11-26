@@ -1,5 +1,27 @@
 # Changelog — loans
 
+### 2026-11-25 — Opciones de prestamista en el panel admin
+
+- Change: el desplegable de reasignación del panel `/admin/loans` se construye
+  desde `GET /api/users` filtrado a cuentas con `Role.role_name = "lender"`, en
+  lugar de mostrar todos los stakeholders.
+- Impact: el contrato de la API de préstamos no cambia; solo se restringe la UI
+  a prestamistas con cuenta. Las cuentas inactivas con rol `lender` siguen
+  disponibles como opciones.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
+### 2026-11-25 — P5 administración de préstamos
+
+- Change: `loanRoutes.js` aplica `requireAdminForLenderChange` en `POST`, `PUT` y
+  `PATCH`. El panel `/admin/loans` lista todos los préstamos con `GET /api/loans`
+  y reasigna el prestamista con `PATCH /api/loans/:id`.
+- Impact: una cuenta `lender` no puede enviar un `lender_id` ajeno en ninguna
+  mutación; recibe `403 Only admins can change the lender`. Un `admin` puede
+  reasignar prestamistas incluso en préstamos con pagos, sin endpoints nuevos.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-23 — Edición parcial de préstamos con pagos
 
 - Change: `updateLoan` ahora consulta si existen pagos y aplica una lista blanca:

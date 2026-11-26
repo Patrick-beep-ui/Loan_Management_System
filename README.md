@@ -82,7 +82,7 @@ La validación y normalización de payloads vive en `src/server/utils/validators
 
 Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
 
-`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/admin`, `/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) exige `Authorization: Bearer <token>`. `checkAuth` verifica el JWT y consulta `users`/`Role` para reconstruir `req.user` con el rol y el stakeholder vigentes en la base: una cuenta con `is_active = false` responde `401`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`. `/api/admin` está protegido además por `requireAdmin` (solo `admin`) y ahora incluye `PATCH /api/admin/users/:userId` para cambiar `role_name` e `is_active`; el listado sigue en `GET /api/users`. `requireAdmin` también protege `POST`, `PUT`, `PATCH` y `DELETE` de `/api/stakeholders`, mientras que sus `GET` siguen disponibles para cualquier cuenta autenticada. `requireAdminForLenderChange` impide que un `lender` asigne un prestamista distinto del suyo. El signup público solo crea cuentas `lender`. Las rutas de préstamos y pagos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista al crear préstamos.
+`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/admin`, `/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) exige `Authorization: Bearer <token>`. `checkAuth` verifica el JWT y consulta `users`/`Role` para reconstruir `req.user` con el rol y el stakeholder vigentes en la base: una cuenta con `is_active = false` responde `401`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`. `/api/admin` está protegido además por `requireAdmin` (solo `admin`) y ahora incluye `PATCH /api/admin/users/:userId` para cambiar `role_name` e `is_active`; el listado sigue en `GET /api/users`. `requireAdmin` también protege `POST`, `PUT`, `PATCH` y `DELETE` de `/api/stakeholders`, mientras que sus `GET` siguen disponibles para cualquier cuenta autenticada. `requireAdminForLenderChange` impide que un `lender` asigne un prestamista distinto del suyo en `POST`, `PUT` y `PATCH` de `/api/loans`. El signup público solo crea cuentas `lender`. Las rutas de préstamos y pagos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista al crear préstamos.
 
 ## Frontend
 
@@ -101,7 +101,7 @@ El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` d
 | `/admin/dashboard` | `AdminDashboard` (stub) | admin |
 | `/admin/users` | `AdminUsers` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` | admin |
-| `/admin/loans` | `AdminLoans` (stub) | admin |
+| `/admin/loans` | `AdminLoans` | admin |
 | `/admin/payments` | `AdminPayments` (stub) | admin |
 | `/test` | `Test` (vista de prueba) | público |
 
@@ -109,7 +109,7 @@ El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` d
 
 ## Panel de administración
 
-El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts/`), `AdminNav` (`src/components/admin/`) y vistas en `src/client/views/admin/`. `RequireAdmin`, definido en `AuthContext.jsx`, redirige a `/loans` a las cuentas que no son `admin`; la autorización real sigue en la API, donde `/api/admin/*` está protegido por `requireAdmin`. `LoanListHeader` muestra el enlace `Admin` solo para administradores. `/admin/users` lista cuentas con `useAdminUsers` y permite editar rol, estado y datos del stakeholder vinculado en un solo diálogo; `/admin/stakeholders` usa `useAdminStakeholders` para crear, editar y eliminar personas con el CRUD existente de `/api/stakeholders`, ocultando a las que están vinculadas a cuentas.
+El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts/`), `AdminNav` (`src/components/admin/`) y vistas en `src/client/views/admin/`. `RequireAdmin`, definido en `AuthContext.jsx`, redirige a `/loans` a las cuentas que no son `admin`; la autorización real sigue en la API, donde `/api/admin/*` está protegido por `requireAdmin`. `LoanListHeader` muestra el enlace `Admin` solo para administradores. `/admin/users` lista cuentas con `useAdminUsers` y permite editar rol, estado y datos del stakeholder vinculado en un solo diálogo; `/admin/stakeholders` usa `useAdminStakeholders` para crear, editar y eliminar personas con el CRUD existente de `/api/stakeholders`, ocultando a las que están vinculadas a cuentas. `/admin/loans` usa `useAdminLoans` para listar todos los préstamos y reasignar el prestamista mediante un diálogo que envía `PATCH /api/loans/:id`; sus opciones vienen de `/api/users` filtrado a cuentas con rol `lender`.
 
 | Ruta | Vista | Estado |
 | --- | --- | --- |
@@ -117,14 +117,14 @@ El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts
 | `/admin/dashboard` | `AdminDashboard` | stub |
 | `/admin/users` | `AdminUsers` | implementado |
 | `/admin/stakeholders` | `AdminStakeholders` | implementado |
-| `/admin/loans` | `AdminLoans` | stub |
+| `/admin/loans` | `AdminLoans` | implementado |
 | `/admin/payments` | `AdminPayments` | stub |
 
 Las fases de dominio reemplazan el contenido de esos stubs sin tocar `main.jsx`:
 
 - P3 users: `/admin/users` reutiliza `GET /api/users` para listar y usa `PATCH /api/admin/users/:userId` para cambiar rol y estado. El mismo diálogo edita los datos del stakeholder vinculado con `GET /api/stakeholders/:id` y `PUT /api/stakeholders/:id`; si no hay persona vinculada solo se muestran rol y estado.
 - P4 stakeholders: el panel reutiliza `GET`, `POST`, `PUT` y `DELETE` de `/api/stakeholders`. Las mutaciones usan `requireAdmin`; ambos `GET` siguen disponibles para cuentas autenticadas y el formulario de préstamos no cambia. La vista oculta a las personas vinculadas a cuentas, sin filtrar la API.
-- P5 loans: las rutas de préstamos aplican `requireAdminForLenderChange`; la vista admin reutiliza los componentes de `loans`.
+- P5 loans: `POST`, `PUT` y `PATCH` de `/api/loans` aplican `requireAdminForLenderChange`; la vista admin lista con `GET /api/loans` y reasigna prestamistas con `PATCH /api/loans/:id`, sin endpoints nuevos bajo `/api/admin`.
 - P6 payments: historial, registro y reversión con los endpoints existentes.
 - P7 dashboard: métricas calculadas en el cliente desde `GET /api/loans` y `GET /api/payments`, sin endpoint propio.
 
@@ -149,15 +149,15 @@ src/
 │  ├─ App.jsx               componente principal (demo de Vite)
 │  ├─ App.css / index.css   estilos base y tokens de Tailwind/shadcn
 │  ├─ contexts/             AuthContext: provider, hook y guards
-│  ├─ hooks/                hooks: useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails, useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert, useAdminUsers, useAdminStakeholders
+│  ├─ hooks/                hooks: useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails, useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert, useAdminUsers, useAdminStakeholders, useAdminLoans
 │  ├─ layouts/              shell `AdminLayout`
 │  ├─ Test.jsx              vista de prueba (/test)
 │  ├─ views/                vistas: Login, Signup, Loans, CreateLoan, LoanDetails, EditLoan
-│  │  └─ admin/             vistas del panel: Dashboard (stub), Users, Stakeholders, Loans (stub), Payments (stub)
+│  │  └─ admin/             vistas del panel: Dashboard (stub), Users, Stakeholders, Loans, Payments (stub)
 │  ├─ utils/                helpers: loanFormat, loanForm, loanSchedule, loanEdit, loanPayment, paymentHistory, userForm, stakeholderForm
 │  └─ assets/
 ├─ components/
-│  ├─ admin/                AdminNav, AdminPlaceholder, users/ y stakeholders/ (tablas, campos compartidos, formularios y confirmaciones)
+│  ├─ admin/                AdminNav, AdminPlaceholder, users/, stakeholders/ y loans/ (tablas, campos compartidos, formularios, reasignación y confirmaciones)
 │  ├─ loans/                componentes de préstamos por propósito
 │  │  ├─ create/            formulario, fiadores, garantías y vista previa
 │  │  ├─ list/              encabezado, avisos y tabla del listado
@@ -269,7 +269,7 @@ Las cuotas deben numerarse desde 1, tener fechas únicas y ascendentes, y montos
 
 Cada fiador puede referenciar un `stakeholder_id` existente o enviar los campos de un stakeholder nuevo, pero no ambos. El `national_id` de un stakeholder inline debe ser único: repetir uno ya registrado responde `409`. Las garantías requieren `description` y aceptan `estimated_value` opcional. Las respuestas incluyen `interest_amount`, `total_to_pay`, cuotas ordenadas, fiadores, garantías e `interestPayment`.
 
-Para cuentas `lender`, `lender_id` debe ser el stakeholder vinculado al usuario: el service lo deriva del JWT y responde `403` si se envía otro valor. Un préstamo de otro prestamista responde `404` aunque el `:id` exista. Los usuarios `admin` mantienen acceso global y pueden especificar cualquier `lender_id`.
+Para cuentas `lender`, `lender_id` debe ser el stakeholder vinculado al usuario: el service lo deriva del JWT y responde `403` si se envía otro valor. Un préstamo de otro prestamista responde `404` aunque el `:id` exista. Los usuarios `admin` mantienen acceso global y pueden especificar cualquier `lender_id`. En `POST`, `PUT` y `PATCH`, un `lender` que envía otro prestamista recibe `403 Only admins can change the lender`.
 
 `disbursed_at` debe incluir hora y acepta ISO 8601 (`2026-01-15T10:30:00Z`, con zona opcional) o formato MySQL (`2026-01-15 10:30:00`); sin zona se interpreta como hora local del servidor y la respuesta usa ISO UTC. `loan_amount` debe ser mayor que 0, tener máximo 2 decimales y llegar hasta `9999999999.99`; `interest_rate` va de 0 a `999.9999`.
 

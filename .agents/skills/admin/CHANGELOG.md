@@ -1,5 +1,27 @@
 # Changelog — admin
 
+## 2026-11-25 — Reasignación limitada a cuentas lender
+
+- Change: `useAdminLoans` dejó de usar `GET /api/stakeholders` para las opciones
+  de prestamista y ahora filtra `GET /api/users` por `Role.role_name = "lender"`.
+- Impact: `/admin/loans` solo ofrece prestamistas vinculados a una cuenta con ese
+  rol; se conservan las cuentas inactivas y se deduplican resultados. El payload
+  de `PATCH /api/loans/:id` no cambia.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
+## 2026-11-25 — P5 préstamos implementado
+
+- Change: `/admin/loans` dejó de ser stub. Se añadieron `useAdminLoans` y cinco
+  componentes bajo `src/components/admin/loans/` para listar préstamos y abrir
+  un diálogo de reasignación de prestamista.
+- Impact: la vista usa `GET /api/loans` (global para `admin`) y
+  `PATCH /api/loans/:id` con `lender_id`, sin duplicar endpoints bajo
+  `/api/admin`. El diálogo excluye al cliente actual y valida la selección antes
+  de enviar.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ## 2026-11-25 — Ajustes de edición en users y stakeholders
 
 - Change: `/admin/stakeholders` oculta a las personas vinculadas a cuentas y el

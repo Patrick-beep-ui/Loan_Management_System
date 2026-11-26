@@ -1,5 +1,14 @@
 # Changelog — auth
 
+## 2026-11-25 — Guard de prestamista montado en préstamos
+
+- Change: `requireAdminForLenderChange` se aplica en `POST`, `PUT` y `PATCH` de
+  `/api/loans` desde `loanRoutes.js`.
+- Impact: un `lender` que envía un `lender_id` distinto de su `stakeholder_id`
+  recibe `403 Only admins can change the lender`; un `admin` continúa con acceso
+  global y los validadores de dominio siguen aplicando.
+- Verification: `pnpm build` compiló correctamente. Sin pruebas de API en vivo.
+
 ## 2026-11-25 — `requireAdmin` en mutaciones de stakeholders
 
 - Change: `requireAdmin` se aplicó a `POST`, `PUT`, `PATCH` y `DELETE` en
