@@ -1,5 +1,14 @@
 # Changelog — database
 
+## 2026-11-25 — Columna `is_active` en `users`
+
+- Change: nueva migración
+  `database/migrations/2026-11-25-admin-user-management.sql` que agrega
+  `users.is_active BOOLEAN NOT NULL DEFAULT TRUE` después de `role_id`.
+- Impact: las cuentas existentes quedan activas; la desactivación es una
+  actualización de esta columna y `checkAuth` la verifica en cada petición.
+- Verification: migración escrita y revisada; no se aplicó en esta sesión.
+
 ## 2026-11-17 — Renombrado de `operator` a `lender`
 
 - Change: nueva migración

@@ -68,6 +68,10 @@ export async function login(payload = {}) {
         throw new UnauthorizedError("Invalid email or password");
     }
 
+    if (user.is_active === false || user.is_active === 0) {
+        throw new UnauthorizedError("Account is inactive");
+    }
+
     return {
         user_id: user.user_id,
         stakeholder_id: user.stakeholder_id,

@@ -3,6 +3,7 @@ import express from "express";
 import "./models/associations.js";
 
 import { checkAuth } from "./middlewares/checkAuth.js";
+import AdminRouter from "./routes/adminRoutes.js";
 import AuthRouter from "./routes/authRoutes.js";
 import UserRouter from "./routes/userRoutes.js";
 import RoleRouter from "./routes/roleRoutes.js";
@@ -17,6 +18,7 @@ api.use("/auth", AuthRouter); // public: signup, login
 
 api.use(checkAuth); // every route registered below requires a valid token
 
+api.use("/admin", AdminRouter);
 api.use("/users", UserRouter); // /api/users
 api.use("/roles", RoleRouter); // /api/roles
 api.use("/stakeholders", StakeholderRouter); // /api/stakeholders

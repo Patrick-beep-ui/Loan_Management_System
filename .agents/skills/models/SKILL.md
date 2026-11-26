@@ -70,5 +70,8 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
   columna `date` de MySQL y evitar desplazamientos de zona horaria.
 - `Loan.disbursed_at` usa `DataTypes.DATE` para coincidir con la columna
   `datetime`; la API lo serializa como ISO UTC.
+- `users.is_active` es booleano no nulo con valor por defecto `true`.
+  `checkAuth` lo consulta en cada petición, por lo que desactivar una cuenta
+  invalida sus tokens existentes sin depender de la expiración del JWT.
 - Los modelos no crean ni alteran el esquema ni usan `sequelize.sync()`. Los
   cambios de esquema se aplican manualmente desde `database/migrations/`.

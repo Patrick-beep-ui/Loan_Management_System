@@ -22,6 +22,9 @@ nullable, adds `status`, adds the unique key on `loan_id`, and adds
 `chk_loan_interest_payment_state`.
 `2026-11-17-rename-operator-role-to-lender.sql` renames the `operator` role to
 `lender` in place, preserving `role_id` and therefore existing user assignments.
+`2026-11-25-admin-user-management.sql` adds `users.is_active` as a non-null
+boolean defaulting to `TRUE`; `checkAuth` reads it on every authenticated
+request.
 
 Run a migration with the same `mysql2` connection method described below, then
 verify the affected columns, keys, and constraints with `information_schema`.

@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
 
-export function checkAuth(req, res, next) {
+import Role from "../models/Role.js";
+import User from "../models/User.js";
+
+export async function checkAuth(req, res, next) {
     const header = req.headers.authorization || "";
     const [scheme, token] = header.split(" ");
 
@@ -8,16 +11,37 @@ export function checkAuth(req, res, next) {
         return res.status(401).json({ error: "Authentication required" });
     }
 
+    let payload;
+
     try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    try {
+        const user = await User.findByPk(payload.user_id, {
+            attributes: ["user_id", "role_id", "stakeholder_id", "is_active"],
+            include: [{ model: Role, attributes: ["role_name"] }]
+        });
+
+        if (!user) {
+            return res.status(401).json({ error: "Invalid or expired token" });
+        }
+
+        if (user.is_active === false || user.is_active === 0) {
+            return res.status(401).json({ error: "Account is inactive" });
+        }
+
         req.user = {
-            user_id: payload.user_id,
-            role_id: payload.role_id,
-            role_name: payload.role_name,
-            stakeholder_id: payload.stakeholder_id
+            user_id: user.user_id,
+            role_id: user.role_id,
+            role_name: user.Role?.role_name ?? null,
+            stakeholder_id: user.stakeholder_id
         };
         return next();
     } catch (error) {
-        return res.status(401).json({ error: "Invalid or expired token" });
+        console.error("Error authenticating request:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
     }
 }

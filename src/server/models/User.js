@@ -21,6 +21,11 @@ const User = connection.define("User", { // table name = users
     },
     role_id: {
         type: DataTypes.INTEGER,
+    },
+    is_active: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
     }
 }, {
     tableName: "users",

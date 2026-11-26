@@ -1,5 +1,15 @@
 # Changelog — models
 
+## 2026-11-25 — Flag `is_active` en `User`
+
+- Change: `User.js` declara `is_active` como booleano no nulo con valor por
+  defecto `true`, reflejando la columna agregada por
+  `database/migrations/2026-11-25-admin-user-management.sql`.
+- Impact: `checkAuth` y `login` pueden rechazar cuentas desactivadas. El esquema
+  se aplica manualmente; los modelos siguen sin usar `sequelize.sync()`.
+- Verification: `pnpm build` y revisión del diff; la migración no se aplicó en
+  esta sesión.
+
 ## 2026-11-17 — Roles `admin` y `lender`
 
 - Change: se documenta que `roles` contiene `admin` y `lender` tras renombrar

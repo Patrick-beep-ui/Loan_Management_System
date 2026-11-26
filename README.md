@@ -16,7 +16,7 @@ El propósito es **reemplazar el control manual de préstamos** por un registro 
 | Entidad | Qué representa |
 | --- | --- |
 | `stakeholders` | Personas que participan en los préstamos. Una misma persona puede ser cliente en un préstamo y fiadora en otro. |
-| `users` | Cuentas de acceso vinculadas a una persona. |
+| `users` | Cuentas de acceso vinculadas a una persona, con `is_active` para desactivarlas. |
 | `roles` | Roles de acceso al sistema: `admin` y `lender`. |
 | `loans` | Préstamos que vinculan a un prestamista con un cliente y registran las condiciones del desembolso y el modo de interés (`included`/`separate`). |
 | `loan_installments` | Cuotas de un préstamo. Cada una tiene su propio monto, vencimiento, estado y tasa diaria de mora. |
@@ -82,7 +82,7 @@ La validación y normalización de payloads vive en `src/server/utils/validators
 
 Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
 
-`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) exige `Authorization: Bearer <token>`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`; `checkAuth` los expone en `req.user`. El signup público solo crea cuentas `lender`. Las rutas de préstamos y pagos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista al crear préstamos.
+`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/admin`, `/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) exige `Authorization: Bearer <token>`. `checkAuth` verifica el JWT y consulta `users`/`Role` para reconstruir `req.user` con el rol y el stakeholder vigentes en la base: una cuenta con `is_active = false` responde `401`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`. `/api/admin` está protegido además por `requireAdmin` (solo `admin`) y `requireAdminForLenderChange` impide que un `lender` asigne un prestamista distinto del suyo. El signup público solo crea cuentas `lender`. Las rutas de préstamos y pagos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista al crear préstamos.
 
 ## Frontend
 
@@ -111,7 +111,8 @@ vite.config.js              plugins de Vite y alias `@` → `./src`
 database/
 └─ migrations/
    ├─ 2026-11-16-loan-interest-payment-mode.sql
-   └─ 2026-11-17-rename-operator-role-to-lender.sql
+   ├─ 2026-11-17-rename-operator-role-to-lender.sql
+   └─ 2026-11-25-admin-user-management.sql
 
 src/
 ├─ client/                  interfaz React (Vite)
@@ -137,13 +138,15 @@ src/
 │  └─ utils.js              reexporta `cn`
 └─ server/                  API Express
    ├─ main.js               servidor, monta /api y escucha en el puerto 3000
-   ├─ api.js                router global: monta /auth y luego checkAuth + /users, /roles, /stakeholders, /loans y /payments
+   ├─ api.js                router global: monta /auth y luego checkAuth + /admin, /users, /roles, /stakeholders, /loans y /payments
    ├─ config/
    │  ├─ connection.js      conexión Sequelize a MySQL
    │  └─ passport.js        estrategias local y JWT (no usado por la API actual)
    ├─ controllers/          intermediarios entre rutas y services
    ├─ middlewares/
-   │  └─ checkAuth.js       exige Authorization: Bearer <token>
+   │  ├─ checkAuth.js       exige token y valida la cuenta contra la base
+   │  ├─ requireAdmin.js    exige rol admin
+   │  └─ requireAdminForLenderChange.js
    ├─ services/             lógica de negocio y operaciones
    ├─ routes/               definición de métodos y URLs
    ├─ utils/

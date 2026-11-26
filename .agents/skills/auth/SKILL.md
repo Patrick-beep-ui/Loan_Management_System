@@ -52,6 +52,9 @@ Recibe `{ email, password }`.
 - Usuario inexistente o contraseña incorrecta lanzan `UnauthorizedError`
   (`401`) con el mensaje genérico `Invalid email or password` (no revela si el
   email existe).
+- Si la cuenta está desactivada (`is_active = false`), lanza
+  `UnauthorizedError` (`401`) con `Account is inactive`, incluso con la
+  contraseña correcta.
 - Responde `200` con `{ token, user }`; `user` incluye `user_id`,
   `stakeholder_id`, `email`, `role_id` y `role_name` (nunca `password_hash`).
 - `token` es un JWT firmado por `generateToken` con el payload
@@ -61,11 +64,26 @@ Recibe `{ email, password }`.
 ## Protección de rutas
 
 `checkAuth` (`src/server/middlewares/checkAuth.js`) exige el header
-`Authorization: Bearer <token>`. Si falta o es inválido responde `401`.
-Deja `req.user = { user_id, role_id, role_name, stakeholder_id }`, usado por
-los services de préstamos para resolver permisos y propiedad. En `api.js`,
-`/auth` se monta antes de `checkAuth`; todo lo que se registre después queda
-protegido.
+`Authorization: Bearer <token>`. Verifica el JWT y después consulta `users`
+(junto con `Role`) para reconstruir `req.user =
+{ user_id, role_id, role_name, stakeholder_id }` desde la base, de modo que los
+cambios de rol y la desactivación surtan efecto sin esperar a que venza el
+token. Si falta el token, es inválido o el usuario ya no existe responde `401
+Invalid or expired token`; una cuenta con `is_active = false` responde `401
+Account is inactive`. Los services de préstamos usan esos valores para
+resolver permisos y propiedad. En `api.js`, `/auth` se monta antes de
+`checkAuth`; todo lo que se registre después queda protegido.
+
+`requireAdmin` (`src/server/middlewares/requireAdmin.js`) responde `403 Admin
+access required` si `req.user.role_name` no es `admin`. Se aplica en
+`AdminRouter` (`src/server/routes/adminRoutes.js`), montado en `/api/admin`
+después de `checkAuth`; las rutas de admin se definen directamente allí.
+
+`requireAdminForLenderChange`
+(`src/server/middlewares/requireAdminForLenderChange.js`) permite enviar
+`lender_id` solo a `admin` o cuando el valor coincide con el `stakeholder_id`
+de la cuenta autenticada; cualquier otro valor responde `403 Only admins can
+change the lender`. Los validadores de dominio mantienen sus reglas habituales.
 
 ## Errores
 
@@ -80,3 +98,6 @@ Cualquier error inesperado se registra y responde `500` con
 - `src/server/utils/validators/authValidation.js`
 - `src/server/utils/generateToken.js`
 - `src/server/middlewares/checkAuth.js`
+- `src/server/middlewares/requireAdmin.js`
+- `src/server/middlewares/requireAdminForLenderChange.js`
+- `src/server/routes/adminRoutes.js`

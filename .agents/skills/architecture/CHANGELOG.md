@@ -1,5 +1,17 @@
 # Changelog — architecture
 
+## 2026-11-25 — Autenticación con estado en base y router de admin
+
+- Change: `checkAuth` pasó a ser asíncrono: tras verificar el JWT consulta
+  `users`/`Role`, reconstruye `req.user` desde la base y rechaza cuentas
+  desactivadas. Se agregaron los middlewares `requireAdmin` y
+  `requireAdminForLenderChange`; `api.js` monta `AdminRouter` en `/api/admin`,
+  que centraliza `requireAdmin` y todavía no define endpoints.
+- Impact: las capas y el manejo de errores tipados no cambian. Los services
+  reciben `req.user` con el rol vigente en la base, no solo el claim del token.
+  Las rutas `/api/admin/*` quedan detrás de `requireAdmin`.
+- Verification: `pnpm build` y revisión del diff; sin pruebas de API en vivo.
+
 ## 2026-11-18 — Router de pagos
 
 - Change: Se montó `PaymentRouter` en `/api/payments` después de `checkAuth` en

@@ -55,6 +55,7 @@ api.use("/auth", AuthRouter); // público: /api/auth
 
 api.use(checkAuth); // protege todo lo registrado debajo
 
+api.use("/admin", AdminRouter); // /api/admin (solo admin)
 api.use("/users", UserRouter); // /api/users
 api.use("/roles", RoleRouter); // /api/roles
 api.use("/stakeholders", StakeholderRouter); // /api/stakeholders
@@ -65,12 +66,21 @@ api.use("/payments", PaymentRouter); // /api/payments
 El orden importa: cualquier router registrado después de `checkAuth` exige
 `Authorization: Bearer <token>`.
 
+`AdminRouter` (`src/server/routes/adminRoutes.js`) se limita a aplicar
+`requireAdmin` a las rutas que define en ese mismo archivo; no delega en
+subrouters por recurso. Las rutas de administración futuras se agregan allí.
+
 ## Middlewares
 
 - `src/server/middlewares/checkAuth.js`: valida el JWT del header
-  `Authorization: Bearer <token>`, deja
-  `req.user = { user_id, role_id, role_name, stakeholder_id }` y responde `401`
-  si falta o es inválido. No consulta la base de datos.
+  `Authorization: Bearer <token>`, consulta `users` y `Role` en la base y deja
+  `req.user = { user_id, role_id, role_name, stakeholder_id }` con valores
+  actualizados. Responde `401` si falta el token, es inválido, el usuario no
+  existe o la cuenta está desactivada (`is_active = false`).
+- `src/server/middlewares/requireAdmin.js`: responde `403` si el rol del
+  usuario autenticado no es `admin`; `api.js` lo aplica al router `/api/admin`.
+- `src/server/middlewares/requireAdminForLenderChange.js`: responde `403` cuando
+  un no admin envía un `lender_id` distinto de su propio `stakeholder_id`.
 
 La firma de tokens vive en `src/server/utils/generateToken.js` (payload
 `{ user_id, role_id, role_name, stakeholder_id }`, expiración

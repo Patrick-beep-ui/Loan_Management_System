@@ -1,5 +1,19 @@
 # Changelog — auth
 
+## 2026-11-25 — Sesión validada contra la base y middlewares de admin
+
+- Change: `checkAuth` consulta `users` y `Role` después de verificar el JWT,
+  reconstruye `req.user` desde la base y rechaza cuentas con `is_active = false`.
+  `login` también rechaza cuentas desactivadas. Se agregaron `requireAdmin` y
+  `requireAdminForLenderChange`, y `api.js` monta `AdminRouter` en `/api/admin`,
+  que centraliza `requireAdmin` y todavía no define endpoints.
+- Impact: los cambios de rol y la desactivación surten efecto de inmediato
+  aunque el token siga vigente. `/api/admin/*` queda restringido a `admin` y un
+  `lender` no puede asignar un `lender_id` distinto del suyo. El signup público
+  no cambia.
+- Verification: `pnpm build` y revisión del diff. Sin pruebas de API en vivo ni
+  migración aplicada en esta sesión, según la preferencia de verificación.
+
 ## 2026-11-17 — Signup solo para lenders e identidad en el JWT
 
 - Change: `validateSignupPayload` ya no exige `role_id`; `authService.signup`
