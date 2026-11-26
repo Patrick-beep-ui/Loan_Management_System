@@ -1,5 +1,16 @@
 # Changelog — frontend
 
+### 2026-11-25 — P6 administración de pagos
+
+- Change: `AdminPayments` dejó de ser stub. Se añadieron `useAdminPayments` y
+  cinco componentes bajo `src/components/admin/payments/` para listar pagos,
+  registrar cuotas o interés pendiente y revertir pagos.
+- Impact: el panel usa `GET /api/payments` y `GET /api/loans`, reutiliza
+  `buildPaymentPayload`, `PaymentModalFields`, `usePaymentRevert` y
+  `RevertPaymentDialog`, y muestra estados de carga, vacío, error y éxito.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-25 — Opciones de prestamista para reasignación
 
 - Change: `useAdminLoans` construye el desplegable de `Reassign lender` desde

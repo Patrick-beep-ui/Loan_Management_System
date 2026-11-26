@@ -102,14 +102,14 @@ El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` d
 | `/admin/users` | `AdminUsers` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` | admin |
 | `/admin/loans` | `AdminLoans` | admin |
-| `/admin/payments` | `AdminPayments` (stub) | admin |
+| `/admin/payments` | `AdminPayments` | admin |
 | `/test` | `Test` (vista de prueba) | público |
 
 `Login` y `Signup` consumen `/api/auth` mediante `src/lib/axiosService.js` (`api.post`): validan los campos, muestran estados de carga y error y usan los componentes `Card`, `Input`, `Label` y `Button`. El servicio centraliza el `baseURL` (`VITE_API_URL` o `http://localhost:3000/api`), un interceptor que envía `Authorization: Bearer <token>` leyendo `token` de `localStorage` y un interceptor de respuesta que ante un `401` limpia el token y emite `auth:unauthorized` (excepto en `/auth/login` y `/auth/signup`). `src/client/contexts/AuthContext.jsx` expone `AuthProvider`, `useAuth()`, `RequireAuth` y `RequireAdmin`: la sesión se hidrata con `GET /api/users/auth`, `/loans`, `/create-loan`, `/loans/:id` y `/loans/:id/edit` están protegidos, `/admin/*` exige rol `admin` y el resto de rutas son públicas. `Login` usa `useAuth().login(token)` y navega a la ruta de origen o `/loans`; `Signup` envía `email`, `password` y `stakeholder_id` y, tras el registro, navega a `/login` con un aviso de éxito. `Loan` compone el listado desde `src/components/loans/list/` con el hook `useLoans` y `api.get("/loans")` (ID, prestamista, cliente, monto, tasa, modo, fecha y total), con estados de carga, vacío y error y formatos en `src/client/utils/loanFormat.js`; usa `useAuth().user` solo para mostrar nombre y rol, porque el backend filtra por JWT. `CreateLoan` es un formulario de dos pasos compuesto desde `src/components/loans/create/`: el hook `useCreateLoanForm` carga stakeholders, administra el estado y valida con `src/client/utils/loanForm.js`, `CreateLoanForm` reúne los campos, fiadores y garantías, e `InstallmentPreview` muestra las cuotas calculadas por `src/client/utils/loanSchedule.js` antes de enviar `POST /api/loans`; `Loan` incluye el botón `New loan` y un aviso de creación correcta. `LoanDetails` compone `src/components/loans/details/` con `useLoanDetails` y `api.get("/loans/:id")`: muestra resumen, cuotas, fiadores, garantías e interés, y ofrece editar siempre pero eliminar solo cuando no hay pagos registrados; `useLoanFormState` es el estado compartido con la creación. Desde el detalle se registran pagos con `src/components/payments/` y `useLoanPayment`: la cuota o el interés se pagan con monto bloqueado y `paid_at` opcional, y un refetch actualiza estados sin recargar. La reversión es independiente: `usePayments` consulta `GET /api/payments?loan_id`, `usePaymentRevert` envía `DELETE /api/payments/:id` con el `payment_id` y `RevertPaymentDialog` pide confirmación antes de liberar la eliminación y la edición financiera completa. `EditLoan` usa `useEditLoanForm`: sin pagos reutiliza el formulario y la vista previa de `create/` y envía `PUT /api/loans/:id`; con pagos muestra `RestrictedLoanEditForm` y envía `PATCH /api/loans/:id` solo con fiadores, garantías y, para `admin`, `lender_id`. En ambos casos vuelve al detalle con `state.updatedLoanId`. `Loan` enlaza cada ID al detalle y muestra `state.deletedLoanId` tras una eliminación. `/test` usa `api.get("/roles")` del mismo servicio (ruta actualmente deshabilitada en `src/server/api.js`). Los estilos se definen en `src/client/index.css` con Tailwind 4, la paleta de marca (`263A69`, `B0C7DD`, `E8E3DD`, `EDECEA` y `0F0F0F`) en temas claro y oscuro, con Playfair Display para títulos y Montserrat para texto desde Google Fonts. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
 
 ## Panel de administración
 
-El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts/`), `AdminNav` (`src/components/admin/`) y vistas en `src/client/views/admin/`. `RequireAdmin`, definido en `AuthContext.jsx`, redirige a `/loans` a las cuentas que no son `admin`; la autorización real sigue en la API, donde `/api/admin/*` está protegido por `requireAdmin`. `LoanListHeader` muestra el enlace `Admin` solo para administradores. `/admin/users` lista cuentas con `useAdminUsers` y permite editar rol, estado y datos del stakeholder vinculado en un solo diálogo; `/admin/stakeholders` usa `useAdminStakeholders` para crear, editar y eliminar personas con el CRUD existente de `/api/stakeholders`, ocultando a las que están vinculadas a cuentas. `/admin/loans` usa `useAdminLoans` para listar todos los préstamos y reasignar el prestamista mediante un diálogo que envía `PATCH /api/loans/:id`; sus opciones vienen de `/api/users` filtrado a cuentas con rol `lender`.
+El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts/`), `AdminNav` (`src/components/admin/`) y vistas en `src/client/views/admin/`. `RequireAdmin`, definido en `AuthContext.jsx`, redirige a `/loans` a las cuentas que no son `admin`; la autorización real sigue en la API, donde `/api/admin/*` está protegido por `requireAdmin`. `LoanListHeader` muestra el enlace `Admin` solo para administradores. `/admin/users` lista cuentas con `useAdminUsers` y permite editar rol, estado y datos del stakeholder vinculado en un solo diálogo; `/admin/stakeholders` usa `useAdminStakeholders` para crear, editar y eliminar personas con el CRUD existente de `/api/stakeholders`, ocultando a las que están vinculadas a cuentas. `/admin/loans` usa `useAdminLoans` para listar todos los préstamos y reasignar el prestamista mediante un diálogo que envía `PATCH /api/loans/:id`; sus opciones vienen de `/api/users` filtrado a cuentas con rol `lender`. `/admin/payments` usa `useAdminPayments` para consultar el historial global con `GET /api/payments`, registrar cuotas o interés pendiente desde `GET /api/loans` y revertir pagos con `usePaymentRevert` y `RevertPaymentDialog`.
 
 | Ruta | Vista | Estado |
 | --- | --- | --- |
@@ -118,14 +118,14 @@ El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts
 | `/admin/users` | `AdminUsers` | implementado |
 | `/admin/stakeholders` | `AdminStakeholders` | implementado |
 | `/admin/loans` | `AdminLoans` | implementado |
-| `/admin/payments` | `AdminPayments` | stub |
+| `/admin/payments` | `AdminPayments` | implementado |
 
 Las fases de dominio reemplazan el contenido de esos stubs sin tocar `main.jsx`:
 
 - P3 users: `/admin/users` reutiliza `GET /api/users` para listar y usa `PATCH /api/admin/users/:userId` para cambiar rol y estado. El mismo diálogo edita los datos del stakeholder vinculado con `GET /api/stakeholders/:id` y `PUT /api/stakeholders/:id`; si no hay persona vinculada solo se muestran rol y estado.
 - P4 stakeholders: el panel reutiliza `GET`, `POST`, `PUT` y `DELETE` de `/api/stakeholders`. Las mutaciones usan `requireAdmin`; ambos `GET` siguen disponibles para cuentas autenticadas y el formulario de préstamos no cambia. La vista oculta a las personas vinculadas a cuentas, sin filtrar la API.
 - P5 loans: `POST`, `PUT` y `PATCH` de `/api/loans` aplican `requireAdminForLenderChange`; la vista admin lista con `GET /api/loans` y reasigna prestamistas con `PATCH /api/loans/:id`, sin endpoints nuevos bajo `/api/admin`.
-- P6 payments: historial, registro y reversión con los endpoints existentes.
+- P6 payments: `/admin/payments` lista `GET /api/payments` para `admin`, usa `GET /api/loans` para ofrecer solo destinos pendientes y registra con `POST /api/payments/installment` o `POST /api/payments/interest`. La reversión reutiliza `DELETE /api/payments/:id`; no se agregó `POST /api/payments` genérico ni rutas bajo `/api/admin`.
 - P7 dashboard: métricas calculadas en el cliente desde `GET /api/loans` y `GET /api/payments`, sin endpoint propio.
 
 No se duplican funcionalidades bajo `/admin`; solo la administración de usuarios vive en ese prefijo. El contrato detallado del módulo está en `.agents/skills/admin/SKILL.md`.
@@ -149,15 +149,15 @@ src/
 │  ├─ App.jsx               componente principal (demo de Vite)
 │  ├─ App.css / index.css   estilos base y tokens de Tailwind/shadcn
 │  ├─ contexts/             AuthContext: provider, hook y guards
-│  ├─ hooks/                hooks: useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails, useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert, useAdminUsers, useAdminStakeholders, useAdminLoans
+│  ├─ hooks/                hooks: useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails, useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert, useAdminUsers, useAdminStakeholders, useAdminLoans, useAdminPayments
 │  ├─ layouts/              shell `AdminLayout`
 │  ├─ Test.jsx              vista de prueba (/test)
 │  ├─ views/                vistas: Login, Signup, Loans, CreateLoan, LoanDetails, EditLoan
-│  │  └─ admin/             vistas del panel: Dashboard (stub), Users, Stakeholders, Loans, Payments (stub)
+│  │  └─ admin/             vistas del panel: Dashboard (stub), Users, Stakeholders, Loans, Payments
 │  ├─ utils/                helpers: loanFormat, loanForm, loanSchedule, loanEdit, loanPayment, paymentHistory, userForm, stakeholderForm
 │  └─ assets/
 ├─ components/
-│  ├─ admin/                AdminNav, AdminPlaceholder, users/, stakeholders/ y loans/ (tablas, campos compartidos, formularios, reasignación y confirmaciones)
+│  ├─ admin/                AdminNav, AdminPlaceholder, users/, stakeholders/, loans/ y payments/ (tablas, campos compartidos, formularios, reasignación, registro y confirmaciones)
 │  ├─ loans/                componentes de préstamos por propósito
 │  │  ├─ create/            formulario, fiadores, garantías y vista previa
 │  │  ├─ list/              encabezado, avisos y tabla del listado
@@ -302,6 +302,6 @@ Hay dos rutas explícitas y no existe un `POST /api/payments` genérico. Ambas r
 
 Cada ruta exige su propio identificador de destino; el campo de la otra ruta se ignora. El monto debe ser exactamente el pendiente (`amount_due` de la cuota o `interest_amount` del préstamo); no se aceptan abonos parciales. `recorded_by` se toma del usuario autenticado en el JWT, no del cuerpo, y se devuelve junto con `recordedBy` en la respuesta `201`. Un destino ajeno al préstamo responde `404`, un destino ya pagado responde `409` y un monto distinto responde `400`. Los listados y el detalle respetan el mismo filtro de prestamista que `/api/loans`.
 
-`PATCH /api/payments/:id` solo corrige `paid_at` (`{ "paid_at": "2026-02-16T09:15:00Z" }`). `DELETE /api/payments/:id` revierte el pago en una transacción: elimina el vínculo de la cuota o nulifica el del interés, deja el destino en `pending`, elimina el registro en `loan_payments` y responde `204`. Después de la reversión el préstamo vuelve a aceptar cambios financieros y eliminación; antes de revertir, el cliente permite actualizar fiadores, garantías y, para `admin`, el prestamista mediante `PATCH`. El cliente expone esta reversión desde `/loans/:id` con un flujo separado del registro de pagos.
+`PATCH /api/payments/:id` solo corrige `paid_at` (`{ "paid_at": "2026-02-16T09:15:00Z" }`). `DELETE /api/payments/:id` revierte el pago en una transacción: elimina el vínculo de la cuota o nulifica el del interés, deja el destino en `pending`, elimina el registro en `loan_payments` y responde `204`. Después de la reversión el préstamo vuelve a aceptar cambios financieros y eliminación; antes de revertir, el cliente permite actualizar fiadores, garantías y, para `admin`, el prestamista mediante `PATCH`. El cliente expone esta reversión desde `/loans/:id` y desde `/admin/payments`, en ambos casos con un flujo separado del registro de pagos.
 
 Passport sigue configurado en `src/server/config/passport.js` pero la API actual no lo usa; la autenticación se resuelve con JWT.

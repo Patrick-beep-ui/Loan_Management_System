@@ -1,5 +1,17 @@
 # Changelog — payments
 
+### 2026-11-25 — P6 administración de pagos
+
+- Change: `/admin/payments` dejó de ser stub. Se añadieron `useAdminPayments` y
+  cinco componentes bajo `src/components/admin/payments/` para consultar el
+  historial global, registrar pagos pendientes y revertir pagos existentes.
+- Impact: el registro reutiliza `buildPaymentPayload` y los endpoints de
+  `/api/payments/installment` e `/api/payments/interest`, con `GET /api/loans`
+  como fuente de destinos pendientes. La reversión usa `usePaymentRevert` y
+  `RevertPaymentDialog` sin duplicar lógica ni rutas bajo `/api/admin`.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-23 — Relación con edición parcial de préstamos
 
 - Change: se documentó que, con pagos registrados, `PATCH /api/loans/:id` sigue

@@ -1,5 +1,16 @@
 # Changelog — admin
 
+## 2026-11-25 — P6 pagos implementado
+
+- Change: `/admin/payments` dejó de ser stub. Se añadieron `useAdminPayments` y
+  cinco componentes bajo `src/components/admin/payments/` para historial,
+  registro y reversión con los endpoints existentes de `/api/payments`.
+- Impact: el panel de `admin` ve todos los pagos, registra cuotas o interés
+  pendiente desde `GET /api/loans` y reutiliza `usePaymentRevert` con
+  `RevertPaymentDialog`. No se crearon rutas bajo `/api/admin`.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ## 2026-11-25 — Reasignación limitada a cuentas lender
 
 - Change: `useAdminLoans` dejó de usar `GET /api/stakeholders` para las opciones

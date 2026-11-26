@@ -23,7 +23,7 @@ El historial de cambios está en [`CHANGELOG.md`](CHANGELOG.md).
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | implementado |
 | `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | implementado |
 | `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | implementado |
-| `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | stub |
+| `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | implementado |
 
 ## Permisos
 
@@ -59,9 +59,15 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
   prestamista con `PATCH /api/loans/:id`. Las opciones del diálogo vienen de
   `GET /api/users` filtrado a cuentas con rol `lender`; se excluye al cliente
   del préstamo y se muestran estados de carga, error y éxito.
+- `src/client/hooks/useAdminPayments.js` y `src/components/admin/payments/`
+  (`AdminPaymentsHeader`, `AdminPaymentsAlerts`, `AdminPaymentsTable`,
+  `AdminPaymentRow` y `AdminPaymentRecordDialog`): listan pagos con
+  `GET /api/payments`, registran cuotas o interés pendiente con los endpoints
+  existentes y reutilizan `usePaymentRevert` con `RevertPaymentDialog` para la
+  reversión. Las opciones de registro salen de `GET /api/loans`.
 - `src/client/views/admin/*.jsx`: las fases de dominio reemplazan solo el
-  contenido de su archivo; `/admin/users`, `/admin/stakeholders` y
-  `/admin/loans` ya no son stubs.
+  contenido de su archivo; `/admin/users`, `/admin/stakeholders`,
+  `/admin/loans` y `/admin/payments` ya no son stubs.
 - `src/components/loans/list/LoanListHeader.jsx`: enlace `Admin` para admins.
 
 ## Contrato de fases posteriores
@@ -83,7 +89,12 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
   `/api/admin`. El desplegable solo ofrece cuentas con rol `lender` leídas de
   `GET /api/users`; el listado y el diálogo reutilizan los helpers de formato de
   `loans` y los primitivos shadcn existentes.
-- P6 payments: historial, registro y reversión con los endpoints existentes.
+- P6 payments: `/admin/payments` lista `GET /api/payments` para `admin` y usa
+  `GET /api/loans` para ofrecer solo cuotas pendientes e interés separado sin
+  pagar. El registro envía `POST /api/payments/installment` o
+  `POST /api/payments/interest` con el monto calculado por el destino; la
+  reversión reutiliza `DELETE /api/payments/:id` mediante `usePaymentRevert`.
+  No hay `POST /api/payments` genérico ni endpoints duplicados bajo `/admin`.
 - P7 dashboard: métricas calculadas en el cliente desde `GET /api/loans` y
   `GET /api/payments`, sin un endpoint propio.
 - No se duplican funcionalidades bajo `/admin`; solo la administración de
@@ -99,9 +110,11 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
 - `src/components/admin/users/`
 - `src/components/admin/stakeholders/`
 - `src/components/admin/loans/`
+- `src/components/admin/payments/`
 - `src/client/hooks/useAdminUsers.js`
 - `src/client/hooks/useAdminStakeholders.js`
 - `src/client/hooks/useAdminLoans.js`
+- `src/client/hooks/useAdminPayments.js`
 - `src/client/utils/userForm.js`
 - `src/client/utils/stakeholderForm.js`
 - `src/client/views/admin/`

@@ -33,7 +33,7 @@ protege `/admin` y sus hijos. El resto de las rutas son públicas:
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | admin |
 | `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | admin |
-| `/admin/payments` | `AdminPayments` (stub) | `src/client/views/admin/AdminPayments.jsx` | admin |
+| `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | admin |
 | `/test` | `Test` (vista de prueba) | `src/client/Test.jsx` | público |
 
 `Login` y `Signup` consumen `/api/auth` a través del servicio compartido
@@ -82,8 +82,9 @@ flujo de autenticación.
 - `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
   `Signup`, `Test.jsx` y los hooks `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
-  `usePayments`, `usePaymentRevert`, `useAdminUsers`, `useAdminStakeholders` y
-  `useAdminLoans` importan esa instancia en lugar de crear clientes propios.
+  `usePayments`, `usePaymentRevert`, `useAdminUsers`, `useAdminStakeholders`,
+  `useAdminLoans` y `useAdminPayments` importan esa instancia en lugar de crear
+  clientes propios.
 
 ## Componentes de UI
 
@@ -130,6 +131,11 @@ Conviene tenerlo presente al agregar componentes nuevos.
 | `loans/AdminLoansTable.jsx` | tabla con estados de carga y vacío |
 | `loans/AdminLoanRow.jsx` | fila con importes formateados y acción `Reassign lender` |
 | `loans/ReassignLenderDialog.jsx` | selección de prestamista y envío de `PATCH /api/loans/:id` |
+| `payments/AdminPaymentsHeader.jsx` | título, descripción y acciones `Refresh` y `Record payment` |
+| `payments/AdminPaymentsAlerts.jsx` | avisos de error y éxito del flujo de pagos |
+| `payments/AdminPaymentsTable.jsx` | tabla con estados de carga y vacío |
+| `payments/AdminPaymentRow.jsx` | fila con pago, préstamo, destino y acción `Revert` |
+| `payments/AdminPaymentRecordDialog.jsx` | selección de cuota o interés pendiente y envío del pago |
 
 `src/components/loans/` reúne la UI específica de préstamos, separada por
 propósito en `create/`, `list/`, `details/` y `edit/`. Las vistas importan desde
@@ -308,7 +314,12 @@ borrar; oculta en cliente las personas vinculadas a cuentas. `/admin/loans` usa
 `Reassign lender` toma sus opciones de las cuentas con `Role.role_name =
 "lender"`, excluye al cliente del préstamo, envía `PATCH /api/loans/:id` con
 `lender_id` y recarga el listado tras guardar. Las cuentas inactivas con rol
-`lender` siguen apareciendo.
+`lender` siguen apareciendo. `/admin/payments` usa `useAdminPayments` sobre
+`GET /api/payments` para el historial de `admin` y `GET /api/loans` para escoger
+destinos pendientes; `Record payment` publica en los endpoints de cuota o interés
+con un monto calculado por el destino, y la reversión reutiliza
+`usePaymentRevert` con `RevertPaymentDialog`. No se expone `PATCH /api/payments/:id`
+en el panel.
 `LoanListHeader` muestra el enlace `Admin` solo cuando
 `user.Role.role_name === "admin"`. El
 contrato completo, incluido el orden de las fases posteriores, vive en el módulo

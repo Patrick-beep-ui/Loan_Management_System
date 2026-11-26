@@ -135,6 +135,20 @@ Después del `204`, la vista vuelve a cargar el préstamo y el historial:
 `Delete` vuelve a estar disponible y `Edit` pasa del formulario reducido al
 formulario completo.
 
+### Panel de administración
+
+`/admin/payments` reemplaza el stub con `AdminPayments`, compuesto desde
+`src/components/admin/payments/` y `src/client/hooks/useAdminPayments.js`. El hook
+consulta `GET /api/payments` para el historial global de `admin` y `GET /api/loans`
+para construir las opciones de registro: solo ofrece cuotas con `status` distinto
+de `paid` e interés separado pendiente sin `payment_id`. `Record payment` usa
+`buildPaymentPayload` y publica en `POST /api/payments/installment` o
+`POST /api/payments/interest`, con `paid_at` opcional; el monto se deriva del
+destino y no se edita. La reversión reutiliza `usePaymentRevert` y
+`RevertPaymentDialog` con `DELETE /api/payments/:id`; tras registrar o revertir
+se recargan pagos y préstamos. No se agregó `PATCH /api/payments/:id` al panel ni
+endpoints bajo `/api/admin`.
+
 ## Permisos y propiedad
 
 `paymentService` reutiliza `loanScope` de `loanService`: los préstamos de un
@@ -173,3 +187,6 @@ cambios y restaura ambos destinos a `pending`.
 - `src/server/models/LoanPayment.js`
 - `src/server/models/InstallmentPayment.js`
 - `src/server/models/LoanInterestPayment.js`
+- `src/client/views/admin/AdminPayments.jsx`
+- `src/client/hooks/useAdminPayments.js`
+- `src/components/admin/payments/`
