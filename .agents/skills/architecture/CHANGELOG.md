@@ -1,5 +1,14 @@
 # Changelog — architecture
 
+## 2026-11-25 — Guard de admin en mutaciones de stakeholders
+
+- Change: `stakeholderRoutes.js` pasa `requireAdmin` a `POST`, `PUT`, `PATCH` y
+  `DELETE`; los `GET` permanecen con solo `checkAuth`.
+- Impact: el middleware se reutiliza fuera de `/api/admin` sin cambiar el
+  orden de capas ni los services. Los formularios de préstamos conservan el
+  listado de stakeholders.
+- Verification: `pnpm build` compiló correctamente; sin pruebas de API en vivo.
+
 ## 2026-11-25 — Ruta directa para administración de usuarios
 
 - Change: `AdminRouter` define `PATCH /users/:userId` con un controller, un

@@ -1,5 +1,13 @@
 # Changelog — auth
 
+## 2026-11-25 — `requireAdmin` en mutaciones de stakeholders
+
+- Change: `requireAdmin` se aplicó a `POST`, `PUT`, `PATCH` y `DELETE` en
+  `stakeholderRoutes.js`. Los dos `GET` siguen protegidos solo por `checkAuth`.
+- Impact: las cuentas `lender` pueden leer stakeholders para préstamos, pero
+  reciben `403 Admin access required` si intentan modificarlos.
+- Verification: `pnpm build` compiló correctamente. Sin pruebas de API en vivo.
+
 ## 2026-11-25 — Mutaciones de usuario bajo `/api/admin`
 
 - Change: `AdminRouter` define `PATCH /users/:userId` directamente. `requireAdmin`

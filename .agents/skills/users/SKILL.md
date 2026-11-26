@@ -1,6 +1,6 @@
 ---
 name: users
-description: User module: listing and admin-only role/active-state updates through layered routes, controllers, services, and validators.
+description: User module: listing and admin-only role/active-state and linked stakeholder updates through layered routes, controllers, services, and validators.
 ---
 
 # users
@@ -44,6 +44,23 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
   responde `500 Internal Server Error`.
 - La respuesta es `200` con el usuario actualizado en la misma proyección que
   `GET /api/users/auth`, sin `password_hash` y con `Stakeholder` y `Role`.
+
+## Cliente administrativo
+
+- `/admin/users` lista con `GET /api/users` y abre un diálogo que combina rol,
+  estado y los datos de la persona vinculada al usuario.
+- Si `user.stakeholder_id` existe, `useAdminUsers` carga
+  `GET /api/stakeholders/:id` con `stakeholderToForm` y valida con
+  `validateStakeholderForm` antes de guardar. Si no existe o la carga falla, el
+  diálogo ofrece solo las opciones de rol y estado.
+- `saveEdit` envía primero `PATCH /api/admin/users/:userId` y después
+  `PUT /api/stakeholders/:stakeholder_id` cuando hay datos de persona. No se
+  creó un endpoint combinado: el backend sigue siendo la autoridad y los
+  mensajes de error de cada ruta se muestran tal cual.
+- Si el `PATCH` termina y el `PUT` falla, el cliente recarga la lista y avisa
+  explícitamente que el estado se actualizó pero los datos de la persona no.
+- Los campos de stakeholder se reutilizan desde
+  `src/components/admin/stakeholders/StakeholderFormFields.jsx`.
 
 ## Archivos
 

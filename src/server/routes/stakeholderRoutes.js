@@ -7,17 +7,18 @@ import {
     replaceStakeholder,
     updateStakeholder
 } from "../controllers/stakeholderController.js";
+import { requireAdmin } from "../middlewares/requireAdmin.js";
 
 const StakeholderRouter = express.Router();
 
 StakeholderRouter.route("/")
     .get(getAllStakeholders) // GET /api/stakeholders
-    .post(createStakeholder); // POST /api/stakeholders
+    .post(requireAdmin, createStakeholder); // POST /api/stakeholders
 
 StakeholderRouter.route("/:id")
     .get(getStakeholderById) // GET /api/stakeholders/:id
-    .put(replaceStakeholder) // PUT /api/stakeholders/:id (full replace)
-    .patch(updateStakeholder) // PATCH /api/stakeholders/:id (partial)
-    .delete(deleteStakeholder); // DELETE /api/stakeholders/:id
+    .put(requireAdmin, replaceStakeholder) // PUT /api/stakeholders/:id (full replace)
+    .patch(requireAdmin, updateStakeholder) // PATCH /api/stakeholders/:id (partial)
+    .delete(requireAdmin, deleteStakeholder); // DELETE /api/stakeholders/:id
 
 export default StakeholderRouter;

@@ -78,7 +78,9 @@ resolver permisos y propiedad. En `api.js`, `/auth` se monta antes de
 access required` si `req.user.role_name` no es `admin`. Se aplica en
 `AdminRouter` (`src/server/routes/adminRoutes.js`), montado en `/api/admin`
 después de `checkAuth`; `PATCH /api/admin/users/:userId` se define directamente
-en ese router, sin subrouters.
+en ese router, sin subrouters. También se aplica a `POST`, `PUT`, `PATCH` y
+`DELETE` en `stakeholderRoutes.js`; los `GET` de stakeholders quedan sin este
+guard para los formularios de préstamos.
 
 `requireAdminForLenderChange`
 (`src/server/middlewares/requireAdminForLenderChange.js`) permite enviar

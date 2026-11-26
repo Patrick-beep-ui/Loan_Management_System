@@ -30,8 +30,8 @@ protege `/admin` y sus hijos. El resto de las rutas son públicas:
 | `/loans/:id/edit` | `EditLoan` | `src/client/views/EditLoan.jsx` | protegido |
 | `/admin` | redirección | `src/client/main.jsx` | admin |
 | `/admin/dashboard` | `AdminDashboard` (stub) | `src/client/views/admin/AdminDashboard.jsx` | admin |
-| `/admin/users` | `AdminUsers` (stub) | `src/client/views/admin/AdminUsers.jsx` | admin |
-| `/admin/stakeholders` | `AdminStakeholders` (stub) | `src/client/views/admin/AdminStakeholders.jsx` | admin |
+| `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | admin |
+| `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | admin |
 | `/admin/loans` | `AdminLoans` (stub) | `src/client/views/admin/AdminLoans.jsx` | admin |
 | `/admin/payments` | `AdminPayments` (stub) | `src/client/views/admin/AdminPayments.jsx` | admin |
 | `/test` | `Test` (vista de prueba) | `src/client/Test.jsx` | público |
@@ -82,8 +82,8 @@ flujo de autenticación.
 - `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
   `Signup`, `Test.jsx` y los hooks `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
-  `usePayments`, `usePaymentRevert` y `useAdminUsers` importan esa instancia en
-  lugar de crear clientes propios.
+  `usePayments`, `usePaymentRevert`, `useAdminUsers` y `useAdminStakeholders`
+  importan esa instancia en lugar de crear clientes propios.
 
 ## Componentes de UI
 
@@ -117,7 +117,14 @@ Conviene tenerlo presente al agregar componentes nuevos.
 | `users/AdminUsersAlerts.jsx` | avisos de error y éxito del flujo de usuarios |
 | `users/AdminUsersTable.jsx` | tabla con estados de carga y vacío |
 | `users/AdminUserRow.jsx` | fila con rol, estado y acción de edición |
-| `users/AdminUserEditDialog.jsx` | diálogo con selectores de rol y estado |
+| `users/AdminUserEditDialog.jsx` | diálogo único con rol, estado y datos del stakeholder vinculado |
+| `stakeholders/AdminStakeholdersHeader.jsx` | título, descripción y acciones `Refresh` y `New stakeholder` |
+| `stakeholders/AdminStakeholdersAlerts.jsx` | avisos de error y éxito del flujo de stakeholders |
+| `stakeholders/AdminStakeholdersTable.jsx` | tabla con estados de carga y vacío |
+| `stakeholders/AdminStakeholderRow.jsx` | fila con acciones `Edit` y `Delete` |
+| `stakeholders/StakeholderFormFields.jsx` | campos reutilizables de persona con validación por campo |
+| `stakeholders/AdminStakeholderFormDialog.jsx` | formulario de alta y edición que reutiliza `StakeholderFormFields` |
+| `stakeholders/DeleteStakeholderDialog.jsx` | confirmación de eliminación con `Dialog` |
 
 `src/components/loans/` reúne la UI específica de préstamos, separada por
 propósito en `create/`, `list/`, `details/` y `edit/`. Las vistas importan desde
@@ -232,8 +239,12 @@ se usa en `CardTitle` y `DialogTitle`, y `@layer base` la aplica también a
 Un interceptor de petición lee el JWT de `localStorage` bajo la clave `token`
 y, si existe, añade `Authorization: Bearer <token>` a todas las peticiones.
 Por eso las vistas invocan métodos con rutas relativas a `/api`
-(`api.post("/auth/login")`, `api.get("/roles")`, `api.get("/stakeholders")`,
-`api.post("/loans")`, `api.put("/loans/:id")`, `api.patch("/loans/:id")`,
+(`api.post("/auth/login")`, `api.get("/roles")`, `api.get("/users")`,
+`api.get("/stakeholders")`, `api.get("/stakeholders/:id")`,
+`api.post("/stakeholders")`, `api.put("/stakeholders/:id")`,
+`api.delete("/stakeholders/:id")`, `api.patch("/admin/users/:userId")`,
+`api.post("/loans")`,
+`api.put("/loans/:id")`, `api.patch("/loans/:id")`,
 `api.post("/payments/installment")`, `api.post("/payments/interest")`,
 `api.get("/payments")`, `api.delete("/payments/:id")`) y no necesitan construir el header ni repetir el prefijo
 `/api`. El interceptor de respuesta elimina
@@ -279,12 +290,18 @@ ese evento y limpia el usuario.
 
 `src/client/layouts/AdminLayout.jsx` es el shell de `/admin`: título, `AdminNav`
 y `Outlet`. Las vistas en `src/client/views/admin/` son reemplazadas por cada
-fase de dominio sin tocar el router; `/admin/users` ya lista cuentas con
-`useAdminUsers` desde `GET /api/users`, permite actualizar rol y estado con
-`PATCH /api/admin/users/:userId` y muestra avisos de carga, error, vacío y
-éxito. `LoanListHeader` muestra el enlace `Admin` solo cuando
-`user.Role.role_name === "admin"`. El contrato completo, incluido el orden de
-las fases posteriores, vive en el módulo `admin`.
+fase de dominio sin tocar el router; `/admin/users` lista cuentas con
+`useAdminUsers` desde `GET /api/users` y usa un único diálogo para rol, estado y
+datos del stakeholder vinculado. Esos datos se cargan con
+`GET /api/stakeholders/:id` y se guardan con `PATCH /api/admin/users/:userId`
+más `PUT /api/stakeholders/:id`; si no hay persona vinculada solo se muestran
+rol y estado. `/admin/stakeholders` usa `useAdminStakeholders` sobre el CRUD
+existente de `/api/stakeholders`: lista con `GET`, crea con `POST`, edita con
+`PUT` y elimina con `DELETE`, con validación local y confirmación antes de
+borrar; oculta en cliente las personas vinculadas a cuentas. `LoanListHeader`
+muestra el enlace `Admin` solo cuando `user.Role.role_name === "admin"`. El
+contrato completo, incluido el orden de las fases posteriores, vive en el módulo
+`admin`.
 
 ## Listado de préstamos
 
@@ -399,7 +416,7 @@ envía `api.patch("/loans/:id", payload)` y vuelve al detalle con
   `useAuth()` desde cualquier vista.
 - Los helpers puros de dominio van en `src/client/utils/`, como
   `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanEdit.js`,
-  `loanPayment.js`, `paymentHistory.js` y `userForm.js`.
+  `loanPayment.js`, `paymentHistory.js`, `userForm.js` y `stakeholderForm.js`.
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en

@@ -21,7 +21,7 @@ El historial de cambios está en [`CHANGELOG.md`](CHANGELOG.md).
 | `/admin` | redirección | `src/client/main.jsx` | va a `/admin/dashboard` |
 | `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | stub |
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | implementado |
-| `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | stub |
+| `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | implementado |
 | `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | stub |
 | `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | stub |
 
@@ -42,19 +42,34 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
 - `src/components/admin/AdminPlaceholder.jsx`: tarjeta compartida por los stubs.
 - `src/components/admin/users/`: UI de usuarios (`AdminUsersHeader`,
   `AdminUsersAlerts`, `AdminUsersTable`, `AdminUserRow` y
-  `AdminUserEditDialog`). La tabla lista desde `GET /api/users` y el diálogo
-  envía `PATCH /api/admin/users/:userId` para rol y estado.
+  `AdminUserEditDialog`). La tabla lista desde `GET /api/users`; el diálogo
+  envía `PATCH /api/admin/users/:userId` para rol y estado y, si hay persona
+  vinculada, `PUT /api/stakeholders/:id` para sus datos.
+- `src/components/admin/stakeholders/`: UI de stakeholders
+  (`AdminStakeholdersHeader`, `AdminStakeholdersAlerts`,
+  `AdminStakeholdersTable`, `AdminStakeholderRow`,
+  `StakeholderFormFields`, `AdminStakeholderFormDialog` y
+  `DeleteStakeholderDialog`). Usa los endpoints existentes de
+  `/api/stakeholders` para crear, editar y eliminar; `StakeholderFormFields` se
+  reutiliza también en el diálogo de usuarios. La tabla oculta las personas
+  vinculadas a cuentas.
 - `src/client/views/admin/*.jsx`: las fases de dominio reemplazan solo el
-  contenido de su archivo; `/admin/users` ya no es stub.
+  contenido de su archivo; `/admin/users` y `/admin/stakeholders` ya no son stubs.
 - `src/components/loans/list/LoanListHeader.jsx`: enlace `Admin` para admins.
 
 ## Contrato de fases posteriores
 
 - P3 users: `/admin/users` reutiliza `GET /api/users` para listar y usa
   `PATCH /api/admin/users/:userId` para cambiar `role_name` e `is_active`.
-  No hay un `GET` duplicado bajo `/api/admin/users`.
-- P4 stakeholders: las mutaciones usan `requireAdmin`; `GET /api/stakeholders`
-  sigue abierto para el formulario de préstamos.
+  El mismo diálogo edita los datos del stakeholder vinculado con
+  `GET /api/stakeholders/:id` y `PUT /api/stakeholders/:id`; si la cuenta no
+  tiene persona vinculada solo se muestran rol y estado. No hay un `GET`
+  duplicado bajo `/api/admin/users` ni un endpoint combinado.
+- P4 stakeholders: el panel reutiliza el CRUD de `/api/stakeholders`. `POST`,
+  `PUT`, `PATCH` y `DELETE` usan `requireAdmin`; ambos `GET` siguen disponibles
+  para cualquier cuenta autenticada y los formularios de préstamos no cambian.
+  La vista oculta las personas referenciadas por `user.stakeholder_id`, sin
+  filtrar la API.
 - P5 loans: las rutas de préstamos aplican `requireAdminForLenderChange`; la
   vista admin reutiliza los componentes de `loans`.
 - P6 payments: historial, registro y reversión con los endpoints existentes.
@@ -71,7 +86,10 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
 - `src/components/admin/AdminNav.jsx`
 - `src/components/admin/AdminPlaceholder.jsx`
 - `src/components/admin/users/`
+- `src/components/admin/stakeholders/`
 - `src/client/hooks/useAdminUsers.js`
+- `src/client/hooks/useAdminStakeholders.js`
 - `src/client/utils/userForm.js`
+- `src/client/utils/stakeholderForm.js`
 - `src/client/views/admin/`
 - `src/components/loans/list/LoanListHeader.jsx`

@@ -79,7 +79,9 @@ recurso; el listado sigue en `GET /api/users`.
   actualizados. Responde `401` si falta el token, es inválido, el usuario no
   existe o la cuenta está desactivada (`is_active = false`).
 - `src/server/middlewares/requireAdmin.js`: responde `403` si el rol del
-  usuario autenticado no es `admin`; `api.js` lo aplica al router `/api/admin`.
+  usuario autenticado no es `admin`; `api.js` lo aplica al router `/api/admin` y
+  `stakeholderRoutes.js` lo aplica a sus mutaciones. Los `GET` de stakeholders
+  quedan solo detrás de `checkAuth`.
 - `src/server/middlewares/requireAdminForLenderChange.js`: responde `403` cuando
   un no admin envía un `lender_id` distinto de su propio `stakeholder_id`.
 

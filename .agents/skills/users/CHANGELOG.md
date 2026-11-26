@@ -1,5 +1,18 @@
 # Changelog — users
 
+## 2026-11-25 — Edición administrativa de la persona vinculada
+
+- Change: el diálogo de `/admin/users` amplió la edición de rol e `is_active`
+  con los datos del stakeholder vinculado. `useAdminUsers` carga
+  `GET /api/stakeholders/:id`, valida localmente y guarda con
+  `PATCH /api/admin/users/:userId` más `PUT /api/stakeholders/:id`; reutiliza
+  `StakeholderFormFields` del panel de stakeholders.
+- Impact: las cuentas con `stakeholder_id` pueden editar estado y datos personales
+  en un solo diálogo; sin stakeholder o si la carga falla solo se editable rol y
+  estado. No se añadió ningún endpoint ni se duplicó el CRUD.
+- Verification: `pnpm build` compiló correctamente (2564 módulos). No se probó en
+  navegador ni contra un servidor, a pedido del usuario.
+
 ## 2026-11-25 — Administración de rol y estado de cuenta
 
 - Change: se añadió `PATCH /api/admin/users/:userId` directamente en

@@ -1,5 +1,28 @@
 # Changelog — stakeholders
 
+## 2026-11-25 — Ocultar personas vinculadas a cuentas en el panel
+
+- Change: `useAdminStakeholders` combina `GET /api/stakeholders` con
+  `GET /api/users` y excluye de la tabla del panel las personas cuyo
+  `stakeholder_id` pertenece a cualquier cuenta, activa o inactiva.
+- Impact: el CRUD y los `GET` de la API no cambian; los formularios de préstamos
+  siguen viendo a los prestamistas. Solo la vista administrativa deja de mostrar
+  prestamistas y administradores como stakeholders administrables.
+- Verification: `pnpm build` compiló correctamente (2564 módulos). No se probó en
+  navegador ni contra un servidor, a pedido del usuario.
+
+## 2026-11-25 — Mutaciones restringidas a administradores
+
+- Change: `stakeholderRoutes.js` aplica `requireAdmin` a `POST`, `PUT`, `PATCH`
+  y `DELETE`. `GET /api/stakeholders` y `GET /api/stakeholders/:id` siguen
+  disponibles para cualquier cuenta autenticada.
+- Impact: las cuentas `lender` pueden seguir leyendo stakeholders para crear o
+  editar préstamos, pero no pueden crear, modificar ni eliminar personas. Las
+  reglas de campos y los códigos de error del CRUD no cambian; las mutaciones
+  ahora pueden responder `403 Admin access required`.
+- Verification: `pnpm build` compiló correctamente. No se probó contra un
+  servidor ni en navegador, a pedido del usuario.
+
 ## 2026-11-16 — Validador reubicado en `utils/validators`
 
 - Change: `stakeholderValidation.js` se movió a `src/server/utils/validators/` y pasó a reutilizar `parsePositiveInteger` y `parseOptionalString` de `validators/common.js`.

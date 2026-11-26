@@ -12,16 +12,17 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Endpoints
 
-Todas las rutas requieren `Authorization: Bearer <token>`.
+Todas las rutas requieren `Authorization: Bearer <token>`. Las mutaciones
+adicionalmente exigen el rol `admin`.
 
 | Método | Ruta | Controller | Service | Acceso |
 | --- | --- | --- | --- | --- |
 | `GET` | `/api/stakeholders` | `stakeholderController.getAllStakeholders` | `stakeholderService.getAllStakeholders` | token |
 | `GET` | `/api/stakeholders/:id` | `stakeholderController.getStakeholderById` | `stakeholderService.getStakeholderById` | token |
-| `POST` | `/api/stakeholders` | `stakeholderController.createStakeholder` | `stakeholderService.createStakeholder` | token |
-| `PUT` | `/api/stakeholders/:id` | `stakeholderController.replaceStakeholder` | `stakeholderService.replaceStakeholder` | token |
-| `PATCH` | `/api/stakeholders/:id` | `stakeholderController.updateStakeholder` | `stakeholderService.updateStakeholder` | token |
-| `DELETE` | `/api/stakeholders/:id` | `stakeholderController.deleteStakeholder` | `stakeholderService.deleteStakeholder` | token |
+| `POST` | `/api/stakeholders` | `stakeholderController.createStakeholder` | `stakeholderService.createStakeholder` | admin |
+| `PUT` | `/api/stakeholders/:id` | `stakeholderController.replaceStakeholder` | `stakeholderService.replaceStakeholder` | admin |
+| `PATCH` | `/api/stakeholders/:id` | `stakeholderController.updateStakeholder` | `stakeholderService.updateStakeholder` | admin |
+| `DELETE` | `/api/stakeholders/:id` | `stakeholderController.deleteStakeholder` | `stakeholderService.deleteStakeholder` | admin |
 
 ## Campos
 
@@ -40,6 +41,15 @@ Todas las rutas requieren `Authorization: Bearer <token>`.
 - `GET /`: devuelve todos los stakeholders ordenados por `last_name` y luego
   `first_name` (`200`).
 - `GET /:id`: devuelve el stakeholder o `404` si no existe.
+- `GET /` y `GET /:id` siguen disponibles para cualquier cuenta autenticada; el
+  formulario de préstamos depende de `GET /` para elegir prestamista, cliente y
+  fiadores.
+- `GET /` no filtra por cuenta: la API devuelve todos los stakeholders. Solo la
+  vista `/admin/stakeholders` oculta en cliente las personas referenciadas por
+  algún `user.stakeholder_id`, para no mostrar prestamistas ni administradores
+  como registros administrables.
+- `POST`, `PUT`, `PATCH` y `DELETE` pasan por `requireAdmin` en
+  `stakeholderRoutes.js`. Un `lender` recibe `403 Admin access required`.
 - `POST /`: crea el stakeholder (`201`) y devuelve el registro creado. Si el
   `national_id` ya existe responde `409`.
 - `PUT /:id`: reemplazo completo (`200`). Exige `first_name` y `last_name`; los
@@ -60,6 +70,7 @@ pero se gestionan desde el módulo `loans` y no desde este CRUD.
 
 - `400` campos obligatorios, enum, fecha o longitud inválidos; `:id` inválido.
 - `401` token ausente o inválido (lo aplica `checkAuth`).
+- `403` mutación intentada por una cuenta que no es `admin`.
 - `404` stakeholder inexistente.
 - `409` `national_id` duplicado o stakeholder referenciado al eliminar.
 - `500` error inesperado.

@@ -14,10 +14,15 @@ export default function AdminUsers() {
         success,
         editingUser,
         formValues,
+        stakeholderValues,
+        stakeholderFieldErrors,
+        stakeholderLoading,
+        stakeholderReady,
         fetchUsers,
         openEdit,
         closeEdit,
         changeForm,
+        changeStakeholderForm,
         saveEdit,
         dismissError,
         dismissSuccess,
@@ -26,7 +31,7 @@ export default function AdminUsers() {
     return (
         <Card className="mx-auto w-full max-w-6xl">
             <AdminUsersHeader
-                description="Review accounts, change roles, and enable or disable access."
+                description="Review accounts, edit linked people, and enable or disable access."
                 refreshing={loading}
                 onRefresh={fetchUsers}
             />
@@ -46,9 +51,14 @@ export default function AdminUsers() {
             <AdminUserEditDialog
                 user={editingUser}
                 formValues={formValues}
+                stakeholderValues={stakeholderValues}
+                stakeholderFieldErrors={stakeholderFieldErrors}
+                stakeholderLoading={stakeholderLoading}
+                stakeholderReady={stakeholderReady}
                 error={error}
                 saving={saving}
                 onChange={changeForm}
+                onStakeholderChange={changeStakeholderForm}
                 onClose={closeEdit}
                 onSave={saveEdit}
             />

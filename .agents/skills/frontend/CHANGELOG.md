@@ -1,5 +1,30 @@
 # Changelog — frontend
 
+### 2026-11-25 — Edición conjunta de usuarios y filtro de stakeholders
+
+- Change: se extrajo `StakeholderFormFields` y se reutilizó en el diálogo de
+  usuarios y en el formulario de stakeholders. `useAdminUsers` combina
+  `PATCH /api/admin/users/:userId` con `PUT /api/stakeholders/:id`; el
+  `useAdminStakeholders` oculta las personas vinculadas a cuentas.
+- Impact: `/admin/users` edita rol, estado y datos personales en un solo
+  diálogo, sin duplicar el campo de rol; `/admin/stakeholders` ya no muestra
+  prestamistas ni administradores. No se añadieron endpoints.
+- Verification: `pnpm build` compiló correctamente (2564 módulos). No se probó
+  en navegador ni contra un servidor, a pedido del usuario.
+
+### 2026-11-25 — P4 administración de stakeholders
+
+- Change: `AdminStakeholders` dejó de ser stub. Se añadieron
+  `useAdminStakeholders`, `src/client/utils/stakeholderForm.js` y seis
+  componentes bajo `src/components/admin/stakeholders/` para listar, crear,
+  editar y eliminar personas con los endpoints existentes de
+  `/api/stakeholders`.
+- Impact: el panel usa `GET`, `POST`, `PUT` y `DELETE` del CRUD actual, con
+  validación local, estados de carga/vacío/error/éxito y confirmación de borrado.
+  Los formularios de préstamos siguen leyendo `GET /api/stakeholders`.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-25 — P3 administración de usuarios
 
 - Change: `AdminUsers` dejó de ser stub. Se añadieron `useAdminUsers`,

@@ -1,5 +1,29 @@
 # Changelog — admin
 
+## 2026-11-25 — Ajustes de edición en users y stakeholders
+
+- Change: `/admin/stakeholders` oculta a las personas vinculadas a cuentas y el
+  diálogo de `/admin/users` combina rol/estado con los datos del stakeholder
+  vinculado, reutilizando `StakeholderFormFields` y los endpoints existentes.
+- Impact: los prestamistas y administradores ya no aparecen como stakeholders
+  administrables, pero sus datos se editan desde su cuenta. El guardado sigue
+  siendo en dos pasos (`PATCH` de usuario y `PUT` de stakeholder), con aviso
+  explícito si el segundo falla.
+- Verification: `pnpm build` compiló correctamente (2564 módulos). No se probó en
+  navegador ni contra un servidor, a pedido del usuario.
+
+## 2026-11-25 — P4 stakeholders implementado
+
+- Change: `/admin/stakeholders` dejó de ser stub. Se añadió
+  `useAdminStakeholders`, `src/client/utils/stakeholderForm.js` y seis componentes
+  bajo `src/components/admin/stakeholders/` para crear, editar y eliminar con
+  los endpoints existentes de `/api/stakeholders`.
+- Impact: el panel ofrece CRUD completo sin duplicar rutas bajo `/api/admin`.
+  Las mutaciones requieren `admin`; los `GET` siguen abiertos a cuentas
+  autenticadas para los formularios de préstamos.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ## 2026-11-25 — P3 usuarios implementado
 
 - Change: `/admin/users` dejó de ser stub. Se añadió `useAdminUsers`, helpers en
