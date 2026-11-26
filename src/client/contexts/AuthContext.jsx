@@ -103,3 +103,26 @@ export function RequireAuth() {
 
   return <Outlet />;
 }
+
+export function RequireAdmin() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+        Checking session...
+      </main>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  if (user.Role?.role_name !== "admin") {
+    return <Navigate to="/loans" replace />;
+  }
+
+  return <Outlet />;
+}

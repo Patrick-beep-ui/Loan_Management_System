@@ -85,6 +85,10 @@ después de `checkAuth`; las rutas de admin se definen directamente allí.
 de la cuenta autenticada; cualquier otro valor responde `403 Only admins can
 change the lender`. Los validadores de dominio mantienen sus reglas habituales.
 
+En el cliente, `RequireAdmin` (`src/client/contexts/AuthContext.jsx`) usa
+`user.Role.role_name` para mostrar el panel `/admin` solo a admins; es una
+comprobación de interfaz, no una autorización de API.
+
 ## Errores
 
 Cualquier error inesperado se registra y responde `500` con
@@ -101,3 +105,4 @@ Cualquier error inesperado se registra y responde `500` con
 - `src/server/middlewares/requireAdmin.js`
 - `src/server/middlewares/requireAdminForLenderChange.js`
 - `src/server/routes/adminRoutes.js`
+- `src/client/contexts/AuthContext.jsx` (`RequireAuth` y `RequireAdmin`)

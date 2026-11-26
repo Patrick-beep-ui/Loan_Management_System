@@ -1,5 +1,18 @@
 # Changelog — frontend
 
+### 2026-11-25 — Shell del panel de administración
+
+- Change: Se añadió `RequireAdmin`, `AdminLayout`, `AdminNav`,
+  `AdminPlaceholder`, cinco vistas stub bajo `src/client/views/admin/` y el
+  enlace `Admin` en `LoanListHeader`. `main.jsx` monta `/admin` y sus hijos
+  detrás de `RequireAuth` y `RequireAdmin`.
+- Impact: solo las cuentas `admin` pueden abrir el panel; los no admins vuelven
+  a `/loans`. Las fases de dominio posteriores reemplazan el contenido de las
+  vistas stub sin tocar el router. El detalle está en [`SKILL.md`](SKILL.md) y
+  en el módulo `admin`.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-23 — Edición reducida de préstamos con pagos
 
 - Change: `Edit` ya no se desactiva cuando el préstamo tiene pagos. `useEditLoanForm`

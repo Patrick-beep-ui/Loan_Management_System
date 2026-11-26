@@ -16,8 +16,8 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 `src/client/main.jsx` crea el router con `createBrowserRouter` y monta
 `RouterProvider` dentro de `React.StrictMode`. Una ruta sin `path` monta
 `AuthProvider` como layout raíz; dentro de ella, `RequireAuth` protege
-`/loans`, `/create-loan`, `/loans/:id` y `/loans/:id/edit`. El resto de las
-rutas son públicas:
+`/loans`, `/create-loan`, `/loans/:id` y `/loans/:id/edit`, y `RequireAdmin`
+protege `/admin` y sus hijos. El resto de las rutas son públicas:
 
 | Ruta | Vista | Archivo | Acceso |
 | --- | --- | --- | --- |
@@ -28,6 +28,12 @@ rutas son públicas:
 | `/create-loan` | `CreateLoan` | `src/client/views/CreateLoan.jsx` | protegido |
 | `/loans/:id` | `LoanDetails` | `src/client/views/LoanDetails.jsx` | protegido |
 | `/loans/:id/edit` | `EditLoan` | `src/client/views/EditLoan.jsx` | protegido |
+| `/admin` | redirección | `src/client/main.jsx` | admin |
+| `/admin/dashboard` | `AdminDashboard` (stub) | `src/client/views/admin/AdminDashboard.jsx` | admin |
+| `/admin/users` | `AdminUsers` (stub) | `src/client/views/admin/AdminUsers.jsx` | admin |
+| `/admin/stakeholders` | `AdminStakeholders` (stub) | `src/client/views/admin/AdminStakeholders.jsx` | admin |
+| `/admin/loans` | `AdminLoans` (stub) | `src/client/views/admin/AdminLoans.jsx` | admin |
+| `/admin/payments` | `AdminPayments` (stub) | `src/client/views/admin/AdminPayments.jsx` | admin |
 | `/test` | `Test` (vista de prueba) | `src/client/Test.jsx` | público |
 
 `Login` y `Signup` consumen `/api/auth` a través del servicio compartido
@@ -100,6 +106,13 @@ el alias declarado en `components.json`, pero los componentes aún no lo usan.
 Conviene tenerlo presente al agregar componentes nuevos.
 
 ### Componentes por dominio
+
+`src/components/admin/` reúne la UI del panel de administración:
+
+| Archivo | Responsabilidad |
+| --- | --- |
+| `AdminNav.jsx` | navegación con `NavLink`; el activo usa `variant="default"` y los demás `"outline"` |
+| `AdminPlaceholder.jsx` | tarjeta compartida por las cinco vistas stub |
 
 `src/components/loans/` reúne la UI específica de préstamos, separada por
 propósito en `create/`, `list/`, `details/` y `edit/`. Las vistas importan desde
@@ -225,8 +238,8 @@ ese evento y limpia el usuario.
 
 ## Autenticación en el cliente
 
-`src/client/contexts/AuthContext.jsx` exporta `AuthProvider`, `useAuth()` y
-`RequireAuth`:
+`src/client/contexts/AuthContext.jsx` exporta `AuthProvider`, `useAuth()`,
+`RequireAuth` y `RequireAdmin`:
 
 - `AuthProvider` es el layout raíz: al montar hidrata el usuario con
   `api.get("/users/auth")` si hay `token`, expone `{ user, isAuthenticated,
@@ -235,6 +248,9 @@ ese evento y limpia el usuario.
   vista; falla si se usa fuera del provider.
 - `RequireAuth` muestra "Checking session..." mientras hidrata y redirige a
   `/login` con `state.from` si no hay sesión; si la hay, renderiza `<Outlet />`.
+- `RequireAdmin` usa el mismo estado de hidratación, redirige a `/login` sin
+  sesión y a `/loans` si `user.Role.role_name` no es `admin`; si lo es,
+  renderiza `<Outlet />`.
 - `login(token)` guarda el JWT, carga `/users/auth` y actualiza el estado;
   `logout()` borra el token y el usuario. Ambos están disponibles vía
   `useAuth()`.
@@ -253,6 +269,14 @@ ese evento y limpia el usuario.
 - Las dos vistas comparten la misma composición: `Card`, `CardHeader`,
   `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Label`, `Input`
   y `Button`, sin colores fijos.
+
+## Panel de administración
+
+`src/client/layouts/AdminLayout.jsx` es el shell de `/admin`: título, `AdminNav`
+y `Outlet`. Las vistas en `src/client/views/admin/` son stubs que las fases de
+dominio reemplazarán sin tocar el router. `LoanListHeader` muestra el enlace
+`Admin` solo cuando `user.Role.role_name === "admin"`. El contrato completo,
+incluido el orden de las fases posteriores, vive en el módulo `admin`.
 
 ## Listado de préstamos
 
@@ -356,6 +380,8 @@ envía `api.patch("/loans/:id", payload)` y vuelve al detalle con
 
 - Las vistas nuevas van en `src/client/views/` y se registran en
   `src/client/main.jsx`.
+- Las vistas del panel van en `src/client/views/admin/` y el shell en
+  `src/client/layouts/`.
 - Los primitivos reutilizables van en `src/components/ui/` y los componentes
   compuestos por dominio en `src/components/<dominio>/`, agrupados por propósito
   cuando hay más de un flujo (por ejemplo, `loans/create/` y `loans/list/`).
@@ -369,4 +395,5 @@ envía `api.patch("/loans/:id", payload)` y vuelve al detalle con
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en
-  `CHANGELOG.md`, siguiendo la skill `documentation`.
+  `CHANGELOG.md`, siguiendo la skill `documentation`; si afecta al panel,
+  también se actualiza el módulo `admin`.

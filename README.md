@@ -97,9 +97,38 @@ El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` d
 | `/create-loan` | `CreateLoan` | protegido |
 | `/loans/:id` | `LoanDetails` | protegido |
 | `/loans/:id/edit` | `EditLoan` | protegido |
+| `/admin` | redirección a `/admin/dashboard` | admin |
+| `/admin/dashboard` | `AdminDashboard` (stub) | admin |
+| `/admin/users` | `AdminUsers` (stub) | admin |
+| `/admin/stakeholders` | `AdminStakeholders` (stub) | admin |
+| `/admin/loans` | `AdminLoans` (stub) | admin |
+| `/admin/payments` | `AdminPayments` (stub) | admin |
 | `/test` | `Test` (vista de prueba) | público |
 
-`Login` y `Signup` consumen `/api/auth` mediante `src/lib/axiosService.js` (`api.post`): validan los campos, muestran estados de carga y error y usan los componentes `Card`, `Input`, `Label` y `Button`. El servicio centraliza el `baseURL` (`VITE_API_URL` o `http://localhost:3000/api`), un interceptor que envía `Authorization: Bearer <token>` leyendo `token` de `localStorage` y un interceptor de respuesta que ante un `401` limpia el token y emite `auth:unauthorized` (excepto en `/auth/login` y `/auth/signup`). `src/client/contexts/AuthContext.jsx` expone `AuthProvider`, `useAuth()` y `RequireAuth`: la sesión se hidrata con `GET /api/users/auth`, `/loans`, `/create-loan`, `/loans/:id` y `/loans/:id/edit` están protegidos y el resto de rutas son públicas. `Login` usa `useAuth().login(token)` y navega a la ruta de origen o `/loans`; `Signup` envía `email`, `password` y `stakeholder_id` y, tras el registro, navega a `/login` con un aviso de éxito. `Loan` compone el listado desde `src/components/loans/list/` con el hook `useLoans` y `api.get("/loans")` (ID, prestamista, cliente, monto, tasa, modo, fecha y total), con estados de carga, vacío y error y formatos en `src/client/utils/loanFormat.js`; usa `useAuth().user` solo para mostrar nombre y rol, porque el backend filtra por JWT. `CreateLoan` es un formulario de dos pasos compuesto desde `src/components/loans/create/`: el hook `useCreateLoanForm` carga stakeholders, administra el estado y valida con `src/client/utils/loanForm.js`, `CreateLoanForm` reúne los campos, fiadores y garantías, e `InstallmentPreview` muestra las cuotas calculadas por `src/client/utils/loanSchedule.js` antes de enviar `POST /api/loans`; `Loan` incluye el botón `New loan` y un aviso de creación correcta. `LoanDetails` compone `src/components/loans/details/` con `useLoanDetails` y `api.get("/loans/:id")`: muestra resumen, cuotas, fiadores, garantías e interés, y ofrece editar siempre pero eliminar solo cuando no hay pagos registrados; `useLoanFormState` es el estado compartido con la creación. Desde el detalle se registran pagos con `src/components/payments/` y `useLoanPayment`: la cuota o el interés se pagan con monto bloqueado y `paid_at` opcional, y un refetch actualiza estados sin recargar. La reversión es independiente: `usePayments` consulta `GET /api/payments?loan_id`, `usePaymentRevert` envía `DELETE /api/payments/:id` con el `payment_id` y `RevertPaymentDialog` pide confirmación antes de liberar la eliminación y la edición financiera completa. `EditLoan` usa `useEditLoanForm`: sin pagos reutiliza el formulario y la vista previa de `create/` y envía `PUT /api/loans/:id`; con pagos muestra `RestrictedLoanEditForm` y envía `PATCH /api/loans/:id` solo con fiadores, garantías y, para `admin`, `lender_id`. En ambos casos vuelve al detalle con `state.updatedLoanId`. `Loan` enlaza cada ID al detalle y muestra `state.deletedLoanId` tras una eliminación. `/test` usa `api.get("/roles")` del mismo servicio (ruta actualmente deshabilitada en `src/server/api.js`). Los estilos se definen en `src/client/index.css` con Tailwind 4, la paleta de marca (`263A69`, `B0C7DD`, `E8E3DD`, `EDECEA` y `0F0F0F`) en temas claro y oscuro, con Playfair Display para títulos y Montserrat para texto desde Google Fonts. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
+`Login` y `Signup` consumen `/api/auth` mediante `src/lib/axiosService.js` (`api.post`): validan los campos, muestran estados de carga y error y usan los componentes `Card`, `Input`, `Label` y `Button`. El servicio centraliza el `baseURL` (`VITE_API_URL` o `http://localhost:3000/api`), un interceptor que envía `Authorization: Bearer <token>` leyendo `token` de `localStorage` y un interceptor de respuesta que ante un `401` limpia el token y emite `auth:unauthorized` (excepto en `/auth/login` y `/auth/signup`). `src/client/contexts/AuthContext.jsx` expone `AuthProvider`, `useAuth()`, `RequireAuth` y `RequireAdmin`: la sesión se hidrata con `GET /api/users/auth`, `/loans`, `/create-loan`, `/loans/:id` y `/loans/:id/edit` están protegidos, `/admin/*` exige rol `admin` y el resto de rutas son públicas. `Login` usa `useAuth().login(token)` y navega a la ruta de origen o `/loans`; `Signup` envía `email`, `password` y `stakeholder_id` y, tras el registro, navega a `/login` con un aviso de éxito. `Loan` compone el listado desde `src/components/loans/list/` con el hook `useLoans` y `api.get("/loans")` (ID, prestamista, cliente, monto, tasa, modo, fecha y total), con estados de carga, vacío y error y formatos en `src/client/utils/loanFormat.js`; usa `useAuth().user` solo para mostrar nombre y rol, porque el backend filtra por JWT. `CreateLoan` es un formulario de dos pasos compuesto desde `src/components/loans/create/`: el hook `useCreateLoanForm` carga stakeholders, administra el estado y valida con `src/client/utils/loanForm.js`, `CreateLoanForm` reúne los campos, fiadores y garantías, e `InstallmentPreview` muestra las cuotas calculadas por `src/client/utils/loanSchedule.js` antes de enviar `POST /api/loans`; `Loan` incluye el botón `New loan` y un aviso de creación correcta. `LoanDetails` compone `src/components/loans/details/` con `useLoanDetails` y `api.get("/loans/:id")`: muestra resumen, cuotas, fiadores, garantías e interés, y ofrece editar siempre pero eliminar solo cuando no hay pagos registrados; `useLoanFormState` es el estado compartido con la creación. Desde el detalle se registran pagos con `src/components/payments/` y `useLoanPayment`: la cuota o el interés se pagan con monto bloqueado y `paid_at` opcional, y un refetch actualiza estados sin recargar. La reversión es independiente: `usePayments` consulta `GET /api/payments?loan_id`, `usePaymentRevert` envía `DELETE /api/payments/:id` con el `payment_id` y `RevertPaymentDialog` pide confirmación antes de liberar la eliminación y la edición financiera completa. `EditLoan` usa `useEditLoanForm`: sin pagos reutiliza el formulario y la vista previa de `create/` y envía `PUT /api/loans/:id`; con pagos muestra `RestrictedLoanEditForm` y envía `PATCH /api/loans/:id` solo con fiadores, garantías y, para `admin`, `lender_id`. En ambos casos vuelve al detalle con `state.updatedLoanId`. `Loan` enlaza cada ID al detalle y muestra `state.deletedLoanId` tras una eliminación. `/test` usa `api.get("/roles")` del mismo servicio (ruta actualmente deshabilitada en `src/server/api.js`). Los estilos se definen en `src/client/index.css` con Tailwind 4, la paleta de marca (`263A69`, `B0C7DD`, `E8E3DD`, `EDECEA` y `0F0F0F`) en temas claro y oscuro, con Playfair Display para títulos y Montserrat para texto desde Google Fonts. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
+
+## Panel de administración
+
+El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts/`), `AdminNav` (`src/components/admin/`) y vistas stub en `src/client/views/admin/`. `RequireAdmin`, definido en `AuthContext.jsx`, redirige a `/loans` a las cuentas que no son `admin`; la autorización real sigue en la API, donde `/api/admin/*` está protegido por `requireAdmin`. `LoanListHeader` muestra el enlace `Admin` solo para administradores.
+
+| Ruta | Vista | Estado |
+| --- | --- | --- |
+| `/admin` | redirección a `/admin/dashboard` | shell |
+| `/admin/dashboard` | `AdminDashboard` | stub |
+| `/admin/users` | `AdminUsers` | stub |
+| `/admin/stakeholders` | `AdminStakeholders` | stub |
+| `/admin/loans` | `AdminLoans` | stub |
+| `/admin/payments` | `AdminPayments` | stub |
+
+Las fases de dominio reemplazan el contenido de esos stubs sin tocar `main.jsx`:
+
+- P3 users: `/admin/users` consume endpoints bajo `/api/admin/users` (aún no implementados).
+- P4 stakeholders: mutaciones con `requireAdmin`; `GET /api/stakeholders` sigue abierto para el formulario de préstamos.
+- P5 loans: las rutas de préstamos aplican `requireAdminForLenderChange`; la vista admin reutiliza los componentes de `loans`.
+- P6 payments: historial, registro y reversión con los endpoints existentes.
+- P7 dashboard: métricas calculadas en el cliente desde `GET /api/loans` y `GET /api/payments`, sin endpoint propio.
+
+No se duplican funcionalidades bajo `/admin`; solo la administración de usuarios vive en ese prefijo. El contrato detallado del módulo está en `.agents/skills/admin/SKILL.md`.
 
 ## Estructura del proyecto
 
@@ -116,16 +145,19 @@ database/
 
 src/
 ├─ client/                  interfaz React (Vite)
-│  ├─ main.jsx              entrada, rutas y `RequireAuth`
+│  ├─ main.jsx              entrada, rutas, `RequireAuth` y `RequireAdmin`
 │  ├─ App.jsx               componente principal (demo de Vite)
 │  ├─ App.css / index.css   estilos base y tokens de Tailwind/shadcn
-│  ├─ contexts/             AuthContext: provider, hook y guard
+│  ├─ contexts/             AuthContext: provider, hook y guards
 │  ├─ hooks/                hooks: useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails, useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert
+│  ├─ layouts/              shell `AdminLayout`
 │  ├─ Test.jsx              vista de prueba (/test)
 │  ├─ views/                vistas: Login, Signup, Loans, CreateLoan, LoanDetails, EditLoan
+│  │  └─ admin/             vistas stub del panel: Dashboard, Users, Stakeholders, Loans, Payments
 │  ├─ utils/                helpers: loanFormat, loanForm, loanSchedule, loanEdit, loanPayment, paymentHistory
 │  └─ assets/
 ├─ components/
+│  ├─ admin/                AdminNav y AdminPlaceholder
 │  ├─ loans/                componentes de préstamos por propósito
 │  │  ├─ create/            formulario, fiadores, garantías y vista previa
 │  │  ├─ list/              encabezado, avisos y tabla del listado

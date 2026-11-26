@@ -1,5 +1,15 @@
 # Changelog — auth
 
+## 2026-11-25 — Guard de admin en el cliente
+
+- Change: `AuthContext.jsx` exporta `RequireAdmin`, que espera la hidratación,
+  redirige a `/login` sin sesión y a `/loans` si `user.Role.role_name` no es
+  `admin`. `LoanListHeader` usa el mismo valor para mostrar el enlace `Admin`.
+- Impact: el panel `/admin` queda oculto para cuentas `lender`; la autorización
+  real sigue en `requireAdmin` y en `/api/admin/*`.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ## 2026-11-25 — Sesión validada contra la base y middlewares de admin
 
 - Change: `checkAuth` consulta `users` y `Role` después de verificar el JWT,
