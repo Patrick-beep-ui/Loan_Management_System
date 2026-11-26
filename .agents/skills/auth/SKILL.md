@@ -77,7 +77,8 @@ resolver permisos y propiedad. En `api.js`, `/auth` se monta antes de
 `requireAdmin` (`src/server/middlewares/requireAdmin.js`) responde `403 Admin
 access required` si `req.user.role_name` no es `admin`. Se aplica en
 `AdminRouter` (`src/server/routes/adminRoutes.js`), montado en `/api/admin`
-después de `checkAuth`; las rutas de admin se definen directamente allí.
+después de `checkAuth`; `PATCH /api/admin/users/:userId` se define directamente
+en ese router, sin subrouters.
 
 `requireAdminForLenderChange`
 (`src/server/middlewares/requireAdminForLenderChange.js`) permite enviar

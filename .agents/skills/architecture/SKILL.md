@@ -66,9 +66,10 @@ api.use("/payments", PaymentRouter); // /api/payments
 El orden importa: cualquier router registrado después de `checkAuth` exige
 `Authorization: Bearer <token>`.
 
-`AdminRouter` (`src/server/routes/adminRoutes.js`) se limita a aplicar
-`requireAdmin` a las rutas que define en ese mismo archivo; no delega en
-subrouters por recurso. Las rutas de administración futuras se agregan allí.
+`AdminRouter` (`src/server/routes/adminRoutes.js`) aplica `requireAdmin` a todo
+lo registrado debajo y define directamente
+`PATCH /users/:userId` → `PATCH /api/admin/users/:userId`. No hay subrouters por
+recurso; el listado sigue en `GET /api/users`.
 
 ## Middlewares
 

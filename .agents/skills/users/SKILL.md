@@ -1,11 +1,11 @@
 ---
 name: users
-description: User module: listing users through the users service, controller, and routes.
+description: User module: listing and admin-only role/active-state updates through layered routes, controllers, services, and validators.
 ---
 
 # users
 
-Módulo de consulta de usuarios.
+Módulo de consulta de usuarios y de administración de rol y estado de cuenta.
 
 El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -15,6 +15,7 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 | --- | --- | --- | --- |
 | `GET` | `/api/users` | `userController.getAllUsers` | `userService.getAllUsers` |
 | `GET` | `/api/users/auth` | `userController.authUser` | `userService.authUser` |
+| `PATCH` | `/api/admin/users/:userId` | `adminUserController.updateAdminUser` | `adminUserService.updateAdminUser` |
 
 ## Comportamiento
 
@@ -32,12 +33,27 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
   `Stakeholder` y `Role` (inicial mayúscula). Si no hay `user_id` responde `401`;
   si el usuario no existe responde `404` con `{ error: "User not found" }`.
   Es la ruta que usa `AuthProvider` en el cliente para hidratar la sesión.
+- `PATCH /api/admin/users/:userId` está protegido por `checkAuth` y `requireAdmin`;
+  un token de `lender` responde `403 Admin access required`.
+- El payload acepta `role_name` (`admin` o `lender`) y `is_active` (booleano),
+  solos o juntos; cualquier otro campo se ignora. La validación vive en
+  `adminUserValidation`, que también exige un `user_id` entero positivo y al
+  menos un campo. Un `role_name` inválido responde `400`.
+- Si el usuario no existe responde `404 User not found`; si el rol no está en
+  la base responde `409 Role <nombre> does not exist`. Un error inesperado
+  responde `500 Internal Server Error`.
+- La respuesta es `200` con el usuario actualizado en la misma proyección que
+  `GET /api/users/auth`, sin `password_hash` y con `Stakeholder` y `Role`.
 
 ## Archivos
 
 - `src/server/routes/userRoutes.js`
+- `src/server/routes/adminRoutes.js`
 - `src/server/controllers/userController.js`
+- `src/server/controllers/adminUserController.js`
 - `src/server/services/userService.js`
+- `src/server/services/adminUserService.js`
+- `src/server/utils/validators/adminUserValidation.js`
 
 La creación de usuarios no vive aquí: pertenece al módulo `auth` mediante
 `POST /api/auth/signup`, que siempre crea cuentas `lender` (rol resuelto desde

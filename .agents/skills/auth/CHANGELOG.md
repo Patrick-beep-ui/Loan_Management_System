@@ -1,5 +1,15 @@
 # Changelog — auth
 
+## 2026-11-25 — Mutaciones de usuario bajo `/api/admin`
+
+- Change: `AdminRouter` define `PATCH /users/:userId` directamente. `requireAdmin`
+  se aplica a todo el router, por lo que `PATCH /api/admin/users/:userId` queda
+  restringido al rol `admin`; `checkAuth` sigue resolviendo el rol desde la base
+  en cada petición.
+- Impact: un `lender` recibe `403 Admin access required`; cambiar el rol o
+  desactivar una cuenta surte efecto en la siguiente solicitud.
+- Verification: `pnpm build` compiló correctamente. Sin pruebas de API en vivo.
+
 ## 2026-11-25 — Guard de admin en el cliente
 
 - Change: `AuthContext.jsx` exporta `RequireAdmin`, que espera la hidratación,

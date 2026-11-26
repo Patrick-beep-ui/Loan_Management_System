@@ -82,8 +82,8 @@ flujo de autenticación.
 - `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
   `Signup`, `Test.jsx` y los hooks `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
-  `usePayments` y `usePaymentRevert` importan esa instancia en lugar de crear
-  clientes propios.
+  `usePayments`, `usePaymentRevert` y `useAdminUsers` importan esa instancia en
+  lugar de crear clientes propios.
 
 ## Componentes de UI
 
@@ -112,7 +112,12 @@ Conviene tenerlo presente al agregar componentes nuevos.
 | Archivo | Responsabilidad |
 | --- | --- |
 | `AdminNav.jsx` | navegación con `NavLink`; el activo usa `variant="default"` y los demás `"outline"` |
-| `AdminPlaceholder.jsx` | tarjeta compartida por las cinco vistas stub |
+| `AdminPlaceholder.jsx` | tarjeta compartida por las vistas stub restantes |
+| `users/AdminUsersHeader.jsx` | título, descripción y botón de actualización |
+| `users/AdminUsersAlerts.jsx` | avisos de error y éxito del flujo de usuarios |
+| `users/AdminUsersTable.jsx` | tabla con estados de carga y vacío |
+| `users/AdminUserRow.jsx` | fila con rol, estado y acción de edición |
+| `users/AdminUserEditDialog.jsx` | diálogo con selectores de rol y estado |
 
 `src/components/loans/` reúne la UI específica de préstamos, separada por
 propósito en `create/`, `list/`, `details/` y `edit/`. Las vistas importan desde
@@ -273,10 +278,13 @@ ese evento y limpia el usuario.
 ## Panel de administración
 
 `src/client/layouts/AdminLayout.jsx` es el shell de `/admin`: título, `AdminNav`
-y `Outlet`. Las vistas en `src/client/views/admin/` son stubs que las fases de
-dominio reemplazarán sin tocar el router. `LoanListHeader` muestra el enlace
-`Admin` solo cuando `user.Role.role_name === "admin"`. El contrato completo,
-incluido el orden de las fases posteriores, vive en el módulo `admin`.
+y `Outlet`. Las vistas en `src/client/views/admin/` son reemplazadas por cada
+fase de dominio sin tocar el router; `/admin/users` ya lista cuentas con
+`useAdminUsers` desde `GET /api/users`, permite actualizar rol y estado con
+`PATCH /api/admin/users/:userId` y muestra avisos de carga, error, vacío y
+éxito. `LoanListHeader` muestra el enlace `Admin` solo cuando
+`user.Role.role_name === "admin"`. El contrato completo, incluido el orden de
+las fases posteriores, vive en el módulo `admin`.
 
 ## Listado de préstamos
 
@@ -391,7 +399,7 @@ envía `api.patch("/loans/:id", payload)` y vuelve al detalle con
   `useAuth()` desde cualquier vista.
 - Los helpers puros de dominio van en `src/client/utils/`, como
   `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanEdit.js`,
-  `loanPayment.js` y `paymentHistory.js`.
+  `loanPayment.js`, `paymentHistory.js` y `userForm.js`.
 - Los tokens de color se definen en `index.css`; evitar colores fijos en los
   componentes de UI.
 - Todo cambio de comportamiento del frontend se documenta aquí y en

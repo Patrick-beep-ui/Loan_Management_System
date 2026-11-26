@@ -1,5 +1,17 @@
 # Changelog — users
 
+## 2026-11-25 — Administración de rol y estado de cuenta
+
+- Change: se añadió `PATCH /api/admin/users/:userId` directamente en
+  `adminRoutes`, con `adminUserController` → `adminUserService` y el validador
+  `adminUserValidation`. Acepta `role_name` y `is_active`, resuelve el rol por
+  nombre y devuelve la proyección de `authUser`.
+- Impact: el listado sigue en `GET /api/users`; solo las mutaciones viven bajo
+  `/api/admin` y quedan detrás de `checkAuth` y `requireAdmin`. El cliente
+  administrativo usa el mismo listado y actualiza la fila con la respuesta.
+- Verification: `pnpm build` compiló correctamente. No se probó contra un
+  servidor ni en navegador, a pedido del usuario.
+
 ## 2026-11-19 — Documentado `GET /api/users/auth`
 
 - Change: se documentó el endpoint existente que devuelve el usuario actual

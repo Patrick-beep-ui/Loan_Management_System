@@ -1,5 +1,16 @@
 # Changelog — frontend
 
+### 2026-11-25 — P3 administración de usuarios
+
+- Change: `AdminUsers` dejó de ser stub. Se añadieron `useAdminUsers`,
+  `src/client/utils/userForm.js` y cinco componentes bajo
+  `src/components/admin/users/` para listar cuentas desde `GET /api/users` y
+  editar `role_name` e `is_active` mediante `PATCH /api/admin/users/:userId`.
+- Impact: el panel permite refrescar la lista, abrir un diálogo de edición y
+  ver estados de carga, vacío, error y éxito sin duplicar el endpoint de listado.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-25 — Shell del panel de administración
 
 - Change: Se añadió `RequireAdmin`, `AdminLayout`, `AdminNav`,

@@ -82,7 +82,7 @@ La validación y normalización de payloads vive en `src/server/utils/validators
 
 Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
 
-`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/admin`, `/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) exige `Authorization: Bearer <token>`. `checkAuth` verifica el JWT y consulta `users`/`Role` para reconstruir `req.user` con el rol y el stakeholder vigentes en la base: una cuenta con `is_active = false` responde `401`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`. `/api/admin` está protegido además por `requireAdmin` (solo `admin`) y `requireAdminForLenderChange` impide que un `lender` asigne un prestamista distinto del suyo. El signup público solo crea cuentas `lender`. Las rutas de préstamos y pagos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista al crear préstamos.
+`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/admin`, `/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) exige `Authorization: Bearer <token>`. `checkAuth` verifica el JWT y consulta `users`/`Role` para reconstruir `req.user` con el rol y el stakeholder vigentes en la base: una cuenta con `is_active = false` responde `401`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`. `/api/admin` está protegido además por `requireAdmin` (solo `admin`) y ahora incluye `PATCH /api/admin/users/:userId` para cambiar `role_name` e `is_active`; el listado sigue en `GET /api/users`. `requireAdminForLenderChange` impide que un `lender` asigne un prestamista distinto del suyo. El signup público solo crea cuentas `lender`. Las rutas de préstamos y pagos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista al crear préstamos.
 
 ## Frontend
 
@@ -99,7 +99,7 @@ El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` d
 | `/loans/:id/edit` | `EditLoan` | protegido |
 | `/admin` | redirección a `/admin/dashboard` | admin |
 | `/admin/dashboard` | `AdminDashboard` (stub) | admin |
-| `/admin/users` | `AdminUsers` (stub) | admin |
+| `/admin/users` | `AdminUsers` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` (stub) | admin |
 | `/admin/loans` | `AdminLoans` (stub) | admin |
 | `/admin/payments` | `AdminPayments` (stub) | admin |
@@ -109,20 +109,20 @@ El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` d
 
 ## Panel de administración
 
-El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts/`), `AdminNav` (`src/components/admin/`) y vistas stub en `src/client/views/admin/`. `RequireAdmin`, definido en `AuthContext.jsx`, redirige a `/loans` a las cuentas que no son `admin`; la autorización real sigue en la API, donde `/api/admin/*` está protegido por `requireAdmin`. `LoanListHeader` muestra el enlace `Admin` solo para administradores.
+El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts/`), `AdminNav` (`src/components/admin/`) y vistas en `src/client/views/admin/`. `RequireAdmin`, definido en `AuthContext.jsx`, redirige a `/loans` a las cuentas que no son `admin`; la autorización real sigue en la API, donde `/api/admin/*` está protegido por `requireAdmin`. `LoanListHeader` muestra el enlace `Admin` solo para administradores. `/admin/users` ya lista cuentas con `useAdminUsers` y permite editar rol y estado en un diálogo.
 
 | Ruta | Vista | Estado |
 | --- | --- | --- |
 | `/admin` | redirección a `/admin/dashboard` | shell |
 | `/admin/dashboard` | `AdminDashboard` | stub |
-| `/admin/users` | `AdminUsers` | stub |
+| `/admin/users` | `AdminUsers` | implementado |
 | `/admin/stakeholders` | `AdminStakeholders` | stub |
 | `/admin/loans` | `AdminLoans` | stub |
 | `/admin/payments` | `AdminPayments` | stub |
 
 Las fases de dominio reemplazan el contenido de esos stubs sin tocar `main.jsx`:
 
-- P3 users: `/admin/users` consume endpoints bajo `/api/admin/users` (aún no implementados).
+- P3 users: `/admin/users` reutiliza `GET /api/users` para listar y usa `PATCH /api/admin/users/:userId` para cambiar rol y estado.
 - P4 stakeholders: mutaciones con `requireAdmin`; `GET /api/stakeholders` sigue abierto para el formulario de préstamos.
 - P5 loans: las rutas de préstamos aplican `requireAdminForLenderChange`; la vista admin reutiliza los componentes de `loans`.
 - P6 payments: historial, registro y reversión con los endpoints existentes.
@@ -149,15 +149,15 @@ src/
 │  ├─ App.jsx               componente principal (demo de Vite)
 │  ├─ App.css / index.css   estilos base y tokens de Tailwind/shadcn
 │  ├─ contexts/             AuthContext: provider, hook y guards
-│  ├─ hooks/                hooks: useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails, useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert
+│  ├─ hooks/                hooks: useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails, useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert, useAdminUsers
 │  ├─ layouts/              shell `AdminLayout`
 │  ├─ Test.jsx              vista de prueba (/test)
 │  ├─ views/                vistas: Login, Signup, Loans, CreateLoan, LoanDetails, EditLoan
-│  │  └─ admin/             vistas stub del panel: Dashboard, Users, Stakeholders, Loans, Payments
-│  ├─ utils/                helpers: loanFormat, loanForm, loanSchedule, loanEdit, loanPayment, paymentHistory
+│  │  └─ admin/             vistas del panel: Dashboard (stub), Users, Stakeholders (stub), Loans (stub), Payments (stub)
+│  ├─ utils/                helpers: loanFormat, loanForm, loanSchedule, loanEdit, loanPayment, paymentHistory, userForm
 │  └─ assets/
 ├─ components/
-│  ├─ admin/                AdminNav y AdminPlaceholder
+│  ├─ admin/                AdminNav, AdminPlaceholder y users/ (tabla y diálogo de usuarios)
 │  ├─ loans/                componentes de préstamos por propósito
 │  │  ├─ create/            formulario, fiadores, garantías y vista previa
 │  │  ├─ list/              encabezado, avisos y tabla del listado

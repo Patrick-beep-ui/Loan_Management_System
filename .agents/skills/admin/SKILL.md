@@ -20,7 +20,7 @@ El historial de cambios está en [`CHANGELOG.md`](CHANGELOG.md).
 | --- | --- | --- | --- |
 | `/admin` | redirección | `src/client/main.jsx` | va a `/admin/dashboard` |
 | `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | stub |
-| `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | stub |
+| `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | implementado |
 | `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | stub |
 | `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | stub |
 | `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | stub |
@@ -40,14 +40,19 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
 - `src/components/admin/AdminNav.jsx`: navegación con `NavLink`; el activo usa
   `buttonVariants` con `variant="default"` y los demás con `"outline"`.
 - `src/components/admin/AdminPlaceholder.jsx`: tarjeta compartida por los stubs.
-- `src/client/views/admin/*.jsx`: stubs; cada fase de dominio reemplaza solo el
-  contenido de su archivo.
+- `src/components/admin/users/`: UI de usuarios (`AdminUsersHeader`,
+  `AdminUsersAlerts`, `AdminUsersTable`, `AdminUserRow` y
+  `AdminUserEditDialog`). La tabla lista desde `GET /api/users` y el diálogo
+  envía `PATCH /api/admin/users/:userId` para rol y estado.
+- `src/client/views/admin/*.jsx`: las fases de dominio reemplazan solo el
+  contenido de su archivo; `/admin/users` ya no es stub.
 - `src/components/loans/list/LoanListHeader.jsx`: enlace `Admin` para admins.
 
 ## Contrato de fases posteriores
 
-- P3 users: `/admin/users` consume endpoints bajo `/api/admin/users` (todavía
-  no implementados).
+- P3 users: `/admin/users` reutiliza `GET /api/users` para listar y usa
+  `PATCH /api/admin/users/:userId` para cambiar `role_name` e `is_active`.
+  No hay un `GET` duplicado bajo `/api/admin/users`.
 - P4 stakeholders: las mutaciones usan `requireAdmin`; `GET /api/stakeholders`
   sigue abierto para el formulario de préstamos.
 - P5 loans: las rutas de préstamos aplican `requireAdminForLenderChange`; la
@@ -65,5 +70,8 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
 - `src/client/layouts/AdminLayout.jsx`
 - `src/components/admin/AdminNav.jsx`
 - `src/components/admin/AdminPlaceholder.jsx`
+- `src/components/admin/users/`
+- `src/client/hooks/useAdminUsers.js`
+- `src/client/utils/userForm.js`
 - `src/client/views/admin/`
 - `src/components/loans/list/LoanListHeader.jsx`

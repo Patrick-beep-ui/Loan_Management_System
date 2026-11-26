@@ -1,5 +1,14 @@
 # Changelog — architecture
 
+## 2026-11-25 — Ruta directa para administración de usuarios
+
+- Change: `AdminRouter` define `PATCH /users/:userId` con un controller, un
+  service y un validador dedicados. El service reutiliza `authUser` para la
+  proyección y resuelve el rol por nombre. No se creó un subrouter.
+- Impact: el router de admin pasa a tener una ruta real sin añadir una capa que
+  no aporta valor. El listado no se duplica: sigue en `GET /api/users`.
+- Verification: `pnpm build` compiló correctamente; sin pruebas de API en vivo.
+
 ## 2026-11-25 — Autenticación con estado en base y router de admin
 
 - Change: `checkAuth` pasó a ser asíncrono: tras verificar el JWT consulta
