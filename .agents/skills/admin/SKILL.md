@@ -19,7 +19,7 @@ El historial de cambios está en [`CHANGELOG.md`](CHANGELOG.md).
 | Ruta | Vista | Archivo | Estado |
 | --- | --- | --- | --- |
 | `/admin` | redirección | `src/client/main.jsx` | va a `/admin/dashboard` |
-| `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | stub |
+| `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | implementado |
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | implementado |
 | `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | implementado |
 | `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | implementado |
@@ -39,7 +39,8 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
 - `src/client/layouts/AdminLayout.jsx`: shell con título, `AdminNav` y `Outlet`.
 - `src/components/admin/AdminNav.jsx`: navegación con `NavLink`; el activo usa
   `buttonVariants` con `variant="default"` y los demás con `"outline"`.
-- `src/components/admin/AdminPlaceholder.jsx`: tarjeta compartida por los stubs.
+- `src/components/admin/AdminPlaceholder.jsx`: tarjeta de marcador de posición
+  reutilizable; ya no es usada por las vistas del panel.
 - `src/components/admin/users/`: UI de usuarios (`AdminUsersHeader`,
   `AdminUsersAlerts`, `AdminUsersTable`, `AdminUserRow` y
   `AdminUserEditDialog`). La tabla lista desde `GET /api/users`; el diálogo
@@ -65,9 +66,14 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
   `GET /api/payments`, registran cuotas o interés pendiente con los endpoints
   existentes y reutilizan `usePaymentRevert` con `RevertPaymentDialog` para la
   reversión. Las opciones de registro salen de `GET /api/loans`.
+- `src/client/hooks/useAdminDashboard.js`, `src/client/utils/adminDashboard.js`
+  y `src/components/admin/dashboard/` (`AdminDashboardHeader`,
+  `AdminDashboardAlerts`, `AdminDashboardCards`, `AdminDashboardStatus`,
+  `AdminDashboardPaymentTrend` y `AdminDashboardRecentPayments`): calculan en el
+  cliente las métricas de préstamos, cuotas, interés y pagos a partir de
+  `GET /api/loans` y `GET /api/payments`.
 - `src/client/views/admin/*.jsx`: las fases de dominio reemplazan solo el
-  contenido de su archivo; `/admin/users`, `/admin/stakeholders`,
-  `/admin/loans` y `/admin/payments` ya no son stubs.
+  contenido de su archivo; ninguna vista del panel sigue siendo stub.
 - `src/components/loans/list/LoanListHeader.jsx`: enlace `Admin` para admins.
 
 ## Contrato de fases posteriores
@@ -95,8 +101,11 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
   `POST /api/payments/interest` con el monto calculado por el destino; la
   reversión reutiliza `DELETE /api/payments/:id` mediante `usePaymentRevert`.
   No hay `POST /api/payments` genérico ni endpoints duplicados bajo `/admin`.
-- P7 dashboard: métricas calculadas en el cliente desde `GET /api/loans` y
-  `GET /api/payments`, sin un endpoint propio.
+- P7 dashboard: `/admin/dashboard` calcula métricas en el cliente desde
+  `GET /api/loans` y `GET /api/payments`, sin un endpoint propio. `adminDashboard.js`
+  resume préstamos, cuotas pagadas/pendientes/vencidas, interés incluido o
+  separado y pagos por mes; la vista muestra tarjetas, estado de la cartera,
+  tendencia de pagos y los pagos más recientes.
 - No se duplican funcionalidades bajo `/admin`; solo la administración de
   usuarios vive en ese prefijo.
 
@@ -111,11 +120,14 @@ la sesión, redirige a `/login` si no hay usuario y a `/loans` si
 - `src/components/admin/stakeholders/`
 - `src/components/admin/loans/`
 - `src/components/admin/payments/`
+- `src/components/admin/dashboard/`
 - `src/client/hooks/useAdminUsers.js`
 - `src/client/hooks/useAdminStakeholders.js`
 - `src/client/hooks/useAdminLoans.js`
 - `src/client/hooks/useAdminPayments.js`
+- `src/client/hooks/useAdminDashboard.js`
 - `src/client/utils/userForm.js`
 - `src/client/utils/stakeholderForm.js`
+- `src/client/utils/adminDashboard.js`
 - `src/client/views/admin/`
 - `src/components/loans/list/LoanListHeader.jsx`

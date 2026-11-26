@@ -1,5 +1,15 @@
 # Changelog — frontend
 
+### 2026-11-25 — P7 dashboard implementado
+
+- Change: `AdminDashboard` dejó de ser stub. Se añadieron `useAdminDashboard`,
+  `src/client/utils/adminDashboard.js` y seis componentes bajo
+  `src/components/admin/dashboard/` para agregar métricas en el cliente.
+- Impact: la vista resume importes, cuotas vencidas, interés y pagos desde
+  `GET /api/loans` y `GET /api/payments`, con estados de carga, error y vacío.
+- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
+  contra un servidor, a pedido del usuario.
+
 ### 2026-11-25 — P6 administración de pagos
 
 - Change: `AdminPayments` dejó de ser stub. Se añadieron `useAdminPayments` y

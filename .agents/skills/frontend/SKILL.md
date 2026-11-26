@@ -29,7 +29,7 @@ protege `/admin` y sus hijos. El resto de las rutas son públicas:
 | `/loans/:id` | `LoanDetails` | `src/client/views/LoanDetails.jsx` | protegido |
 | `/loans/:id/edit` | `EditLoan` | `src/client/views/EditLoan.jsx` | protegido |
 | `/admin` | redirección | `src/client/main.jsx` | admin |
-| `/admin/dashboard` | `AdminDashboard` (stub) | `src/client/views/admin/AdminDashboard.jsx` | admin |
+| `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | admin |
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | admin |
 | `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | admin |
@@ -83,8 +83,8 @@ flujo de autenticación.
   `Signup`, `Test.jsx` y los hooks `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
   `usePayments`, `usePaymentRevert`, `useAdminUsers`, `useAdminStakeholders`,
-  `useAdminLoans` y `useAdminPayments` importan esa instancia en lugar de crear
-  clientes propios.
+  `useAdminLoans`, `useAdminPayments` y `useAdminDashboard` importan esa
+  instancia en lugar de crear clientes propios.
 
 ## Componentes de UI
 
@@ -113,7 +113,7 @@ Conviene tenerlo presente al agregar componentes nuevos.
 | Archivo | Responsabilidad |
 | --- | --- |
 | `AdminNav.jsx` | navegación con `NavLink`; el activo usa `variant="default"` y los demás `"outline"` |
-| `AdminPlaceholder.jsx` | tarjeta compartida por las vistas stub restantes |
+| `AdminPlaceholder.jsx` | tarjeta de marcador de posición reutilizable; ya no es usada por el panel |
 | `users/AdminUsersHeader.jsx` | título, descripción y botón de actualización |
 | `users/AdminUsersAlerts.jsx` | avisos de error y éxito del flujo de usuarios |
 | `users/AdminUsersTable.jsx` | tabla con estados de carga y vacío |
@@ -136,6 +136,12 @@ Conviene tenerlo presente al agregar componentes nuevos.
 | `payments/AdminPaymentsTable.jsx` | tabla con estados de carga y vacío |
 | `payments/AdminPaymentRow.jsx` | fila con pago, préstamo, destino y acción `Revert` |
 | `payments/AdminPaymentRecordDialog.jsx` | selección de cuota o interés pendiente y envío del pago |
+| `dashboard/AdminDashboardHeader.jsx` | título, descripción y botón de actualización |
+| `dashboard/AdminDashboardAlerts.jsx` | aviso de error del panel |
+| `dashboard/AdminDashboardCards.jsx` | tarjetas de importes, pagos y cuotas vencidas |
+| `dashboard/AdminDashboardStatus.jsx` | estado de cuotas, interés y cartera |
+| `dashboard/AdminDashboardPaymentTrend.jsx` | pagos agrupados por mes |
+| `dashboard/AdminDashboardRecentPayments.jsx` | tabla de los pagos más recientes |
 
 `src/components/loans/` reúne la UI específica de préstamos, separada por
 propósito en `create/`, `list/`, `details/` y `edit/`. Las vistas importan desde
@@ -319,7 +325,10 @@ borrar; oculta en cliente las personas vinculadas a cuentas. `/admin/loans` usa
 destinos pendientes; `Record payment` publica en los endpoints de cuota o interés
 con un monto calculado por el destino, y la reversión reutiliza
 `usePaymentRevert` con `RevertPaymentDialog`. No se expone `PATCH /api/payments/:id`
-en el panel.
+en el panel. `/admin/dashboard` usa `useAdminDashboard` y
+`src/client/utils/adminDashboard.js` para agregar `GET /api/loans` y
+`GET /api/payments` en el cliente: tarjetas de importes, estado de la cartera,
+tendencia mensual y pagos recientes, sin endpoint propio.
 `LoanListHeader` muestra el enlace `Admin` solo cuando
 `user.Role.role_name === "admin"`. El
 contrato completo, incluido el orden de las fases posteriores, vive en el módulo
