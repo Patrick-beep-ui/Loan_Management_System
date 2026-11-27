@@ -1,5 +1,18 @@
 # Changelog — frontend
 
+### 2026-11-26 — Stakeholder type filters in the admin table
+
+- Change: `AdminStakeholdersFilter` and `stakeholderCategory.js` were added.
+  `useAdminStakeholders` combines `GET /api/stakeholders` with `GET /api/users`
+  and exposes category counts plus filtered rows. The profile adds a loan note
+  when an admin/lender is also a customer on loans.
+- Impact: the stakeholder panel can show all stakeholders, only admins, only
+  lenders, or only people without linked accounts. The table design and its
+  `Edit`/`Delete` actions are unchanged.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed
+  classification, counts, and filtering. Not tested in a browser or against a
+  server.
+
 ### 2026-11-26 — Stakeholder profiles and dashboard stakeholder card
 
 - Change: registered `/admin/stakeholders/:id` with

@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import api from "@/lib/axiosService";
+import {
+    categorizeStakeholders,
+    countStakeholderCategories,
+    filterStakeholdersByCategory,
+} from "@/client/utils/stakeholderCategory";
 import {
     buildStakeholderPayload,
     EMPTY_STAKEHOLDER_FORM,
@@ -10,6 +15,7 @@ import {
 
 export function useAdminStakeholders() {
     const [stakeholders, setStakeholders] = useState([]);
+    const [category, setCategory] = useState("all");
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -28,10 +34,18 @@ export function useAdminStakeholders() {
         setLoading(true);
 
         try {
-            const response = await api.get("/stakeholders");
-            setStakeholders(
-                Array.isArray(response.data) ? response.data : [],
-            );
+            const [stakeholdersResponse, usersResponse] = await Promise.all([
+                api.get("/stakeholders"),
+                api.get("/users"),
+            ]);
+            const people = Array.isArray(stakeholdersResponse.data)
+                ? stakeholdersResponse.data
+                : [];
+            const users = Array.isArray(usersResponse.data)
+                ? usersResponse.data
+                : [];
+
+            setStakeholders(categorizeStakeholders(people, users));
         } catch (requestError) {
             setError(
                 requestError.response?.data?.error ||
@@ -149,6 +163,15 @@ export function useAdminStakeholders() {
         }
     }
 
+    const categoryCounts = useMemo(
+        () => countStakeholderCategories(stakeholders),
+        [stakeholders],
+    );
+    const filteredStakeholders = useMemo(
+        () => filterStakeholdersByCategory(stakeholders, category),
+        [stakeholders, category],
+    );
+
     function dismissError() {
         setError("");
     }
@@ -159,6 +182,10 @@ export function useAdminStakeholders() {
 
     return {
         stakeholders,
+        filteredStakeholders,
+        category,
+        setCategory,
+        categoryCounts,
         loading,
         saving,
         deleting,

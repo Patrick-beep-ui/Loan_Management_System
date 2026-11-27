@@ -47,6 +47,14 @@ export default function AdminStakeholderPersonalInfo({ profile }) {
           />
           <InfoItem label="Access account" value={accessLabel} />
           {access && <InfoItem label="Email" value={access.email} />}
+          {access && profile.roleCounts.customer > 0 && (
+            <InfoItem
+              label="Loan note"
+              value={`Also customer in ${profile.roleCounts.customer} loan${
+                profile.roleCounts.customer === 1 ? "" : "s"
+              }`}
+            />
+          )}
         </div>
       </CardContent>
     </Card>

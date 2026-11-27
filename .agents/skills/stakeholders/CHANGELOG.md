@@ -1,5 +1,20 @@
 # Changelog — stakeholders
 
+## 2026-11-26 — Admin, lender, and customer filters
+
+- Change: `/admin/stakeholders` now has `All`, `Admins`, `Lenders`, and
+  `Customers` filters above the unchanged table. `useAdminStakeholders` reads
+  `GET /api/users` again to classify each person by linked account role; a
+  stakeholder with no linked account is a `Customers` row.
+- Impact: admins, lenders, and normal customers can be reviewed separately.
+  The account role wins when a lender or admin is also a customer on loans;
+  their profile still shows customer loans in the role counts and adds a loan
+  note. The table columns, clickable names, `Edit`, and `Delete` are unchanged,
+  and no API or schema changed.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed the
+  three categories, counts, and customer filtering. Not tested in a browser or
+  against a server.
+
 ## 2026-11-26 — Stakeholder profiles in the admin panel
 
 - Change: stakeholder names in `/admin/stakeholders` and the compact dashboard

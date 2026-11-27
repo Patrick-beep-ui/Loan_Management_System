@@ -1,5 +1,18 @@
 # Changelog — admin
 
+## 2026-11-26 — Stakeholder type filters
+
+- Change: added `AdminStakeholdersFilter` and `stakeholderCategory.js`.
+  `/admin/stakeholders` now offers `All`, `Admins`, `Lenders`, and `Customers`
+  filters with counts, while keeping the existing table, clickable names,
+  `Edit`, and `Delete`. The hook reads `GET /api/users` for classification.
+- Impact: admins, lenders, and people without accounts can be reviewed
+  separately. A linked account determines the primary category; customer loan
+  participation remains visible in the profile role counts and loan note.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed the
+  category mapping, counts, and filtering. Not tested in a browser or against
+  a server.
+
 ## 2026-11-26 — Stakeholder profiles from the dashboard and table
 
 - Change: added `/admin/stakeholders/:id`, `useAdminStakeholderProfile`,

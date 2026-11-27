@@ -83,7 +83,12 @@ guarantors and appear with the `guarantor` role in the profile.
 
 The stakeholder name in the existing admin table links to the profile. Columns,
 styling, `Edit`, and `Delete` are unchanged, and all stakeholders are listed,
-including those linked to accounts.
+including those linked to accounts. Above the table, the `All`, `Admins`,
+`Lenders`, and `Customers` filters split the list by linked account role:
+`admin` and `lender` accounts use those roles, while a person with no linked
+account is a customer. The account role wins when that person is also a
+customer on loans; the profile still shows those loans in its customer count
+and loan note.
 
 ## Errors
 
@@ -102,6 +107,7 @@ including those linked to accounts.
 - `src/server/utils/validators/stakeholderValidation.js`
 - `src/server/models/Stakeholder.js`
 - `src/client/utils/stakeholderProfile.js`
+- `src/client/utils/stakeholderCategory.js`
 - `src/client/hooks/useAdminStakeholderProfile.js`
 - `src/client/views/admin/AdminStakeholderProfile.jsx`
 - `src/components/admin/stakeholders/` (profile sections and linked table name)

@@ -249,8 +249,13 @@ having a password pending.
 
 `/admin/stakeholders` uses `useAdminStakeholders` for the existing
 `/api/stakeholders` CRUD and lists every person, including stakeholders linked
-to accounts. The table design and its `Edit` and `Delete` actions are
-unchanged; each name links to `/admin/stakeholders/:id`. That profile uses
+to accounts. `All`, `Admins`, `Lenders`, and `Customers` filters split the
+table by linked account role: admins and lenders come from `GET /api/users`,
+and a person without a linked account is a customer. An admin or lender who is
+also a loan customer stays in their account category; the profile keeps that
+participation in its role counts and adds a loan note. The table design and
+its `Edit` and `Delete` actions are unchanged; each name links to
+`/admin/stakeholders/:id`. That profile uses
 `useAdminStakeholderProfile` and `src/client/utils/stakeholderProfile.js` to
 combine `GET /api/stakeholders/:id`, `GET /api/loans`, and `GET /api/users` on
 the client: it shows personal information, the linked account, counts by role,
@@ -322,7 +327,8 @@ src/
 │  │                        Stakeholder profile, Loans, Payments
 │  ├─ utils/                loanFormat, loanStatus, loanForm, loanSchedule, loanEdit,
 │  │                       loanPayment, paymentHistory, userForm, stakeholderForm,
-│  │                       adminDashboard, stakeholderProfile
+│  │                       adminDashboard, stakeholderProfile,
+│  │                       stakeholderCategory
 │  └─ assets/
 ├─ components/
 │  ├─ admin/                AdminNav, AdminPlaceholder, users/, stakeholders/, loans/,

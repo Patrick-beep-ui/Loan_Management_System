@@ -64,6 +64,8 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
   `/api/stakeholders` to create, edit and delete; `StakeholderFormFields` is
   also reused in the users dialog. The table lists every stakeholder and the
   name links to the profile; `Edit` and `Delete` are unchanged.
+  `AdminStakeholdersFilter` adds `All`, `Admins`, `Lenders`, and `Customers`
+  tabs with counts above that table.
 - `src/client/hooks/useAdminLoans.js` and `src/components/admin/loans/`
   (`AdminLoansHeader`, `AdminLoansAlerts`, `AdminLoansTable`, `AdminLoanRow` and
   `ReassignLenderDialog`): list loans with `GET /api/loans` and reassign the
@@ -105,7 +107,10 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
 - P4 stakeholders: the panel reuses the `/api/stakeholders` CRUD. `POST`,
   `PUT`, `PATCH` and `DELETE` use `requireAdmin`; both `GET`s remain available
   to any authenticated account and the loan forms are unchanged. The table
-  lists all stakeholders, including those linked to an account. A name opens
+  lists all stakeholders, including those linked to an account, and filters
+  them by linked account role (`admin`, `lender`, or customer with no account).
+  The account role wins when the person is also a loan customer; the profile
+  keeps that participation in its role counts and loan note. A name opens
   `/admin/stakeholders/:id`, which reads `GET /api/stakeholders/:id`,
   `GET /api/loans` and `GET /api/users` with no dedicated profile endpoint;
   roles are derived from loan relationships in `stakeholderProfile.js`.
@@ -159,6 +164,7 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
 - `src/client/hooks/useAdminDashboard.js`
 - `src/client/utils/userForm.js`
 - `src/client/utils/stakeholderForm.js`
+- `src/client/utils/stakeholderCategory.js`
 - `src/client/utils/adminDashboard.js`
 - `src/client/utils/stakeholderProfile.js`
 - `src/client/utils/loanStatus.js`

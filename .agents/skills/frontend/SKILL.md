@@ -129,6 +129,7 @@ Keep this in mind when adding new components.
 | `stakeholders/AdminStakeholdersHeader.jsx` | title, description, and `Refresh` and `New stakeholder` actions |
 | `stakeholders/AdminStakeholdersAlerts.jsx` | error and success notices for the stakeholder flow |
 | `stakeholders/AdminStakeholdersTable.jsx` | table with loading and empty states |
+| `stakeholders/AdminStakeholdersFilter.jsx` | All / Admins / Lenders / Customers tabs with counts |
 | `stakeholders/AdminStakeholderRow.jsx` | row with a name that links to the profile and unchanged `Edit` and `Delete` actions |
 | `stakeholders/StakeholderFormFields.jsx` | reusable person fields with per-field validation |
 | `stakeholders/AdminStakeholderFormDialog.jsx` | creation and edit form that reuses `StakeholderFormFields` |
@@ -339,7 +340,11 @@ and shows the one-time `temporary_password`. Each row can reset a password with
 the existing CRUD of `/api/stakeholders`: listing with `GET`, creation with `POST`,
 editing with `PUT`, and deletion with `DELETE`, with local validation and
 confirmation before deleting. It lists everyone, including people linked to
-accounts. Each name opens `/admin/stakeholders/:id`, where
+accounts, and `GET /api/users` supplies the role used by the `All`, `Admins`,
+`Lenders`, and `Customers` filters. A person with no linked account is a
+customer; an admin/lender who is also a loan customer stays in their account
+category and keeps that participation in the profile. Each name opens
+`/admin/stakeholders/:id`, where
 `useAdminStakeholderProfile` combines `GET /api/stakeholders/:id`,
 `GET /api/loans` and `GET /api/users`; `stakeholderProfile.js` derives
 lender/customer/guarantor roles from loan relations, including multiple roles
@@ -486,7 +491,8 @@ sends `api.patch("/loans/:id", payload)` and returns to the detail with
 - Pure domain helpers go in `src/client/utils/`, such as
   `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanStatus.js`,
   `loanEdit.js`, `loanPayment.js`, `paymentHistory.js`, `userForm.js`,
-  `stakeholderForm.js`, `adminDashboard.js`, and `stakeholderProfile.js`.
+  `stakeholderForm.js`, `stakeholderCategory.js`, `adminDashboard.js`, and
+  `stakeholderProfile.js`.
 - Color tokens are defined in `index.css`; avoid fixed colors in
   UI components.
 - Every frontend behavior change is documented here and in
