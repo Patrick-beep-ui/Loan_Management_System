@@ -183,6 +183,7 @@ flow.
 | `/admin/dashboard` | `AdminDashboard` | admin |
 | `/admin/users` | `AdminUsers` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` | admin |
+| `/admin/stakeholders/:id` | `AdminStakeholderProfile` | admin |
 | `/admin/loans` | `AdminLoans` | admin |
 | `/admin/payments` | `AdminPayments` | admin |
 | `/test` | `Test` (test view) | public |
@@ -247,7 +248,15 @@ password once. Accounts with `must_change_password = true` are marked as
 having a password pending.
 
 `/admin/stakeholders` uses `useAdminStakeholders` for the existing
-`/api/stakeholders` CRUD, hiding people already linked to accounts.
+`/api/stakeholders` CRUD and lists every person, including stakeholders linked
+to accounts. The table design and its `Edit` and `Delete` actions are
+unchanged; each name links to `/admin/stakeholders/:id`. That profile uses
+`useAdminStakeholderProfile` and `src/client/utils/stakeholderProfile.js` to
+combine `GET /api/stakeholders/:id`, `GET /api/loans`, and `GET /api/users` on
+the client: it shows personal information, the linked account, counts by role,
+and one row per associated loan with all applicable lender, customer, and
+guarantor roles. A loan can give the same stakeholder more than one role.
+Collateral remains an asset with no stakeholder link in the schema.
 `/admin/loans` uses `useAdminLoans` to list all loans and reassign the lender
 with `PATCH /api/loans/:id`, with options from `GET /api/users` filtered to
 `lender` accounts. `/admin/payments` uses `useAdminPayments` for the global
@@ -255,12 +264,15 @@ history from `GET /api/payments`, records pending installments or interest from
 `GET /api/loans`, and reverts payments with `usePaymentRevert` and
 `RevertPaymentDialog`. `/admin/dashboard` uses `useAdminDashboard` and
 `src/client/utils/adminDashboard.js` to aggregate loan, installment, interest,
-and payment metrics from `GET /api/loans` and `GET /api/payments`, with no
-dedicated endpoint. The same data produces a list of overdue installments
-sorted by due date; each item links to `/loans/:id` with
-`state.focusInstallmentId` so the specific installment is highlighted on the
-detail page. `src/client/utils/loanStatus.js` is the shared date-overdue rule
-for the card, the list, and the detail badge.
+payment, and stakeholder metrics from `GET /api/loans`, `GET /api/payments`,
+and `GET /api/stakeholders`, with no dedicated endpoint. The same data produces
+a list of overdue installments sorted by due date; each item links to
+`/loans/:id` with `state.focusInstallmentId` so the specific installment is
+highlighted on the detail page. A compact stakeholder card links names to
+their profiles and offers a `Manage stakeholders` action.
+`src/client/utils/loanStatus.js` is the shared date-overdue rule for the card,
+the list, and the detail badge; `stakeholderProfile.js` supplies the stakeholder
+summaries.
 
 | Route | View | Status |
 | --- | --- | --- |
@@ -268,6 +280,7 @@ for the card, the list, and the detail badge.
 | `/admin/dashboard` | `AdminDashboard` | implemented |
 | `/admin/users` | `AdminUsers` | implemented |
 | `/admin/stakeholders` | `AdminStakeholders` | implemented |
+| `/admin/stakeholders/:id` | `AdminStakeholderProfile` | implemented |
 | `/admin/loans` | `AdminLoans` | implemented |
 | `/admin/payments` | `AdminPayments` | implemented |
 
@@ -300,14 +313,16 @@ src/
 │  ├─ hooks/                useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails,
 │  │                       useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert,
 │  │                       useChangePassword, useAdminUsers, useAdminStakeholders,
-│  │                       useAdminLoans, useAdminPayments, useAdminDashboard
+│  │                       useAdminStakeholderProfile, useAdminLoans,
+│  │                       useAdminPayments, useAdminDashboard
 │  ├─ layouts/              `AdminLayout` shell
 │  ├─ Test.jsx              test view (/test)
 │  ├─ views/                Login, ChangePassword, Loans, CreateLoan, LoanDetails, EditLoan
-│  │  └─ admin/             panel views: Dashboard, Users, Stakeholders, Loans, Payments
+│  │  └─ admin/             panel views: Dashboard, Users, Stakeholders,
+│  │                        Stakeholder profile, Loans, Payments
 │  ├─ utils/                loanFormat, loanStatus, loanForm, loanSchedule, loanEdit,
 │  │                       loanPayment, paymentHistory, userForm, stakeholderForm,
-│  │                       adminDashboard
+│  │                       adminDashboard, stakeholderProfile
 │  └─ assets/
 ├─ components/
 │  ├─ admin/                AdminNav, AdminPlaceholder, users/, stakeholders/, loans/,

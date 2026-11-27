@@ -22,6 +22,7 @@ import EditLoan from "./views/EditLoan";
 import AdminDashboard from "./views/admin/AdminDashboard";
 import AdminUsers from "./views/admin/AdminUsers";
 import AdminStakeholders from "./views/admin/AdminStakeholders";
+import AdminStakeholderProfile from "./views/admin/AdminStakeholderProfile";
 import AdminLoans from "./views/admin/AdminLoans";
 import AdminPayments from "./views/admin/AdminPayments";
 import Test from "./Test";
@@ -75,6 +76,10 @@ const router = createBrowserRouter([
                   { path: "dashboard", element: <AdminDashboard /> },
                   { path: "users", element: <AdminUsers /> },
                   { path: "stakeholders", element: <AdminStakeholders /> },
+                  {
+                    path: "stakeholders/:id",
+                    element: <AdminStakeholderProfile />,
+                  },
                   { path: "loans", element: <AdminLoans /> },
                   { path: "payments", element: <AdminPayments /> },
                 ],

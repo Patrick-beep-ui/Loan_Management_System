@@ -28,27 +28,10 @@ export function useAdminStakeholders() {
         setLoading(true);
 
         try {
-            const [stakeholdersResponse, usersResponse] = await Promise.all([
-                api.get("/stakeholders"),
-                api.get("/users"),
-            ]);
-            const users = Array.isArray(usersResponse.data)
-                ? usersResponse.data
-                : [];
-            const linkedStakeholderIds = new Set(
-                users
-                    .map((user) => user.stakeholder_id)
-                    .filter((stakeholderId) => stakeholderId),
+            const response = await api.get("/stakeholders");
+            setStakeholders(
+                Array.isArray(response.data) ? response.data : [],
             );
-            const stakeholders = Array.isArray(stakeholdersResponse.data)
-                ? stakeholdersResponse.data
-                : [];
-            const visibleStakeholders = stakeholders.filter(
-                (stakeholder) =>
-                    !linkedStakeholderIds.has(stakeholder.stakeholder_id),
-            );
-
-            setStakeholders(visibleStakeholders);
         } catch (requestError) {
             setError(
                 requestError.response?.data?.error ||

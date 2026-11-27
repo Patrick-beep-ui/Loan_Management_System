@@ -33,6 +33,7 @@ The remaining routes are public:
 | `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | admin |
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | admin |
+| `/admin/stakeholders/:id` | `AdminStakeholderProfile` | `src/client/views/admin/AdminStakeholderProfile.jsx` | admin |
 | `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | admin |
 | `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | admin |
 | `/test` | `Test` (test view) | `src/client/Test.jsx` | public |
@@ -86,8 +87,9 @@ authentication flow.
   `ChangePassword`, `Test.jsx`, and the hooks `useChangePassword`, `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
   `usePayments`, `usePaymentRevert`, `useAdminUsers`, `useAdminStakeholders`,
-  `useAdminLoans`, `useAdminPayments`, and `useAdminDashboard` import that
-  instance instead of creating their own clients.
+  `useAdminStakeholderProfile`, `useAdminLoans`, `useAdminPayments`, and
+  `useAdminDashboard` import that instance instead of creating their own
+  clients.
 
 ## UI components
 
@@ -127,10 +129,14 @@ Keep this in mind when adding new components.
 | `stakeholders/AdminStakeholdersHeader.jsx` | title, description, and `Refresh` and `New stakeholder` actions |
 | `stakeholders/AdminStakeholdersAlerts.jsx` | error and success notices for the stakeholder flow |
 | `stakeholders/AdminStakeholdersTable.jsx` | table with loading and empty states |
-| `stakeholders/AdminStakeholderRow.jsx` | row with `Edit` and `Delete` actions |
+| `stakeholders/AdminStakeholderRow.jsx` | row with a name that links to the profile and unchanged `Edit` and `Delete` actions |
 | `stakeholders/StakeholderFormFields.jsx` | reusable person fields with per-field validation |
 | `stakeholders/AdminStakeholderFormDialog.jsx` | creation and edit form that reuses `StakeholderFormFields` |
 | `stakeholders/DeleteStakeholderDialog.jsx` | deletion confirmation with `Dialog` |
+| `stakeholders/AdminStakeholderProfileHeader.jsx` | profile title, stakeholder ID, and back action |
+| `stakeholders/AdminStakeholderPersonalInfo.jsx` | personal fields and linked access account summary |
+| `stakeholders/AdminStakeholderLoanRoles.jsx` | associated-loan count and lender/customer/guarantor counts |
+| `stakeholders/AdminStakeholderLoansTable.jsx` | associated loans with role badges and detail links |
 | `loans/AdminLoansHeader.jsx` | title, description, and refresh button |
 | `loans/AdminLoansAlerts.jsx` | error and success notices for the loan flow |
 | `loans/AdminLoansTable.jsx` | table with loading and empty states |
@@ -145,6 +151,7 @@ Keep this in mind when adding new components.
 | `dashboard/AdminDashboardAlerts.jsx` | panel error notice |
 | `dashboard/AdminDashboardCards.jsx` | cards of amounts, payments, and overdue installments |
 | `dashboard/AdminDashboardOverdue.jsx` | sorted overdue-installment table with highlighted-detail links |
+| `dashboard/AdminDashboardStakeholders.jsx` | compact stakeholder list with profile links and a manage action |
 | `dashboard/AdminDashboardStatus.jsx` | status of installments, interest, and portfolio |
 | `dashboard/AdminDashboardPaymentTrend.jsx` | payments grouped by month |
 | `dashboard/AdminDashboardRecentPayments.jsx` | table of the most recent payments |
@@ -331,7 +338,13 @@ and shows the one-time `temporary_password`. Each row can reset a password with
 `/admin/stakeholders` uses `useAdminStakeholders` over
 the existing CRUD of `/api/stakeholders`: listing with `GET`, creation with `POST`,
 editing with `PUT`, and deletion with `DELETE`, with local validation and
-confirmation before deleting; it hides people linked to accounts on the client. `/admin/loans` uses
+confirmation before deleting. It lists everyone, including people linked to
+accounts. Each name opens `/admin/stakeholders/:id`, where
+`useAdminStakeholderProfile` combines `GET /api/stakeholders/:id`,
+`GET /api/loans` and `GET /api/users`; `stakeholderProfile.js` derives
+lender/customer/guarantor roles from loan relations, including multiple roles
+on one loan. The table's `Edit` and `Delete` actions are unchanged.
+`/admin/loans` uses
 `useAdminLoans` over `GET /api/loans` and `GET /api/users`; the
 `Reassign lender` dialog takes its options from accounts with `Role.role_name =
 "lender"`, excludes the loan's customer, sends `PATCH /api/loans/:id` with
@@ -342,13 +355,15 @@ pending destinations; `Record payment` posts to the installment or interest
 endpoints with an amount calculated by the destination, and reversal reuses
 `usePaymentRevert` with `RevertPaymentDialog`. `PATCH /api/payments/:id` is not
 exposed in the panel. `/admin/dashboard` uses `useAdminDashboard` and
-`src/client/utils/adminDashboard.js` to aggregate `GET /api/loans` and
-`GET /api/payments` on the client: cards of amounts, a list of overdue
-installments, portfolio status, monthly trend, and recent payments, with no
-dedicated endpoint. `src/client/utils/loanStatus.js` defines the shared
-date-overdue rule for the card, list and detail badge. Each overdue row links
-to `/loans/:id` with `state: { focusInstallmentId }` and separate interest is
-excluded because it has no due date.
+`src/client/utils/adminDashboard.js` to aggregate `GET /api/loans`,
+`GET /api/payments` and `GET /api/stakeholders` on the client: cards of amounts,
+a list of overdue installments, a compact stakeholder card with profile links,
+portfolio status, monthly trend, and recent payments, with no dedicated
+endpoint. `src/client/utils/loanStatus.js` defines the shared date-overdue rule
+for the card, list and detail badge, while `stakeholderProfile.js` supplies the
+stakeholder summaries and role labels. Each overdue row links to `/loans/:id`
+with `state: { focusInstallmentId }` and separate interest is excluded because
+it has no due date.
 `LoanListHeader` shows the `Admin` link only when
 `user.Role.role_name === "admin"`. The full contract, including
 the order of later phases, lives in the `admin`
@@ -470,8 +485,8 @@ sends `api.patch("/loans/:id", payload)` and returns to the detail with
   `useAuth()` from any view.
 - Pure domain helpers go in `src/client/utils/`, such as
   `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanStatus.js`,
-  `loanEdit.js`, `loanPayment.js`, `paymentHistory.js`, `userForm.js`, and
-  `stakeholderForm.js`.
+  `loanEdit.js`, `loanPayment.js`, `paymentHistory.js`, `userForm.js`,
+  `stakeholderForm.js`, `adminDashboard.js`, and `stakeholderProfile.js`.
 - Color tokens are defined in `index.css`; avoid fixed colors in
   UI components.
 - Every frontend behavior change is documented here and in

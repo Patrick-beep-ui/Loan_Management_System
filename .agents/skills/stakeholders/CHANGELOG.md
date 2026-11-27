@@ -1,5 +1,22 @@
 # Changelog — stakeholders
 
+## 2026-11-26 — Stakeholder profiles in the admin panel
+
+- Change: stakeholder names in `/admin/stakeholders` and the compact dashboard
+  card now link to `/admin/stakeholders/:id`. The profile shows personal data,
+  linked access account details, participation counts, and every associated
+  loan with all of the stakeholder's roles. `useAdminStakeholders` no longer
+  excludes people linked to user accounts.
+- Impact: the earlier client-side filter was removed, so lenders and admins
+  appear in the stakeholder table too. No schema, endpoint, or loan-form
+  behavior changed: `stakeholderProfile.js` derives roles from `GET /api/loans`
+  (`lender_id`, `customer_id`, and `guarantors[].guarantor_stakeholder_id`) and
+  reads the person and account from `GET /api/stakeholders/:id` and
+  `GET /api/users`. A loan can show several roles at once.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed a
+  stakeholder with customer, guarantor, and lender roles plus a loan where both
+  customer and guarantor apply. Not tested in a browser or against a server.
+
 ## 2026-11-25 — Hide people linked to accounts in the panel
 
 - Change: `useAdminStakeholders` combines `GET /api/stakeholders` with

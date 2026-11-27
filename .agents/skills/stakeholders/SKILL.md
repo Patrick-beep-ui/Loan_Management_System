@@ -43,10 +43,9 @@ require the `admin` role.
 - `GET /:id`: returns the stakeholder or `404` if it does not exist.
 - `GET /` and `GET /:id` remain available to any authenticated account; the
   loan form depends on `GET /` to choose lenders, customers, and guarantors.
-- `GET /` does not filter by account: the API returns all stakeholders. Only
-  the `/admin/stakeholders` view hides in the client people referenced by any
-  `user.stakeholder_id`, so lenders and administrators are not shown as
-  manageable records.
+- `GET /` does not filter by account: the API returns all stakeholders. The
+  `/admin/stakeholders` view also lists all of them, including people linked to
+  an account; account data is still managed from `/admin/users`.
 - `POST`, `PUT`, `PATCH` and `DELETE` pass through `requireAdmin` in
   `stakeholderRoutes.js`. A `lender` receives `403 Admin access required`.
 - `POST /`: creates the stakeholder (`201`) and returns the created record. If
@@ -66,6 +65,26 @@ zero returns `400`.
 guarantors. Those records use the same field rules and unique `national_id`,
 but are managed from the `loans` module and not from this CRUD.
 
+## Admin stakeholder profile
+
+`/admin/stakeholders/:id` is a client-only view; it adds no API route. It reads
+the person with `GET /api/stakeholders/:id`, the loan list with `GET /api/loans`
+(global for an admin) and the account list with `GET /api/users`.
+`src/client/utils/stakeholderProfile.js` associates a stakeholder with a loan
+when they are its `lender_id`, its `customer_id`, or a
+`guarantors[].guarantor_stakeholder_id`. One loan can produce several roles.
+The profile displays personal information, linked account data, counts by role,
+and one row per associated loan with links to `/loans/:id`. The dashboard uses
+the same helper for its compact stakeholder card.
+
+Collateral remains an asset with a description and estimated value; it has no
+stakeholder link in the schema. People who back a loan are represented as
+guarantors and appear with the `guarantor` role in the profile.
+
+The stakeholder name in the existing admin table links to the profile. Columns,
+styling, `Edit`, and `Delete` are unchanged, and all stakeholders are listed,
+including those linked to accounts.
+
 ## Errors
 
 - `400` required fields, invalid enum, date, or length; invalid `:id`.
@@ -82,3 +101,8 @@ but are managed from the `loans` module and not from this CRUD.
 - `src/server/services/stakeholderService.js`
 - `src/server/utils/validators/stakeholderValidation.js`
 - `src/server/models/Stakeholder.js`
+- `src/client/utils/stakeholderProfile.js`
+- `src/client/hooks/useAdminStakeholderProfile.js`
+- `src/client/views/admin/AdminStakeholderProfile.jsx`
+- `src/components/admin/stakeholders/` (profile sections and linked table name)
+- `src/components/admin/dashboard/AdminDashboardStakeholders.jsx`

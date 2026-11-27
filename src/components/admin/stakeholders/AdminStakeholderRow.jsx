@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/client/utils/loanFormat";
@@ -7,7 +9,14 @@ export default function AdminStakeholderRow({ stakeholder, onEdit, onDelete }) {
     return (
         <TableRow>
             <TableCell>{stakeholder.stakeholder_id}</TableCell>
-            <TableCell>{stakeholderName(stakeholder)}</TableCell>
+            <TableCell>
+                <Link
+                    to={`/admin/stakeholders/${stakeholder.stakeholder_id}`}
+                    className="text-foreground underline-offset-4 hover:underline"
+                >
+                    {stakeholderName(stakeholder)}
+                </Link>
+            </TableCell>
             <TableCell>{stakeholder.national_id || "—"}</TableCell>
             <TableCell>{stakeholder.marital_status || "—"}</TableCell>
             <TableCell>{stakeholder.occupation || "—"}</TableCell>

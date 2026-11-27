@@ -1,5 +1,21 @@
 # Changelog — admin
 
+## 2026-11-26 — Stakeholder profiles from the dashboard and table
+
+- Change: added `/admin/stakeholders/:id`, `useAdminStakeholderProfile`,
+  `stakeholderProfile.js`, four profile components and a compact
+  `AdminDashboardStakeholders` card. Stakeholder names in the existing table
+  and the dashboard card link to the profile; columns, `Edit`, and `Delete`
+  remain unchanged. The filter that hid people linked to user accounts was
+  removed from `useAdminStakeholders`.
+- Impact: admins can open a person's personal information, linked account,
+  role counts, and all associated loans with lender/customer/guarantor roles.
+  `/admin/dashboard` now reads `GET /api/stakeholders` in addition to loans and
+  payments. No API route or schema was added: the profile aggregates existing
+  reads on the client and a single loan can show several roles.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed the
+  multi-role aggregation. Not tested in a browser or against a server.
+
 ## 2026-11-26 — Overdue installments in the dashboard
 
 - Change: the dashboard now renders an overdue-installment table from the
