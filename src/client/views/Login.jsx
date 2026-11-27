@@ -55,14 +55,19 @@ export default function Login() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Sign in</CardTitle>
+    <main className="flex min-h-screen w-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-xl">
+
+        <CardHeader className="space-y-3 px-8 pt-8">
+
+          <CardTitle className="text-3xl">Sign in</CardTitle>
+          
           <CardDescription>Access your loan management account.</CardDescription>
+
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+
+          <CardContent className="space-y-6 px-8 py-6">
             {registered && (
               <p
                 role="status"
@@ -105,7 +110,7 @@ export default function Login() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex-col items-stretch gap-3">
+          <CardFooter className="flex-col items-stretch gap-5 px-8 pb-8">
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? "Signing in..." : "Sign in"}
             </Button>
