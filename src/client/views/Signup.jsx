@@ -59,15 +59,15 @@ export default function Signup() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Create an account</CardTitle>
+      <Card className="w-full max-w-xl shadow-md">
+        <CardHeader className="space-y-3 px-8 pt-8">
+          <CardTitle className="text-3xl">Create an account</CardTitle>
           <CardDescription>
             Register as a lender to start managing loans.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 px-8 py-6">
             {error && (
               <p
                 role="alert"
@@ -117,7 +117,7 @@ export default function Signup() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex-col items-stretch gap-3">
+          <CardFooter className="flex-col items-stretch gap-5 px-8 pb-8">
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? "Creating account..." : "Sign up"}
             </Button>
