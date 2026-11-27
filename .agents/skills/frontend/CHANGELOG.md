@@ -1,296 +1,296 @@
 # Changelog — frontend
 
-### 2026-11-25 — P7 dashboard implementado
+### 2026-11-25 — P7 dashboard implemented
 
-- Change: `AdminDashboard` dejó de ser stub. Se añadieron `useAdminDashboard`,
-  `src/client/utils/adminDashboard.js` y seis componentes bajo
-  `src/components/admin/dashboard/` para agregar métricas en el cliente.
-- Impact: la vista resume importes, cuotas vencidas, interés y pagos desde
-  `GET /api/loans` y `GET /api/payments`, con estados de carga, error y vacío.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `AdminDashboard` was no longer a stub. `useAdminDashboard`,
+  `src/client/utils/adminDashboard.js`, and six components under
+  `src/components/admin/dashboard/` were added to aggregate metrics on the client.
+- Impact: the view summarizes amounts, overdue installments, interest, and payments
+  from `GET /api/loans` and `GET /api/payments`, with loading, error, and empty states.
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-25 — P6 administración de pagos
+### 2026-11-25 — P6 payment administration
 
-- Change: `AdminPayments` dejó de ser stub. Se añadieron `useAdminPayments` y
-  cinco componentes bajo `src/components/admin/payments/` para listar pagos,
-  registrar cuotas o interés pendiente y revertir pagos.
-- Impact: el panel usa `GET /api/payments` y `GET /api/loans`, reutiliza
-  `buildPaymentPayload`, `PaymentModalFields`, `usePaymentRevert` y
-  `RevertPaymentDialog`, y muestra estados de carga, vacío, error y éxito.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `AdminPayments` was no longer a stub. `useAdminPayments` and
+  five components under `src/components/admin/payments/` were added to list payments,
+  record pending installments or interest, and reverse payments.
+- Impact: the panel uses `GET /api/payments` and `GET /api/loans`, reuses
+  `buildPaymentPayload`, `PaymentModalFields`, `usePaymentRevert`, and
+  `RevertPaymentDialog`, and shows loading, empty, error, and success states.
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-25 — Opciones de prestamista para reasignación
+### 2026-11-25 — Lender options for reassignment
 
-- Change: `useAdminLoans` construye el desplegable de `Reassign lender` desde
-  `GET /api/users`, filtrando cuentas con `Role.role_name = "lender"` en lugar de
-  usar todos los stakeholders. Las opciones se deduplican por
-  `stakeholder_id`, muestran nombre y email y conservan las cuentas inactivas.
-- Impact: solo se puede reasignar un préstamo a personas vinculadas a una cuenta
-  de prestamista. Si el prestamista actual ya no tiene ese rol, el diálogo no lo
-  preselecciona y exige elegir una opción válida.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `useAdminLoans` builds the `Reassign lender` dropdown from
+  `GET /api/users`, filtering accounts with `Role.role_name = "lender"` instead of
+  using all stakeholders. Options are deduplicated by
+  `stakeholder_id`, show name and email, and retain inactive accounts.
+- Impact: a loan can only be reassigned to people linked to a lender
+  account. If the current lender no longer has that role, the dialog does not
+  preselect them and requires choosing a valid option.
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-25 — P5 administración de préstamos
+### 2026-11-25 — P5 loan administration
 
-- Change: `AdminLoans` dejó de ser stub. Se añadieron `useAdminLoans` y cinco
-  componentes bajo `src/components/admin/loans/` para listar préstamos y
-  reasignar el prestamista con `PATCH /api/loans/:id`.
-- Impact: el panel usa `GET /api/loans` y `GET /api/stakeholders`, reutiliza los
-  formatos de `loanFormat.js` y muestra estados de carga, vacío, error y éxito.
-  El diálogo excluye al cliente actual y valida el prestamista elegido.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `AdminLoans` was no longer a stub. `useAdminLoans` and five
+  components under `src/components/admin/loans/` were added to list loans and
+  reassign the lender with `PATCH /api/loans/:id`.
+- Impact: the panel uses `GET /api/loans` and `GET /api/stakeholders`, reuses the
+  formats from `loanFormat.js`, and shows loading, empty, error, and success states.
+  The dialog excludes the current customer and validates the chosen lender.
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-25 — Edición conjunta de usuarios y filtro de stakeholders
+### 2026-11-25 — Combined user editing and stakeholder filtering
 
-- Change: se extrajo `StakeholderFormFields` y se reutilizó en el diálogo de
-  usuarios y en el formulario de stakeholders. `useAdminUsers` combina
-  `PATCH /api/admin/users/:userId` con `PUT /api/stakeholders/:id`; el
-  `useAdminStakeholders` oculta las personas vinculadas a cuentas.
-- Impact: `/admin/users` edita rol, estado y datos personales en un solo
-  diálogo, sin duplicar el campo de rol; `/admin/stakeholders` ya no muestra
-  prestamistas ni administradores. No se añadieron endpoints.
-- Verification: `pnpm build` compiló correctamente (2564 módulos). No se probó
-  en navegador ni contra un servidor, a pedido del usuario.
+- Change: `StakeholderFormFields` was extracted and reused in the user dialog
+  and the stakeholder form. `useAdminUsers` combines
+  `PATCH /api/admin/users/:userId` with `PUT /api/stakeholders/:id`;
+  `useAdminStakeholders` hides people linked to accounts.
+- Impact: `/admin/users` edits role, status, and personal data in a single
+  dialog, without duplicating the role field; `/admin/stakeholders` no longer shows
+  lenders or admins. No endpoints were added.
+- Verification: `pnpm build` built successfully (2564 modules). Not tested in
+  a browser or against a server, at the user's request.
 
-### 2026-11-25 — P4 administración de stakeholders
+### 2026-11-25 — P4 stakeholder administration
 
-- Change: `AdminStakeholders` dejó de ser stub. Se añadieron
-  `useAdminStakeholders`, `src/client/utils/stakeholderForm.js` y seis
-  componentes bajo `src/components/admin/stakeholders/` para listar, crear,
-  editar y eliminar personas con los endpoints existentes de
+- Change: `AdminStakeholders` was no longer a stub. `useAdminStakeholders`,
+  `src/client/utils/stakeholderForm.js`, and six components under
+  `src/components/admin/stakeholders/` were added to list, create,
+  edit, and delete people using the existing endpoints of
   `/api/stakeholders`.
-- Impact: el panel usa `GET`, `POST`, `PUT` y `DELETE` del CRUD actual, con
-  validación local, estados de carga/vacío/error/éxito y confirmación de borrado.
-  Los formularios de préstamos siguen leyendo `GET /api/stakeholders`.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Impact: the panel uses `GET`, `POST`, `PUT`, and `DELETE` from the current CRUD, with
+  local validation, loading/empty/error/success states, and deletion confirmation.
+  Loan forms still read `GET /api/stakeholders`.
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-25 — P3 administración de usuarios
+### 2026-11-25 — P3 user administration
 
-- Change: `AdminUsers` dejó de ser stub. Se añadieron `useAdminUsers`,
-  `src/client/utils/userForm.js` y cinco componentes bajo
-  `src/components/admin/users/` para listar cuentas desde `GET /api/users` y
-  editar `role_name` e `is_active` mediante `PATCH /api/admin/users/:userId`.
-- Impact: el panel permite refrescar la lista, abrir un diálogo de edición y
-  ver estados de carga, vacío, error y éxito sin duplicar el endpoint de listado.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `AdminUsers` was no longer a stub. `useAdminUsers`,
+  `src/client/utils/userForm.js`, and five components under
+  `src/components/admin/users/` were added to list accounts from `GET /api/users` and
+  edit `role_name` and `is_active` via `PATCH /api/admin/users/:userId`.
+- Impact: the panel can refresh the list, open an edit dialog, and
+  see loading, empty, error, and success states without duplicating the listing endpoint.
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-25 — Shell del panel de administración
+### 2026-11-25 — Admin panel shell
 
-- Change: Se añadió `RequireAdmin`, `AdminLayout`, `AdminNav`,
-  `AdminPlaceholder`, cinco vistas stub bajo `src/client/views/admin/` y el
-  enlace `Admin` en `LoanListHeader`. `main.jsx` monta `/admin` y sus hijos
-  detrás de `RequireAuth` y `RequireAdmin`.
-- Impact: solo las cuentas `admin` pueden abrir el panel; los no admins vuelven
-  a `/loans`. Las fases de dominio posteriores reemplazan el contenido de las
-  vistas stub sin tocar el router. El detalle está en [`SKILL.md`](SKILL.md) y
-  en el módulo `admin`.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `RequireAdmin`, `AdminLayout`, `AdminNav`, `AdminPlaceholder`, five stub
+  views under `src/client/views/admin/`, and the `Admin` link in `LoanListHeader`
+  were added. `main.jsx` mounts `/admin` and its children behind
+  `RequireAuth` and `RequireAdmin`.
+- Impact: only `admin` accounts can open the panel; non-admins return
+  to `/loans`. Later domain phases replace the content of the stub
+  views without touching the router. Details are in [`SKILL.md`](SKILL.md) and
+  in the `admin` module.
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-23 — Edición reducida de préstamos con pagos
+### 2026-11-23 — Reduced loan editing with payments
 
-- Change: `Edit` ya no se desactiva cuando el préstamo tiene pagos. `useEditLoanForm`
-  distingue ese caso, usa `buildRestrictedLoanPatchPayload` y envía
-  `PATCH /api/loans/:id` con fiadores, garantías y, solo para `admin`,
-  `lender_id`. Se añadió `RestrictedLoanEditForm` y se ajustaron los avisos de
-  detalle y edición.
-- Impact: los préstamos pagados siguen sin poder eliminarse ni editar términos
-  financieros, cliente, desembolso o cuotas, pero sí actualizan fiadores y
-  garantías; los administradores también pueden cambiar el prestamista. El
-  detalle está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `Edit` is no longer disabled when the loan has payments. `useEditLoanForm`
+  distinguishes that case, uses `buildRestrictedLoanPatchPayload`, and sends
+  `PATCH /api/loans/:id` with guarantors, collateral, and, only for `admin`,
+  `lender_id`. `RestrictedLoanEditForm` was added and the detail and edit
+  notices were adjusted.
+- Impact: loans with payments still cannot be deleted or have their
+  financial terms, customer, disbursement, or installments edited, but they
+  can update guarantors and collateral; administrators can also change the
+  lender. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-23 — Reversión independiente de pagos
+### 2026-11-23 — Independent payment reversals
 
-- Change: Se añadieron `usePayments`, `usePaymentRevert`, `paymentHistory.js` y
-  `RevertPaymentDialog`. La reversión consume `GET /api/payments?loan_id=...` y
-  `DELETE /api/payments/:id` por `payment_id`, sin acoplarse al registro de
-  pagos ni a la edición del préstamo.
-- Impact: `/loans/:id` muestra `Revert` en cuotas pagadas y `Revert interest` en
-  la obligación separada pagada. Tras confirmar se eliminan los pagos, se
-  recargan el préstamo y el historial, se muestra un aviso y vuelven a estar
-  disponibles `Edit` y `Delete`. El detalle está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `usePayments`, `usePaymentRevert`, `paymentHistory.js`, and
+  `RevertPaymentDialog` were added. Reversal consumes `GET /api/payments?loan_id=...` and
+  `DELETE /api/payments/:id` by `payment_id`, without coupling to payment
+  recording or loan editing.
+- Impact: `/loans/:id` shows `Revert` on paid installments and `Revert interest` on
+  the paid separate obligation. After confirmation, payments are deleted, the
+  loan and history are reloaded, a notice is displayed, and `Edit` and `Delete` become
+  available again. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-23 — Registro de pagos desde el detalle del préstamo
+### 2026-11-23 — Payment recording from the loan detail
 
-- Change: Se añadieron `useLoanPayment`, helpers de payload y modales separados
-  para pagar cuotas e interés separado. El monto queda bloqueado, `paid_at` es
-  opcional y se convierte a ISO con zona. Tras registrar un pago se refresca el
-  detalle sin recargar la página.
-- Impact: `/loans/:id` muestra acciones `Pay` por cuota pendiente y
-  `Pay interest` para la obligación separada pendiente, con aviso de éxito y
-  estados actualizados. El detalle está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `useLoanPayment`, payload helpers, and separate modals
+  to pay installments and separate interest were added. The amount is locked, `paid_at` is
+  optional and converted to zoned ISO. After recording a payment, the
+  detail refreshes without reloading the page.
+- Impact: `/loans/:id` shows `Pay` actions per pending installment and
+  `Pay interest` for the pending separate obligation, with a success notice and
+  updated states. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-### 2026-11-19 — Detalle, edición y eliminación de préstamos
+### 2026-11-19 — Loan detail, editing, and deletion
 
-- Change: Se añadieron las rutas protegidas `/loans/:id` y `/loans/:id/edit`, el
-  hook compartido `useLoanFormState`, los helpers `loanEdit.js` y los
-  componentes de `details/` y `edit/`. La creación y la edición reutilizan el
-  mismo formulario y vista previa; la eliminación usa `Dialog`.
-- Impact: El listado enlaza cada ID al detalle, muestra avisos de creación y
-  eliminación, y bloquea editar o eliminar cuando hay pagos registrados. La
-  edición envía un `PUT` completo y vuelve al detalle con un aviso. El detalle
-  está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente (2529 modules transformed).
-  No se probó en navegador ni contra un servidor; solo se ejecutó la
-  compilación, a pedido del usuario.
+- Change: The protected routes `/loans/:id` and `/loans/:id/edit`, the
+  shared hook `useLoanFormState`, the helpers `loanEdit.js`, and the
+  components in `details/` and `edit/` were added. Creation and editing reuse the
+  same form and preview; deletion uses `Dialog`.
+- Impact: The listing links each ID to the detail, shows creation and
+  deletion notices, and blocks editing or deletion when payments are recorded.
+  Editing sends a full `PUT` and returns to the detail with a notice. Details
+  are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully (2529 modules transformed).
+  Not tested in a browser or against a server; only the build was run,
+  at the user's request.
 
-### 2026-11-19 — Componentes de préstamos agrupados por propósito
+### 2026-11-19 — Loan components grouped by purpose
 
-- Change: Se movieron los componentes de `src/components/loans/` a
-  `create/` y `list/` según el flujo que atienden y se actualizaron todas las
-  importaciones. No cambia ningún componente ni su comportamiento.
-- Impact: Las vistas `CreateLoan` y `Loan` importan desde
-  `src/components/loans/create/` y `src/components/loans/list/`
-  respectivamente. El detalle está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente (2483 modules transformed).
-  No se probó en navegador ni contra un servidor; solo se ejecutó la
-  compilación, a pedido del usuario.
+- Change: Components were moved from `src/components/loans/` to
+  `create/` and `list/` according to the flow they serve, and all imports
+  were updated. No component or behavior changes.
+- Impact: The `CreateLoan` and `Loan` views import from
+  `src/components/loans/create/` and `src/components/loans/list/`
+  respectively. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully (2483 modules transformed).
+  Not tested in a browser or against a server; only the build was run,
+  at the user's request.
 
-### 2026-11-19 — Componentes por dominio para el listado de préstamos
+### 2026-11-19 — Domain components for the loan listing
 
-- Change: Se dividió `Loans.jsx` en componentes de `src/components/loans/`, se
-  extrajo la carga y las acciones a `useLoans` y el formato a
-  `src/client/utils/loanFormat.js`, manteniendo el mismo listado.
-- Impact: La vista queda como composición del encabezado, los avisos y la tabla;
-  no cambian columnas, estados, mensajes ni comportamiento. El detalle está en
+- Change: `Loans.jsx` was split into components in `src/components/loans/`, loading
+  and actions were extracted to `useLoans`, and formatting to
+  `src/client/utils/loanFormat.js`, keeping the same listing.
+- Impact: The view is now a composition of the header, notices, and table;
+  columns, states, messages, and behavior do not change. Details are in
   [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente (2483 modules transformed).
-  No se probó en navegador ni contra un servidor; solo se ejecutó la
-  compilación, a pedido del usuario.
+- Verification: `pnpm build` built successfully (2483 modules transformed).
+  Not tested in a browser or against a server; only the build was run,
+  at the user's request.
 
-### 2026-11-19 — Componentes por dominio para CreateLoan
+### 2026-11-19 — Domain components for CreateLoan
 
-- Change: Se dividió `CreateLoan.jsx` en componentes de `src/components/loans/`,
-  se extrajo el estado a `useCreateLoanForm` y la validación a
-  `src/client/utils/loanForm.js`, manteniendo el mismo flujo de dos pasos.
-- Impact: La vista queda como composición del formulario y la vista previa; no
-  cambian rutas, payload ni comportamiento. El detalle está en
+- Change: `CreateLoan.jsx` was split into components in `src/components/loans/`,
+  state was extracted to `useCreateLoanForm` and validation to
+  `src/client/utils/loanForm.js`, keeping the same two-step flow.
+- Impact: The view is now a composition of the form and the preview; no
+  routes, payload, or behavior change. Details are in
   [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente (2476 modules transformed).
-  No se probó en navegador ni contra un servidor; solo se ejecutó la
-  compilación, a pedido del usuario.
+- Verification: `pnpm build` built successfully (2476 modules transformed).
+  Not tested in a browser or against a server; only the build was run,
+  at the user's request.
 
-### 2026-11-19 — Creación de préstamos con vista previa
+### 2026-11-19 — Loan creation with preview
 
-- Change: Se reemplazó el placeholder de `CreateLoan` por un formulario que
-  carga stakeholders, admite fiadores existentes o inline, exige garantías y
-  calcula las cuotas con `src/client/utils/loanSchedule.js` antes de enviar
-  `POST /api/loans`. `Loan` añade el botón `New loan` y un aviso de créación
-  correcta. Se instalaron los componentes shadcn `select` y `textarea`.
-- Impact: `/create-loan` pasa a ser un flujo funcional de dos pasos (formulario
-  y revisión) y vuelve a `/loans` con `state.createdLoanId` tras la creación.
-  El backend sigue siendo el único validador definitivo y no se añadió ningún
-  endpoint nuevo. El detalle está en [`SKILL.md`](SKILL.md).
-- Verification: no se ejecutó `pnpm build` ni se probó en navegador o contra un
-  servidor, a pedido del usuario. Queda pendiente esa comprobación.
+- Change: The `CreateLoan` placeholder was replaced by a form that
+  loads stakeholders, supports existing or inline guarantors, requires collateral, and
+  calculates installments with `src/client/utils/loanSchedule.js` before sending
+  `POST /api/loans`. `Loan` adds the `New loan` button and a successful creation
+  notice. The shadcn `select` and `textarea` components were installed.
+- Impact: `/create-loan` becomes a functional two-step flow (form
+  and review) and returns to `/loans` with `state.createdLoanId` after creation.
+  The backend remains the only definitive validator and no new
+  endpoints were added. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` was not run and nothing was tested in a browser or against a
+  server, at the user's request. That check remains pending.
 
-### 2026-11-19 — Contexto de autenticación y rutas protegidas
+### 2026-11-19 — Authentication context and protected routes
 
-- Change: Se reemplazó el wrapper de `AuthContext.jsx` por `AuthProvider`,
-  `useAuth()` y `RequireAuth`, con hidratación desde `GET /api/users/auth`.
-  El servicio axios añade un interceptor de `401` que limpia el token y emite
-  `auth:unauthorized`. `/loans` y `/create-loan` quedan tras el guard; `Login`
-  usa `login(token)` y redirige a la ruta de origen; `Loan` muestra nombre y rol
-  desde `useAuth().user` sin filtrar en cliente.
-- Impact: Las rutas de préstamos exigen sesión y el usuario está disponible en
-  cualquier vista. El filtrado de préstamos sigue siendo responsabilidad del
-  backend por JWT. El detalle está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente (220 modules transformed).
-  No se probó contra un servidor ni en navegador.
+- Change: The `AuthContext.jsx` wrapper was replaced by `AuthProvider`,
+  `useAuth()`, and `RequireAuth`, with hydration from `GET /api/users/auth`.
+  The axios service adds a `401` interceptor that clears the token and emits
+  `auth:unauthorized`. `/loans` and `/create-loan` are now behind the guard; `Login`
+  uses `login(token)` and redirects to the original route; `Loan` displays name and role
+  from `useAuth().user` without filtering on the client.
+- Impact: Loan routes require a session and the user is available in
+  any view. Loan filtering remains the backend's responsibility by JWT. Details
+  are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully (220 modules transformed).
+  Not tested against a server or in a browser.
 
-### 2026-11-18 — Listado de préstamos
+### 2026-11-18 — Loan listing
 
-- Change: Se reemplazó el placeholder de `Loan` por una tabla que consume
-  `GET /api/loans` mediante `api.get("/loans")`. Muestra ID, prestamista,
-  cliente, monto, tasa, modo, fecha de desembolso y total a pagar, con importes
-  y fechas formateados y estados de carga, vacío y error con reintento. Un `401`
-  elimina el token y redirige a `/login`.
-- Impact: `/loans` pasa a ser una vista funcional que usa el servicio axios
-  compartido y los componentes `Table*`. `CreateLoan` sigue siendo placeholder.
-  El detalle está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente. No se probó contra un
-  servidor ni en navegador.
+- Change: The `Loan` placeholder was replaced by a table that consumes
+  `GET /api/loans` via `api.get("/loans")`. It displays ID, lender,
+  customer, amount, rate, mode, disbursement date, and total to pay, with formatted
+  amounts and dates and loading, empty, and error states with retry. A `401`
+  deletes the token and redirects to `/login`.
+- Impact: `/loans` becomes a functional view using the shared axios
+  service and the `Table*` components. `CreateLoan` remains a placeholder.
+  Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully. Not tested against a
+  server or in a browser.
 
-### 2026-11-18 — Servicio axios compartido
+### 2026-11-18 — Shared axios service
 
-- Change: Se añadió `src/lib/axiosService.js`, una instancia de axios con
-  `baseURL` desde `VITE_API_URL` (o `http://localhost:3000/api`) y un
-  interceptor que adjunta `Authorization: Bearer <token>` leyendo `token` de
-  `localStorage`. `Login`, `Signup` y `Test.jsx` ahora usan `api.post`/`api.get`
-  con rutas relativas a `/api`.
-- Impact: Todas las peticiones pasan por un único cliente y el token se envía
-  de forma centralizada; no hay que repetir el header ni el prefijo `/api`.
-  El detalle está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente. No se probó el flujo contra
-  un servidor ni en navegador; `/api/roles` sigue deshabilitado en
+- Change: `src/lib/axiosService.js` was added, an axios instance with
+  `baseURL` from `VITE_API_URL` (or `http://localhost:3000/api`) and an
+  interceptor that attaches `Authorization: Bearer <token>` reading `token` from
+  `localStorage`. `Login`, `Signup`, and `Test.jsx` now use `api.post`/`api.get`
+  with paths relative to `/api`.
+- Impact: All requests go through a single client and the token is sent
+  centrally; there is no need to repeat the header or the `/api` prefix.
+  Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully. The flow was not tested against
+  a server or in a browser; `/api/roles` is still disabled in
   `src/server/api.js`.
 
-### 2026-11-18 — Vistas de login y signup
+### 2026-11-18 — Login and signup views
 
-- Change: Se reemplazó el placeholder de `Login` por un formulario conectado a
-  `POST /api/auth/login` y se añadió `Signup`, conectado a
-  `POST /api/auth/signup` mediante `axios.post`. Ambos usan `Card`, `Input`,
-  `Label` y `Button`,
-  validan los campos y muestran estados de carga y error. `Login` guarda el JWT
-  en `localStorage` como `token` y navega a `/loans`; `Signup` navega a
-  `/login` con un aviso de registro correcto.
-- Impact: El cliente ya puede autenticarse contra la API. `Loan` y
-  `CreateLoan` siguen siendo placeholders y todavía no envían el token a las
-  rutas protegidas. Los detalles están en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente y `git diff --check` no
-  reportó errores. No se probó el flujo contra un servidor ni en navegador.
+- Change: The `Login` placeholder was replaced by a form connected to
+  `POST /api/auth/login` and `Signup` was added, connected to
+  `POST /api/auth/signup` via `axios.post`. Both use `Card`, `Input`,
+  `Label`, and `Button`,
+  validate fields, and show loading and error states. `Login` saves the JWT
+  in `localStorage` as `token` and navigates to `/loans`; `Signup` navigates to
+  `/login` with a successful registration notice.
+- Impact: The client can now authenticate against the API. `Loan` and
+  `CreateLoan` remain placeholders and do not yet send the token to
+  protected routes. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully and `git diff --check` did
+  not report errors. The flow was not tested against a server or in a browser.
 
-### 2026-11-18 — Tipografía de marca
+### 2026-11-18 — Brand typography
 
-- Change: Se reemplazó Geist por Montserrat (texto) y Playfair Display
-  (encabezados), cargadas desde Google Fonts con `preconnect` y `display=swap`
-  en `index.html`; `@theme inline` define `--font-sans` y `--font-heading`, y
-  `@layer base` aplica `font-heading` a `h1`–`h6`. Se eliminó la dependencia
-  `@fontsource-variable/geist`.
-- Impact: Cambia la tipografía de toda la interfaz; `CardTitle` y `DialogTitle`
-  ya usaban la utilidad `font-heading`. Las fuentes requieren conexión a
-  Google Fonts en tiempo de ejecución. El detalle está en
+- Change: Geist was replaced by Montserrat (text) and Playfair Display
+  (headings), loaded from Google Fonts with `preconnect` and `display=swap`
+  in `index.html`; `@theme inline` defines `--font-sans` and `--font-heading`, and
+  `@layer base` applies `font-heading` to `h1`–`h6`. The
+  `@fontsource-variable/geist` dependency was removed.
+- Impact: Changes the typography of the entire interface; `CardTitle` and `DialogTitle`
+  already used the `font-heading` utility. The fonts require a connection to
+  Google Fonts at runtime. Details are in
   [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente, `git diff --check` no
-  reportó errores, el HTML compilado conserva los enlaces de fuentes y el CSS
-  compilado ya no contiene Geist. Sin comprobación visual en navegador.
+- Verification: `pnpm build` built successfully, `git diff --check` did
+  not report errors, the compiled HTML retains the font links and the compiled
+  CSS no longer contains Geist. No visual check in a browser.
 
-### 2026-11-18 — Paleta de marca
+### 2026-11-18 — Brand palette
 
-- Change: Se reemplazaron los tokens de color de `src/client/index.css` por la
-  paleta `263A69` (principal), `B0C7DD` (secundaria), `E8E3DD` (fondos y
-  tarjetas), `EDECEA` (notificaciones y popups) y `0F0F0F` (texto), convertida
-  a `oklch`; se recoloreó `.dark` con los mismos colores y se eliminaron los
-  estados de color heredados de Vite en `index.css` y `App.css`.
-- Impact: Cambia la apariencia de todos los componentes que usan utilidades
-  shadcn. `--destructive` y los tokens `chart-*`/`sidebar-*` conservan sus
-  valores anteriores. El mapeo completo está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente, `git diff --check` no
-  reportó errores y el CSS compilado contiene los nuevos valores `oklch`. Sin
-  comprobación visual en navegador.
+- Change: The color tokens in `src/client/index.css` were replaced by the
+  palette `263A69` (primary), `B0C7DD` (secondary), `E8E3DD` (backgrounds and
+  cards), `EDECEA` (notifications and popups), and `0F0F0F` (text), converted
+  to `oklch`; `.dark` was recolored with the same colors and the
+  legacy Vite color states in `index.css` and `App.css` were removed.
+- Impact: Changes the appearance of all components using shadcn utilities.
+  `--destructive` and the `chart-*`/`sidebar-*` tokens keep their
+  previous values. The full mapping is in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully, `git diff --check` did
+  not report errors, and the compiled CSS contains the new `oklch` values. No
+  visual check in a browser.
 
-### 2026-11-18 — Scaffold del frontend
+### 2026-11-18 — Frontend scaffold
 
-- Change: Se añadió la base del cliente React: router con cuatro rutas, vistas
-  placeholder, seis componentes de UI generados con shadcn, Tailwind 4 con
-  tokens de tema claro/oscuro, fuente Geist, alias `@` y los archivos de
-  configuración `components.json` y `jsconfig.json`.
-- Impact: Define la estructura y las convenciones del frontend. Todavía no hay
-  integración con la API ni autenticación en el cliente; `App.jsx` sigue siendo
-  la demo de Vite y los componentes importan `cn` del paquete en lugar de
-  `@/lib/utils`. Ver los detalles en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente (46 módulos) y
-  `git diff --check` no reportó errores. Las rutas y los componentes no se
-  probaron en el navegador.
+- Change: The React client base was added: a router with four routes, placeholder
+  views, six UI components generated with shadcn, Tailwind 4 with
+  light/dark theme tokens, the Geist font, the `@` alias, and the
+  configuration files `components.json` and `jsconfig.json`.
+- Impact: Defines the structure and conventions of the frontend. There is still no
+  API integration or client-side authentication; `App.jsx` remains the
+  Vite demo and components import `cn` from the package instead of
+  `@/lib/utils`. See details in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully (46 modules) and
+  `git diff --check` did not report errors. Routes and components were not
+  tested in the browser.

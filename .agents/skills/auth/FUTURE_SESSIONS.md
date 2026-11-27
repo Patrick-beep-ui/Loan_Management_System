@@ -1,37 +1,37 @@
-# Session management — diseño futuro (no implementado)
+# Session management — future design (not implemented)
 
-Este documento describe el modelo de sesiones recomendado para cuando se
-escale la autenticación. **No está implementado**: hoy solo existe un access
-token JWT de 1 hora (`JWT_EXPIRES_IN`), sin refresh tokens ni estado de sesión.
+This document describes the recommended session model for when authentication is
+scaled up. **It is not implemented**: currently there is only a 1-hour JWT access
+token (`JWT_EXPIRES_IN`), with no refresh tokens or session state.
 
-## Política propuesta
+## Proposed policy
 
-| Qué se configura | Valor inicial | Qué pasa al vencer |
+| What is configured | Initial value | What happens on expiration |
 | --- | ---: | --- |
-| Access token JWT | 15 min | La API rechaza el token; el cliente pide uno nuevo con el refresh token. |
-| Inactividad de sesión | 15 min | El backend cierra la sesión y pide iniciar sesión de nuevo. |
-| Duración máxima de sesión | 8 h desde el login | El usuario debe volver a iniciar sesión aunque haya estado activo. Renovar tokens no reinicia este plazo. |
+| Access token JWT | 15 min | The API rejects the token; the client requests a new one with the refresh token. |
+| Session inactivity | 15 min | The backend closes the session and asks the user to log in again. |
+| Maximum session duration | 8 h from login | The user must log in again even if they have been active. Refreshing tokens does not reset this period. |
 
-## Diseño
+## Design
 
-- **Access token**: JWT `{ user_id, role_id, session_id }`, firmado con
-  `JWT_SECRET`, expira en 15 min. Lo verifica `checkAuth`.
-- **Refresh token**: token opaco aleatorio (64 hex), guardado **hasheado**
-  (SHA-256) en la tabla `sessions`. Solo lo usa `POST /api/auth/refresh`.
-- **Inactividad**: `sessions.last_activity_at` se actualiza en cada refresh
-  exitoso. Si `now - last_activity_at > 15 min`, el refresh falla y la sesión
-  se cierra.
-- **Duración máxima**: `sessions.expires_at = login + 8 h`. El refresh falla
-  después de ese instante y nunca lo extiende.
-- **Refresh**: como el access token dura 15 min, el cliente refresca dentro de
-  esa ventana; ese refresh es el latido de actividad.
-- **Transporte**: refresh token en cookie `httpOnly`, `sameSite=lax` (y
-  `secure` en producción). Requiere `cookie-parser`. El access token se
-  devuelve en el JSON.
-- **Logout**: `POST /api/auth/logout` revoca la sesión (`revoked_at`) y borra la
-  cookie.
+- **Access token**: JWT `{ user_id, role_id, session_id }`, signed with
+  `JWT_SECRET`, expires in 15 min. Verified by `checkAuth`.
+- **Refresh token**: random opaque token (64 hex), stored **hashed** (SHA-256) in
+  the `sessions` table. Used only by `POST /api/auth/refresh`.
+- **Inactivity**: `sessions.last_activity_at` is updated on every successful
+  refresh. If `now - last_activity_at > 15 min`, the refresh fails and the
+  session is closed.
+- **Maximum duration**: `sessions.expires_at = login + 8 h`. Refresh fails after
+  that point and never extends it.
+- **Refresh**: since the access token lasts 15 min, the client refreshes within
+  that window; that refresh is the activity heartbeat.
+- **Transport**: refresh token in an `httpOnly` cookie, `sameSite=lax` (and
+  `secure` in production). Requires `cookie-parser`. The access token is returned
+  in the JSON.
+- **Logout**: `POST /api/auth/logout` revokes the session (`revoked_at`) and
+  clears the cookie.
 
-## Tabla propuesta
+## Proposed table
 
 ```sql
 sessions(
@@ -46,23 +46,23 @@ sessions(
 )
 ```
 
-## Endpoints futuros
+## Future endpoints
 
-| Método | Ruta | Acceso |
+| Method | Route | Access |
 | --- | --- | --- |
 | `POST` | `/api/auth/refresh` | refresh token |
 | `POST` | `/api/auth/logout` | refresh token |
 
-## Variables de entorno propuestas
+## Proposed environment variables
 
 - `ACCESS_TOKEN_TTL=15m`
 - `SESSION_IDLE_TIMEOUT=15m`
 - `SESSION_MAX_DURATION=8h`
 
-## Notas de implementación
+## Implementation notes
 
-- Requiere un modelo `Session` y la asociación `User.hasMany(Session)`.
-- `checkAuth` puede seguir validando solo el JWT; la revocación inmediata en
-  logout exigiría consultar `sessions` en cada request.
-- La tabla no existe todavía; el proyecto no usa migraciones, así que habría
-  que crear el DDL manualmente.
+- Requires a `Session` model and the `User.hasMany(Session)` association.
+- `checkAuth` can continue validating only the JWT; immediate revocation on
+  logout would require querying `sessions` on every request.
+- The table does not exist yet; the project does not use migrations, so the DDL
+  would have to be created manually.

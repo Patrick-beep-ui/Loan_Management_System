@@ -1,261 +1,261 @@
 ---
 name: frontend
-description: Frontend React con Vite: entrada, rutas, componentes de UI, estilos y alias de rutas.
+description: React frontend with Vite: entry point, routes, UI components, styles, and path aliases.
 ---
 
 # Frontend
 
-La interfaz vive en `src/client/` y usa React 19 con Vite 6. Los primitivos
-compartidos están en `src/components/ui/`, los componentes por dominio en
-`src/components/<dominio>/`, los hooks de cliente en `src/client/hooks/` y las
-utilidades en `src/lib/` y `src/client/utils/`.
-El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
+The interface lives in `src/client/` and uses React 19 with Vite 6. Shared
+primitives are in `src/components/ui/`, domain components in
+`src/components/<domain>/`, client hooks in `src/client/hooks/`, and
+utilities in `src/lib/` and `src/client/utils/`.
+The change history for this module is in [`CHANGELOG.md`](CHANGELOG.md).
 
-## Entrada y rutas
+## Entry point and routes
 
-`src/client/main.jsx` crea el router con `createBrowserRouter` y monta
-`RouterProvider` dentro de `React.StrictMode`. Una ruta sin `path` monta
-`AuthProvider` como layout raíz; dentro de ella, `RequireAuth` protege
-`/loans`, `/create-loan`, `/loans/:id` y `/loans/:id/edit`, y `RequireAdmin`
-protege `/admin` y sus hijos. El resto de las rutas son públicas:
+`src/client/main.jsx` creates the router with `createBrowserRouter` and mounts
+`RouterProvider` inside `React.StrictMode`. A route without `path` mounts
+`AuthProvider` as the root layout; inside it, `RequireAuth` protects
+`/loans`, `/create-loan`, `/loans/:id`, and `/loans/:id/edit`, while `RequireAdmin`
+protects `/admin` and its children. The remaining routes are public:
 
-| Ruta | Vista | Archivo | Acceso |
+| Route | View | File | Access |
 | --- | --- | --- | --- |
-| `/` | `App` (demo inicial de Vite) | `src/client/App.jsx` | público |
-| `/login` | `Login` | `src/client/views/Login.jsx` | público |
-| `/signup` | `Signup` | `src/client/views/Signup.jsx` | público |
-| `/loans` | `Loan` | `src/client/views/Loans.jsx` | protegido |
-| `/create-loan` | `CreateLoan` | `src/client/views/CreateLoan.jsx` | protegido |
-| `/loans/:id` | `LoanDetails` | `src/client/views/LoanDetails.jsx` | protegido |
-| `/loans/:id/edit` | `EditLoan` | `src/client/views/EditLoan.jsx` | protegido |
-| `/admin` | redirección | `src/client/main.jsx` | admin |
+| `/` | `App` (initial Vite demo) | `src/client/App.jsx` | public |
+| `/login` | `Login` | `src/client/views/Login.jsx` | public |
+| `/signup` | `Signup` | `src/client/views/Signup.jsx` | public |
+| `/loans` | `Loan` | `src/client/views/Loans.jsx` | protected |
+| `/create-loan` | `CreateLoan` | `src/client/views/CreateLoan.jsx` | protected |
+| `/loans/:id` | `LoanDetails` | `src/client/views/LoanDetails.jsx` | protected |
+| `/loans/:id/edit` | `EditLoan` | `src/client/views/EditLoan.jsx` | protected |
+| `/admin` | redirect | `src/client/main.jsx` | admin |
 | `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | admin |
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | admin |
 | `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | admin |
 | `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | admin |
-| `/test` | `Test` (vista de prueba) | `src/client/Test.jsx` | público |
+| `/test` | `Test` (test view) | `src/client/Test.jsx` | public |
 
-`Login` y `Signup` consumen `/api/auth` a través del servicio compartido
-`src/lib/axiosService.js` (`api.post`): validan los campos, desactivan el botón
-mientras envían y muestran `error.response?.data?.error` o un mensaje de red en
-una región `role="alert"` con tokens `destructive`. `Login` usa
-`useAuth().login(token)` para guardar el JWT en `localStorage`, cargar el
-usuario con `/users/auth` y navegar a la ruta de origen (`state.from`) o
-`/loans`. `Signup` envía `email`, `password` y `stakeholder_id` como entero
-positivo y, tras el `201`, navega a `/login` con un aviso de registro correcto.
-`Loan` consume `/api/loans` con `api.get("/loans")` y muestra un listado en
-tabla con ID, prestamista, cliente, monto, tasa, modo, fecha de desembolso y
-total a pagar; usa `useAuth().user` solo para mostrar nombre y rol, porque el
-backend ya filtra los préstamos según el JWT. Incluye estados de carga, vacío y
-error con reintento, un botón `New loan` que navega a `/create-loan` y un aviso
-`role="status"` cuando vuelve con `state.createdLoanId`; un `401` global limpia
-la sesión y `RequireAuth` vuelve a `/login`. `CreateLoan` es un formulario
-funcional: carga `GET /api/stakeholders`, permite seleccionar o crear fiadores,
-genera una vista previa de cuotas y envía `POST /api/loans` tras la aprobación;
-no registra pagos; esa acción ocurre desde `LoanDetails`. `LoanDetails` consume `GET /api/loans/:id` y muestra
-el resumen, el calendario, fiadores, garantías y el estado del interés; desde
-ahí se navega a `/loans/:id/edit` y se elimina el préstamo con `Dialog` solo si
-no hay pagos registrados. `EditLoan` recupera el mismo préstamo: sin pagos
-rellena el formulario compartido y envía `PUT /api/loans/:id` con todos los
-arreglos; con pagos muestra un formulario reducido y envía `PATCH /api/loans/:id`
-solo con fiadores, garantías y, para `admin`, `lender_id`.
-`App.jsx` continúa siendo el contador de ejemplo de
-Vite. La ruta `/test` usa `api.get("/roles")`; esa ruta del servidor está
-actualmente deshabilitada en `src/server/api.js`, por lo que no forma parte del
-flujo de autenticación.
+`Login` and `Signup` consume `/api/auth` through the shared service
+`src/lib/axiosService.js` (`api.post`): they validate the fields, disable the button
+while submitting, and show `error.response?.data?.error` or a network message in
+a `role="alert"` region with `destructive` tokens. `Login` uses
+`useAuth().login(token)` to save the JWT in `localStorage`, load the
+user with `/users/auth`, and navigate to the original route (`state.from`) or
+`/loans`. `Signup` sends `email`, `password`, and `stakeholder_id` as a positive
+integer and, after `201`, navigates to `/login` with a successful registration notice.
+`Loan` consumes `/api/loans` with `api.get("/loans")` and displays a table
+listing with ID, lender, customer, amount, rate, mode, disbursement date, and
+total to pay; it uses `useAuth().user` only to display the name and role, because the
+backend already filters loans according to the JWT. It includes loading, empty,
+and error states with retry, a `New loan` button that navigates to `/create-loan`, and a
+`role="status"` notice when returning with `state.createdLoanId`; a global
+`401` clears the session and `RequireAuth` returns to `/login`. `CreateLoan` is a functional
+form: it loads `GET /api/stakeholders`, allows selecting or creating guarantors,
+generates an installment preview, and sends `POST /api/loans` after approval;
+it does not record payments; that action occurs from `LoanDetails`. `LoanDetails` consumes `GET /api/loans/:id` and displays
+the summary, schedule, guarantors, collateral, and interest status; from
+there you navigate to `/loans/:id/edit` and delete the loan with `Dialog` only if
+there are no recorded payments. `EditLoan` retrieves the same loan: without payments
+it fills the shared form and sends `PUT /api/loans/:id` with all the
+arrays; with payments it shows a reduced form and sends `PATCH /api/loans/:id`
+only with guarantors, collateral, and, for `admin`, `lender_id`.
+`App.jsx` remains the example Vite counter.
+The `/test` route uses `api.get("/roles")`; that server route is
+currently disabled in `src/server/api.js`, so it is not part of the
+authentication flow.
 
-## Configuración y dependencias
+## Configuration and dependencies
 
-- `vite.config.js`: registra los plugins `react()` y `tailwindcss()` y define el
-  alias `@` → `./src` con `fileURLToPath(new URL("./src", import.meta.url))`.
-- `jsconfig.json`: `baseUrl` `.` y el path `@/*` → `./src/*` para que editores y
-  herramientas resuelvan el mismo alias.
-- `components.json`: configuración de shadcn con estilo `base-nova`, `tsx: false`,
-  `rsc: false`, CSS en `src/client/index.css`, iconos `lucide` y los alias
-  `@/components`, `@/lib/utils`, `@/components/ui`, `@/lib` y `@/hooks`.
-- Dependencias de UI: `@base-ui/react` (primitivos), `class-variance-authority`
-  (variantes), `cn` (concatenación de clases), `lucide-react` (iconos),
-  `tailwindcss`, `@tailwindcss/vite` y `tw-animate-css`. `react-router-dom`
-  provee el enrutamiento. La instalación de la CLI añadió también `shadcn` e
-  `install` como dependencias; el código actual no las utiliza.
-- `axios` se usa únicamente a través de `src/lib/axiosService.js`; `Login`,
-  `Signup`, `Test.jsx` y los hooks `useLoans`, `useLoanFormState`,
+- `vite.config.js`: registers the `react()` and `tailwindcss()` plugins and defines the
+  alias `@` → `./src` with `fileURLToPath(new URL("./src", import.meta.url))`.
+- `jsconfig.json`: `baseUrl` `.` and the path `@/*` → `./src/*` so editors and
+  tools resolve the same alias.
+- `components.json`: shadcn configuration with `base-nova` style, `tsx: false`,
+  `rsc: false`, CSS in `src/client/index.css`, `lucide` icons, and the aliases
+  `@/components`, `@/lib/utils`, `@/components/ui`, `@/lib`, and `@/hooks`.
+- UI dependencies: `@base-ui/react` (primitives), `class-variance-authority`
+  (variants), `cn` (class concatenation), `lucide-react` (icons),
+  `tailwindcss`, `@tailwindcss/vite`, and `tw-animate-css`. `react-router-dom`
+  provides routing. The CLI installation also added `shadcn` and
+  `install` as dependencies; the current code does not use them.
+- `axios` is used only through `src/lib/axiosService.js`; `Login`,
+  `Signup`, `Test.jsx`, and the hooks `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
   `usePayments`, `usePaymentRevert`, `useAdminUsers`, `useAdminStakeholders`,
-  `useAdminLoans`, `useAdminPayments` y `useAdminDashboard` importan esa
-  instancia en lugar de crear clientes propios.
+  `useAdminLoans`, `useAdminPayments`, and `useAdminDashboard` import that
+  instance instead of creating their own clients.
 
-## Componentes de UI
+## UI components
 
-`src/components/ui/` contiene los componentes generados con shadcn:
+`src/components/ui/` contains the components generated with shadcn:
 
-| Archivo | Componentes exportados | Primitivo |
+| File | Exported components | Primitive |
 | --- | --- | --- |
-| `button.jsx` | `Button`, `buttonVariants` | `Button` de `@base-ui/react/button` |
-| `card.jsx` | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardAction`, `CardContent`, `CardFooter` | elementos `div` |
-| `dialog.jsx` | `Dialog`, `DialogTrigger`, `DialogPortal`, `DialogClose`, `DialogOverlay`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription` | `Dialog` de `@base-ui/react/dialog` |
-| `input.jsx` | `Input` | `Input` de `@base-ui/react/input` |
-| `label.jsx` | `Label` | elemento `label` |
-| `select.jsx` | `Select`, `SelectContent`, `SelectGroup`, `SelectItem`, `SelectLabel`, `SelectScrollDownButton`, `SelectScrollUpButton`, `SelectSeparator`, `SelectTrigger`, `SelectValue` | `Select` de `@base-ui/react/select` |
-| `table.jsx` | `Table`, `TableHeader`, `TableBody`, `TableFooter`, `TableHead`, `TableRow`, `TableCell`, `TableCaption` | etiquetas HTML de tabla |
-| `textarea.jsx` | `Textarea` | elemento `textarea` |
+| `button.jsx` | `Button`, `buttonVariants` | `Button` from `@base-ui/react/button` |
+| `card.jsx` | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardAction`, `CardContent`, `CardFooter` | `div` elements |
+| `dialog.jsx` | `Dialog`, `DialogTrigger`, `DialogPortal`, `DialogClose`, `DialogOverlay`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription` | `Dialog` from `@base-ui/react/dialog` |
+| `input.jsx` | `Input` | `Input` from `@base-ui/react/input` |
+| `label.jsx` | `Label` | `label` element |
+| `select.jsx` | `Select`, `SelectContent`, `SelectGroup`, `SelectItem`, `SelectLabel`, `SelectScrollDownButton`, `SelectScrollUpButton`, `SelectSeparator`, `SelectTrigger`, `SelectValue` | `Select` from `@base-ui/react/select` |
+| `table.jsx` | `Table`, `TableHeader`, `TableBody`, `TableFooter`, `TableHead`, `TableRow`, `TableCell`, `TableCaption` | HTML table tags |
+| `textarea.jsx` | `Textarea` | `textarea` element |
 
-Los componentes con estilos combinan `className` mediante `cn`. Hoy importan
-`cn` directamente del paquete `cn`; `src/lib/utils.js` también lo reexporta y es
-el alias declarado en `components.json`, pero los componentes aún no lo usan.
-Conviene tenerlo presente al agregar componentes nuevos.
+Styled components combine `className` via `cn`. Today they import
+`cn` directly from the `cn` package; `src/lib/utils.js` also re-exports it and is
+the alias declared in `components.json`, but the components do not use it yet.
+Keep this in mind when adding new components.
 
-### Componentes por dominio
+### Domain components
 
-`src/components/admin/` reúne la UI del panel de administración:
+`src/components/admin/` brings together the admin panel UI:
 
-| Archivo | Responsabilidad |
+| File | Responsibility |
 | --- | --- |
-| `AdminNav.jsx` | navegación con `NavLink`; el activo usa `variant="default"` y los demás `"outline"` |
-| `AdminPlaceholder.jsx` | tarjeta de marcador de posición reutilizable; ya no es usada por el panel |
-| `users/AdminUsersHeader.jsx` | título, descripción y botón de actualización |
-| `users/AdminUsersAlerts.jsx` | avisos de error y éxito del flujo de usuarios |
-| `users/AdminUsersTable.jsx` | tabla con estados de carga y vacío |
-| `users/AdminUserRow.jsx` | fila con rol, estado y acción de edición |
-| `users/AdminUserEditDialog.jsx` | diálogo único con rol, estado y datos del stakeholder vinculado |
-| `stakeholders/AdminStakeholdersHeader.jsx` | título, descripción y acciones `Refresh` y `New stakeholder` |
-| `stakeholders/AdminStakeholdersAlerts.jsx` | avisos de error y éxito del flujo de stakeholders |
-| `stakeholders/AdminStakeholdersTable.jsx` | tabla con estados de carga y vacío |
-| `stakeholders/AdminStakeholderRow.jsx` | fila con acciones `Edit` y `Delete` |
-| `stakeholders/StakeholderFormFields.jsx` | campos reutilizables de persona con validación por campo |
-| `stakeholders/AdminStakeholderFormDialog.jsx` | formulario de alta y edición que reutiliza `StakeholderFormFields` |
-| `stakeholders/DeleteStakeholderDialog.jsx` | confirmación de eliminación con `Dialog` |
-| `loans/AdminLoansHeader.jsx` | título, descripción y botón de actualización |
-| `loans/AdminLoansAlerts.jsx` | avisos de error y éxito del flujo de préstamos |
-| `loans/AdminLoansTable.jsx` | tabla con estados de carga y vacío |
-| `loans/AdminLoanRow.jsx` | fila con importes formateados y acción `Reassign lender` |
-| `loans/ReassignLenderDialog.jsx` | selección de prestamista y envío de `PATCH /api/loans/:id` |
-| `payments/AdminPaymentsHeader.jsx` | título, descripción y acciones `Refresh` y `Record payment` |
-| `payments/AdminPaymentsAlerts.jsx` | avisos de error y éxito del flujo de pagos |
-| `payments/AdminPaymentsTable.jsx` | tabla con estados de carga y vacío |
-| `payments/AdminPaymentRow.jsx` | fila con pago, préstamo, destino y acción `Revert` |
-| `payments/AdminPaymentRecordDialog.jsx` | selección de cuota o interés pendiente y envío del pago |
-| `dashboard/AdminDashboardHeader.jsx` | título, descripción y botón de actualización |
-| `dashboard/AdminDashboardAlerts.jsx` | aviso de error del panel |
-| `dashboard/AdminDashboardCards.jsx` | tarjetas de importes, pagos y cuotas vencidas |
-| `dashboard/AdminDashboardStatus.jsx` | estado de cuotas, interés y cartera |
-| `dashboard/AdminDashboardPaymentTrend.jsx` | pagos agrupados por mes |
-| `dashboard/AdminDashboardRecentPayments.jsx` | tabla de los pagos más recientes |
+| `AdminNav.jsx` | navigation with `NavLink`; the active one uses `variant="default"` and the others `"outline"` |
+| `AdminPlaceholder.jsx` | reusable placeholder card; no longer used by the panel |
+| `users/AdminUsersHeader.jsx` | title, description, and refresh button |
+| `users/AdminUsersAlerts.jsx` | error and success notices for the user flow |
+| `users/AdminUsersTable.jsx` | table with loading and empty states |
+| `users/AdminUserRow.jsx` | row with role, status, and edit action |
+| `users/AdminUserEditDialog.jsx` | single dialog with role, status, and linked stakeholder data |
+| `stakeholders/AdminStakeholdersHeader.jsx` | title, description, and `Refresh` and `New stakeholder` actions |
+| `stakeholders/AdminStakeholdersAlerts.jsx` | error and success notices for the stakeholder flow |
+| `stakeholders/AdminStakeholdersTable.jsx` | table with loading and empty states |
+| `stakeholders/AdminStakeholderRow.jsx` | row with `Edit` and `Delete` actions |
+| `stakeholders/StakeholderFormFields.jsx` | reusable person fields with per-field validation |
+| `stakeholders/AdminStakeholderFormDialog.jsx` | creation and edit form that reuses `StakeholderFormFields` |
+| `stakeholders/DeleteStakeholderDialog.jsx` | deletion confirmation with `Dialog` |
+| `loans/AdminLoansHeader.jsx` | title, description, and refresh button |
+| `loans/AdminLoansAlerts.jsx` | error and success notices for the loan flow |
+| `loans/AdminLoansTable.jsx` | table with loading and empty states |
+| `loans/AdminLoanRow.jsx` | row with formatted amounts and `Reassign lender` action |
+| `loans/ReassignLenderDialog.jsx` | lender selection and submission of `PATCH /api/loans/:id` |
+| `payments/AdminPaymentsHeader.jsx` | title, description, and `Refresh` and `Record payment` actions |
+| `payments/AdminPaymentsAlerts.jsx` | error and success notices for the payment flow |
+| `payments/AdminPaymentsTable.jsx` | table with loading and empty states |
+| `payments/AdminPaymentRow.jsx` | row with payment, loan, destination, and `Revert` action |
+| `payments/AdminPaymentRecordDialog.jsx` | selection of a pending installment or interest and payment submission |
+| `dashboard/AdminDashboardHeader.jsx` | title, description, and refresh button |
+| `dashboard/AdminDashboardAlerts.jsx` | panel error notice |
+| `dashboard/AdminDashboardCards.jsx` | cards of amounts, payments, and overdue installments |
+| `dashboard/AdminDashboardStatus.jsx` | status of installments, interest, and portfolio |
+| `dashboard/AdminDashboardPaymentTrend.jsx` | payments grouped by month |
+| `dashboard/AdminDashboardRecentPayments.jsx` | table of the most recent payments |
 
-`src/components/loans/` reúne la UI específica de préstamos, separada por
-propósito en `create/`, `list/`, `details/` y `edit/`. Las vistas importan desde
-la carpeta correspondiente con el alias `@/`.
+`src/components/loans/` gathers the loan-specific UI, separated by
+purpose into `create/`, `list/`, `details/`, and `edit/`. The views import from
+the corresponding folder with the `@/` alias.
 
 #### `src/components/loans/create/`
 
-| Archivo | Responsabilidad |
+| File | Responsibility |
 | --- | --- |
-| `CreateLoanForm.jsx` | formulario completo: datos, fiadores, garantías y envío de la vista previa |
-| `LoanDetailsFields.jsx` | campos de prestamista, cliente, monto, tasa, modo, desembolso y cuotas |
-| `GuarantorsFieldArray.jsx` | alta, baja y listado de fiadores |
-| `GuarantorRow.jsx` | un fiador existente o inline |
-| `CollateralsFieldArray.jsx` | alta, baja y listado de garantías |
-| `CollateralRow.jsx` | una garantía con descripción y valor estimado |
-| `InstallmentPreview.jsx` | resumen, tabla de cuotas y acciones de aprobación |
-| `FormField.jsx` | envoltorio de etiqueta y control, usado por el formulario |
-| `ErrorAlert.jsx` | mensaje de error con `role="alert"`, usado por el formulario y la vista previa |
+| `CreateLoanForm.jsx` | complete form: data, guarantors, collateral, and preview submission |
+| `LoanDetailsFields.jsx` | lender, customer, amount, rate, mode, disbursement, and installment fields |
+| `GuarantorsFieldArray.jsx` | creation, deletion, and listing of guarantors |
+| `GuarantorRow.jsx` | an existing or inline guarantor |
+| `CollateralsFieldArray.jsx` | creation, deletion, and listing of collateral |
+| `CollateralRow.jsx` | a collateral with description and estimated value |
+| `InstallmentPreview.jsx` | summary, installment table, and approval actions |
+| `FormField.jsx` | label and control wrapper, used by the form |
+| `ErrorAlert.jsx` | error message with `role="alert"`, used by the form and the preview |
 
 #### `src/components/loans/list/`
 
-| Archivo | Responsabilidad |
+| File | Responsibility |
 | --- | --- |
-| `LoanListHeader.jsx` | título, descripción según el usuario y botón `New loan` |
-| `LoanCreatedAlert.jsx` | aviso descartable `role="status"` tras la creación |
-| `LoanDeletedAlert.jsx` | aviso descartable `role="status"` tras la eliminación |
-| `LoanLoadErrorAlert.jsx` | error de carga con acción `Retry` |
-| `LoanTable.jsx` | tabla del listado con estados de carga y vacío |
-| `LoanTableRow.jsx` | una fila con importes, tasa, modo y fecha formateados; el ID enlaza al detalle |
+| `LoanListHeader.jsx` | title, description based on the user, and `New loan` button |
+| `LoanCreatedAlert.jsx` | dismissible `role="status"` notice after creation |
+| `LoanDeletedAlert.jsx` | dismissible `role="status"` notice after deletion |
+| `LoanLoadErrorAlert.jsx` | load error with `Retry` action |
+| `LoanTable.jsx` | listing table with loading and empty states |
+| `LoanTableRow.jsx` | a row with formatted amounts, rate, mode, and date; the ID links to the detail |
 
 #### `src/components/loans/details/`
 
-| Archivo | Responsabilidad |
+| File | Responsibility |
 | --- | --- |
-| `LoanDetailsHeader.jsx` | título, acciones `Back to loans`, `Edit` y `Delete` |
-| `LoanSummary.jsx` | resumen de prestamista, cliente, importes y condiciones |
-| `LoanInstallmentsTable.jsx` | calendario ordenado por número de cuota, con acciones `Pay` y `Revert` |
-| `LoanGuarantorsList.jsx` | fiadores y sus IDs de stakeholder |
-| `LoanCollateralsList.jsx` | garantías con valor estimado |
-| `LoanInterestStatus.jsx` | estado del interés ordinario y sus acciones `Pay interest` y `Revert interest` |
-| `LoanLockedAlert.jsx` | aviso que explica qué campos quedan bloqueados con pagos y que la eliminación requiere revertirlos |
-| `LoanUpdatedAlert.jsx` | aviso descartable tras volver de la edición |
-| `LoanDetailsError.jsx` | error de carga, `404` y reintento |
-| `DeleteLoanDialog.jsx` | confirmación de eliminación con `Dialog` |
+| `LoanDetailsHeader.jsx` | title, `Back to loans`, `Edit`, and `Delete` actions |
+| `LoanSummary.jsx` | summary of lender, customer, amounts, and terms |
+| `LoanInstallmentsTable.jsx` | schedule sorted by installment number, with `Pay` and `Revert` actions |
+| `LoanGuarantorsList.jsx` | guarantors and their stakeholder IDs |
+| `LoanCollateralsList.jsx` | collateral with estimated value |
+| `LoanInterestStatus.jsx` | ordinary interest status and its `Pay interest` and `Revert interest` actions |
+| `LoanLockedAlert.jsx` | notice explaining which fields are locked when payments exist and that deletion requires reverting them |
+| `LoanUpdatedAlert.jsx` | dismissible notice after returning from editing |
+| `LoanDetailsError.jsx` | load error, `404`, and retry |
+| `DeleteLoanDialog.jsx` | deletion confirmation with `Dialog` |
 
 #### `src/components/loans/edit/`
 
-| Archivo | Responsabilidad |
+| File | Responsibility |
 | --- | --- |
-| `EditLoanHeader.jsx` | título de la edición y acción para volver al detalle |
-| `EditLoanError.jsx` | error de carga, `404` y reintento |
-| `EditLockedAlert.jsx` | aviso que explica la edición reducida cuando hay pagos |
-| `RestrictedLoanEditForm.jsx` | formulario de edición con pagos: fiadores, garantías y selección de prestamista solo para `admin` |
+| `EditLoanHeader.jsx` | edit title and action to return to the detail |
+| `EditLoanError.jsx` | load error, `404`, and retry |
+| `EditLockedAlert.jsx` | notice explaining the reduced edit when payments exist |
+| `RestrictedLoanEditForm.jsx` | edit form with payments: guarantors, collateral, and lender selection only for `admin` |
 
-### Pagos y reversión
+### Payments and reversals
 
-`src/components/payments/` reúne la UI de registro y reversión de pagos,
-separada de los flujos de préstamos:
+`src/components/payments/` gathers the UI for recording and reversing
+payments, separate from the loan flows:
 
-| Archivo | Responsabilidad |
+| File | Responsibility |
 | --- | --- |
-| `InstallmentPaymentModal.jsx` | confirma el pago de una cuota contra `/payments/installment` |
-| `InterestPaymentModal.jsx` | confirma el pago del interés separado contra `/payments/interest` |
-| `PaymentModalFields.jsx` | monto bloqueado y `paid_at` opcional compartidos |
-| `PaymentSuccessAlert.jsx` | aviso descartable `role="status"` tras registrar o revertir un pago |
-| `RevertPaymentDialog.jsx` | confirmación de reversión con `Dialog` y botón destructivo |
+| `InstallmentPaymentModal.jsx` | confirms the payment of an installment against `/payments/installment` |
+| `InterestPaymentModal.jsx` | confirms the payment of separate interest against `/payments/interest` |
+| `PaymentModalFields.jsx` | shared locked amount and optional `paid_at` |
+| `PaymentSuccessAlert.jsx` | dismissible `role="status"` notice after recording or reversing a payment |
+| `RevertPaymentDialog.jsx` | reversal confirmation with `Dialog` and a destructive button |
 
-## Estilos
+## Styles
 
-`src/client/index.css` importa `tailwindcss`, `tw-animate-css` y
-`shadcn/tailwind.css`; declara `@custom-variant dark`, las variables de color de
-la paleta de marca y un bloque `@theme inline` que las expone como utilidades
-(`--color-*`, `--font-heading`, `--font-sans`, `--radius-*`). El bloque
-`@layer base` aplica `border-border`, `outline-ring/50`, `bg-background`,
-`text-foreground` y `font-sans` a los elementos base, y `font-heading` a
-los encabezados semánticos `h1` a `h6`.
+`src/client/index.css` imports `tailwindcss`, `tw-animate-css`, and
+`shadcn/tailwind.css`; declares `@custom-variant dark`, the brand palette color
+variables, and an `@theme inline` block that exposes them as utilities
+(`--color-*`, `--font-heading`, `--font-sans`, `--radius-*`). The `@layer base`
+block applies `border-border`, `outline-ring/50`, `bg-background`,
+`text-foreground`, and `font-sans` to base elements, and `font-heading` to
+the semantic headings `h1` through `h6`.
 
-### Paleta de marca
+### Brand palette
 
-Los cinco colores se definen en formato `oklch` dentro de `:root` y `.dark`:
+The five colors are defined in `oklch` format inside `:root` and `.dark`:
 
-| Hex | Uso | Tokens principales |
+| Hex | Usage | Main tokens |
 | --- | --- | --- |
-| `263A69` | Color principal de la aplicación | `--primary`, `--ring` |
-| `B0C7DD` | Acciones secundarias relacionadas con el principal | `--secondary`, `--accent`, `--border`, `--input` |
-| `E8E3DD` | Fondos, objetos sutiles y tarjetas | `--background`, `--card` |
-| `EDECEA` | Notificaciones, popups y mensajes | `--popover`, `--muted`, `--primary-foreground` en tema claro |
-| `0F0F0F` | Texto | `--foreground`, `--card-foreground`, `--secondary-foreground` |
+| `263A69` | Main application color | `--primary`, `--ring` |
+| `B0C7DD` | Secondary actions related to the primary | `--secondary`, `--accent`, `--border`, `--input` |
+| `E8E3DD` | Backgrounds, subtle objects, and cards | `--background`, `--card` |
+| `EDECEA` | Notifications, popups, and messages | `--popover`, `--muted`, `--primary-foreground` in light theme |
+| `0F0F0F` | Text | `--foreground`, `--card-foreground`, `--secondary-foreground` |
 
-En tema claro los textos sobre el azul oscuro usan `EDECEA`; en `.dark` el
-fondo es `0F0F0F`, las tarjetas y popups usan `263A69` y los acentos pasan a
-`B0C7DD`. `--destructive` conserva el rojo de shadcn y los tokens `chart-*` y
-`sidebar-*` mantienen sus valores por defecto. Los estilos heredados de Vite
-(colores fijos en `a`, `button` y `App.css`) se eliminaron o se reemplazaron por
-variables de la paleta.
+In the light theme, text on dark blue uses `EDECEA`; in `.dark` the
+background is `0F0F0F`, cards and popups use `263A69`, and accents become
+`B0C7DD`. `--destructive` keeps shadcn's red and the `chart-*` and
+`sidebar-*` tokens keep their defaults. Legacy Vite styles
+(fixed colors in `a`, `button`, and `App.css`) were removed or replaced by
+palette variables.
 
-### Tipografía
+### Typography
 
-Las fuentes se cargan desde Google Fonts mediante los enlaces `preconnect` y
-`stylesheet` en `index.html`: Montserrat (rango variable `100..900`) para el
-texto y Playfair Display (`400..900`) para los títulos, ambas con
-`display=swap`. En `index.css`, `@theme inline` define `--font-sans` como
-Montserrat y `--font-heading` como Playfair Display. La utilidad `font-heading`
-se usa en `CardTitle` y `DialogTitle`, y `@layer base` la aplica también a
-`h1`–`h6`. No se instala ninguna fuente local: el paquete
-`@fontsource-variable/geist` se eliminó del proyecto.
+Fonts are loaded from Google Fonts via the `preconnect` and
+`stylesheet` links in `index.html`: Montserrat (variable range `100..900`) for
+text and Playfair Display (`400..900`) for headings, both with
+`display=swap`. In `index.css`, `@theme inline` defines `--font-sans` as
+Montserrat and `--font-heading` as Playfair Display. The `font-heading` utility
+is used in `CardTitle` and `DialogTitle`, and `@layer base` also applies it to
+`h1`–`h6`. No local font is installed: the
+`@fontsource-variable/geist` package was removed from the project.
 
-## Servicio HTTP
+## HTTP service
 
-`src/lib/axiosService.js` exporta una instancia de axios con
+`src/lib/axiosService.js` exports an axios instance with
 `baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"`.
-Un interceptor de petición lee el JWT de `localStorage` bajo la clave `token`
-y, si existe, añade `Authorization: Bearer <token>` a todas las peticiones.
-Por eso las vistas invocan métodos con rutas relativas a `/api`
+A request interceptor reads the JWT from `localStorage` under the key `token`
+and, if present, adds `Authorization: Bearer <token>` to all requests.
+That is why views call methods with paths relative to `/api`
 (`api.post("/auth/login")`, `api.get("/roles")`, `api.get("/users")`,
 `api.get("/stakeholders")`, `api.get("/stakeholders/:id")`,
 `api.post("/stakeholders")`, `api.put("/stakeholders/:id")`,
@@ -263,193 +263,193 @@ Por eso las vistas invocan métodos con rutas relativas a `/api`
 `api.post("/loans")`,
 `api.put("/loans/:id")`, `api.patch("/loans/:id")`,
 `api.post("/payments/installment")`, `api.post("/payments/interest")`,
-`api.get("/payments")`, `api.delete("/payments/:id")`) y no necesitan construir el header ni repetir el prefijo
-`/api`. El interceptor de respuesta elimina
-`token` y emite `auth:unauthorized` ante un `401`, salvo en `/auth/login` y
-`/auth/signup` para no ocultar errores de credenciales. `AuthProvider` escucha
-ese evento y limpia el usuario.
+`api.get("/payments")`, `api.delete("/payments/:id")`) and do not need to build the header or repeat the
+`/api` prefix. The response interceptor removes
+`token` and emits `auth:unauthorized` on a `401`, except on `/auth/login` and
+`/auth/signup` so credential errors are not hidden. `AuthProvider` listens
+for that event and clears the user.
 
-## Autenticación en el cliente
+## Client authentication
 
-`src/client/contexts/AuthContext.jsx` exporta `AuthProvider`, `useAuth()`,
-`RequireAuth` y `RequireAdmin`:
+`src/client/contexts/AuthContext.jsx` exports `AuthProvider`, `useAuth()`,
+`RequireAuth`, and `RequireAdmin`:
 
-- `AuthProvider` es el layout raíz: al montar hidrata el usuario con
-  `api.get("/users/auth")` si hay `token`, expone `{ user, isAuthenticated,
-  loading, login, logout }` y renderiza `<Outlet />`.
-- `useAuth()` permite leer el usuario y las acciones de sesión desde cualquier
-  vista; falla si se usa fuera del provider.
-- `RequireAuth` muestra "Checking session..." mientras hidrata y redirige a
-  `/login` con `state.from` si no hay sesión; si la hay, renderiza `<Outlet />`.
-- `RequireAdmin` usa el mismo estado de hidratación, redirige a `/login` sin
-  sesión y a `/loans` si `user.Role.role_name` no es `admin`; si lo es,
-  renderiza `<Outlet />`.
-- `login(token)` guarda el JWT, carga `/users/auth` y actualiza el estado;
-  `logout()` borra el token y el usuario. Ambos están disponibles vía
+- `AuthProvider` is the root layout: on mount it hydrates the user with
+  `api.get("/users/auth")` if there is a `token`, exposes `{ user, isAuthenticated,
+  loading, login, logout }`, and renders `<Outlet />`.
+- `useAuth()` lets you read the user and session actions from any
+  view; it fails if used outside the provider.
+- `RequireAuth` shows "Checking session..." while hydrating and redirects to
+  `/login` with `state.from` if there is no session; if there is, it renders `<Outlet />`.
+- `RequireAdmin` uses the same hydration state, redirects to `/login` without
+  a session and to `/loans` if `user.Role.role_name` is not `admin`; if it is,
+  it renders `<Outlet />`.
+- `login(token)` saves the JWT, loads `/users/auth`, and updates the state;
+  `logout()` clears the token and the user. Both are available via
   `useAuth()`.
-- El usuario expuesto conserva las claves de Sequelize `Stakeholder` y `Role`
+- The exposed user retains the Sequelize `Stakeholder` and `Role` keys
   (`user.Stakeholder.first_name`, `user.Role.role_name`, etc.). `CreateLoan`
-  toma `lender_id` de `user.stakeholder_id` para cuentas `lender`; `admin` lo
-  selecciona en el formulario.
-- Las peticiones a `/auth/login` y `/auth/signup` usan `api.post` del servicio
-  compartido; la URL final se resuelve con el `baseURL` configurado. El JWT se
-  guarda en `localStorage` con la clave `token` y el interceptor lo adjunta como
-  `Authorization: Bearer <token>` a todas las peticiones, incluso a las públicas
-  cuando ya hay una sesión. Ese es el mecanismo que exige `checkAuth`.
-- Los errores se leen de `error.response?.data?.error`; si no hay respuesta se
-  muestra un mensaje genérico. Ambos casos usan una región `role="alert"` con
-  `text-destructive` y `bg-destructive/10`.
-- Las dos vistas comparten la misma composición: `Card`, `CardHeader`,
-  `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Label`, `Input`
-  y `Button`, sin colores fijos.
+  takes `lender_id` from `user.stakeholder_id` for `lender` accounts; `admin` selects
+  it in the form.
+- Requests to `/auth/login` and `/auth/signup` use `api.post` from the
+  shared service; the final URL resolves with the configured `baseURL`. The JWT is
+  saved in `localStorage` with the key `token` and the interceptor attaches it as
+  `Authorization: Bearer <token>` to all requests, even public ones
+  when a session already exists. That is the mechanism required by `checkAuth`.
+- Errors are read from `error.response?.data?.error`; if there is no response,
+  a generic message is displayed. Both cases use a `role="alert"` region with
+  `text-destructive` and `bg-destructive/10`.
+- Both views share the same composition: `Card`, `CardHeader`,
+  `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Label`, `Input`,
+  and `Button`, with no fixed colors.
 
-## Panel de administración
+## Admin panel
 
-`src/client/layouts/AdminLayout.jsx` es el shell de `/admin`: título, `AdminNav`
-y `Outlet`. Las vistas en `src/client/views/admin/` son reemplazadas por cada
-fase de dominio sin tocar el router; `/admin/users` lista cuentas con
-`useAdminUsers` desde `GET /api/users` y usa un único diálogo para rol, estado y
-datos del stakeholder vinculado. Esos datos se cargan con
-`GET /api/stakeholders/:id` y se guardan con `PATCH /api/admin/users/:userId`
-más `PUT /api/stakeholders/:id`; si no hay persona vinculada solo se muestran
-rol y estado. `/admin/stakeholders` usa `useAdminStakeholders` sobre el CRUD
-existente de `/api/stakeholders`: lista con `GET`, crea con `POST`, edita con
-`PUT` y elimina con `DELETE`, con validación local y confirmación antes de
-borrar; oculta en cliente las personas vinculadas a cuentas. `/admin/loans` usa
-`useAdminLoans` sobre `GET /api/loans` y `GET /api/users`; el diálogo
-`Reassign lender` toma sus opciones de las cuentas con `Role.role_name =
-"lender"`, excluye al cliente del préstamo, envía `PATCH /api/loans/:id` con
-`lender_id` y recarga el listado tras guardar. Las cuentas inactivas con rol
-`lender` siguen apareciendo. `/admin/payments` usa `useAdminPayments` sobre
-`GET /api/payments` para el historial de `admin` y `GET /api/loans` para escoger
-destinos pendientes; `Record payment` publica en los endpoints de cuota o interés
-con un monto calculado por el destino, y la reversión reutiliza
-`usePaymentRevert` con `RevertPaymentDialog`. No se expone `PATCH /api/payments/:id`
-en el panel. `/admin/dashboard` usa `useAdminDashboard` y
-`src/client/utils/adminDashboard.js` para agregar `GET /api/loans` y
-`GET /api/payments` en el cliente: tarjetas de importes, estado de la cartera,
-tendencia mensual y pagos recientes, sin endpoint propio.
-`LoanListHeader` muestra el enlace `Admin` solo cuando
-`user.Role.role_name === "admin"`. El
-contrato completo, incluido el orden de las fases posteriores, vive en el módulo
-`admin`.
+`src/client/layouts/AdminLayout.jsx` is the shell for `/admin`: title, `AdminNav`,
+and `Outlet`. The views in `src/client/views/admin/` are replaced by each
+domain phase without touching the router; `/admin/users` lists accounts with
+`useAdminUsers` from `GET /api/users` and uses a single dialog for role, status, and
+linked stakeholder data. Those data are loaded with
+`GET /api/stakeholders/:id` and saved with `PATCH /api/admin/users/:userId`
+plus `PUT /api/stakeholders/:id`; if there is no linked person, only
+role and status are shown. `/admin/stakeholders` uses `useAdminStakeholders` over
+the existing CRUD of `/api/stakeholders`: listing with `GET`, creation with `POST`,
+editing with `PUT`, and deletion with `DELETE`, with local validation and
+confirmation before deleting; it hides people linked to accounts on the client. `/admin/loans` uses
+`useAdminLoans` over `GET /api/loans` and `GET /api/users`; the
+`Reassign lender` dialog takes its options from accounts with `Role.role_name =
+"lender"`, excludes the loan's customer, sends `PATCH /api/loans/:id` with
+`lender_id`, and reloads the listing after saving. Inactive accounts with the
+`lender` role still appear. `/admin/payments` uses `useAdminPayments` over
+`GET /api/payments` for the `admin` history and `GET /api/loans` to choose
+pending destinations; `Record payment` posts to the installment or interest
+endpoints with an amount calculated by the destination, and reversal reuses
+`usePaymentRevert` with `RevertPaymentDialog`. `PATCH /api/payments/:id` is not
+exposed in the panel. `/admin/dashboard` uses `useAdminDashboard` and
+`src/client/utils/adminDashboard.js` to aggregate `GET /api/loans` and
+`GET /api/payments` on the client: cards of amounts, portfolio status,
+monthly trend, and recent payments, with no dedicated endpoint.
+`LoanListHeader` shows the `Admin` link only when
+`user.Role.role_name === "admin"`. The full contract, including
+the order of later phases, lives in the `admin`
+module.
 
-## Listado de préstamos
+## Loan listing
 
-La vista `src/client/views/Loans.jsx` arma el `Card` y compone `LoanListHeader`,
-`LoanCreatedAlert`, `LoanDeletedAlert`, `LoanLoadErrorAlert` y `LoanTable`. El
-hook `useLoans` consume `api.get("/loans")` con el servicio compartido y
-mantiene los estados de carga, vacío y error, además de las acciones de reintento, cierre del aviso y
-navegación a `/create-loan`. Usa `useAuth().user` solo para construir la
-descripción con nombre y rol, porque el backend filtra los préstamos según el
-JWT. `LoanTable` muestra ID, prestamista, cliente, monto, tasa, modo, fecha de
-desembolso y total a pagar; los formatos viven en
-`src/client/utils/loanFormat.js`: importes con dos decimales y separador de
-miles, tasa con hasta cuatro decimales y `%`, fecha `YYYY-MM-DD` y `—` para
-valores ausentes. Cuando la creación termina, la vista vuelve con
-`state.createdLoanId` y `LoanCreatedAlert` muestra un aviso `role="status"`
-descartable. Tras una eliminación, la vista vuelve con `state.deletedLoanId` y
-`LoanDeletedAlert` muestra el aviso correspondiente; el ID de cada fila enlaza
-a `/loans/:id`. Ante un `401`, el interceptor global limpia `token` y
-`RequireAuth` redirige a `/login`.
+The `src/client/views/Loans.jsx` view assembles the `Card` and composes
+`LoanListHeader`, `LoanCreatedAlert`, `LoanDeletedAlert`, `LoanLoadErrorAlert`, and
+`LoanTable`. The `useLoans` hook consumes `api.get("/loans")` with the shared service
+and maintains loading, empty, and error states, plus the retry, notice-dismissal, and
+navigation to `/create-loan` actions. It uses `useAuth().user` only to build the
+description with name and role, because the backend filters loans according to
+the JWT. `LoanTable` displays ID, lender, customer, amount, rate, mode,
+disbursement date, and total to pay; the formats live in
+`src/client/utils/loanFormat.js`: amounts with two decimals and a thousands
+separator, rate with up to four decimals and `%`, `YYYY-MM-DD` date, and `—` for
+missing values. When creation finishes, the view returns with
+`state.createdLoanId` and `LoanCreatedAlert` displays a dismissible `role="status"`
+notice. After a deletion, the view returns with `state.deletedLoanId` and
+`LoanDeletedAlert` displays the corresponding notice; each row's ID links
+to `/loans/:id`. On a `401`, the global interceptor clears `token` and
+`RequireAuth` redirects to `/login`.
 
-## Creación de préstamos
+## Loan creation
 
-La vista `src/client/views/CreateLoan.jsx` solo arma el encabezado y alterna
-entre `CreateLoanForm` e `InstallmentPreview`. El hook `useLoanFormState`
-mantiene el estado, carga `GET /api/stakeholders` con `api.get("/stakeholders")`
-y valida con `buildLoanPayload` de `src/client/utils/loanForm.js`;
-`normalizeGuarantors` y `normalizeCollaterals` son helpers exportados del mismo
-archivo y se reutilizan en la edición con pagos. `useCreateLoanForm` solo envía
-`POST /api/loans`. El formulario
-permite elegir cliente, prestamista (solo `admin`) y fiadores existentes;
-también permite crear fiadores inline con `first_name`, `last_name`,
-`national_id`, `marital_status`, `occupation` y `date_of_birth`. Exige al menos
-un fiador y una garantía con `description` y `estimated_value` opcional.
-`lender_id` se deriva de `useAuth().user.stakeholder_id` para cuentas `lender`.
+The `src/client/views/CreateLoan.jsx` view only assembles the header and toggles
+between `CreateLoanForm` and `InstallmentPreview`. The `useLoanFormState` hook
+maintains state, loads `GET /api/stakeholders` with `api.get("/stakeholders")`,
+and validates with `buildLoanPayload` from `src/client/utils/loanForm.js`;
+`normalizeGuarantors` and `normalizeCollaterals` are helpers exported from the same
+file and are reused in editing with payments. `useCreateLoanForm` only sends
+`POST /api/loans`. The form lets you choose a customer, lender (only
+`admin`), and existing guarantors; it also allows creating inline guarantors with
+`first_name`, `last_name`, `national_id`, `marital_status`, `occupation`, and
+`date_of_birth`. It requires at least one guarantor and one collateral with a
+`description` and optional `estimated_value`.
+`lender_id` is derived from `useAuth().user.stakeholder_id` for `lender` accounts.
 
-El botón `Preview installments` valida los datos con `buildLoanPayload` y usa
-`src/client/utils/loanSchedule.js` para generar el calendario antes de enviar
-nada. El helper trabaja en centavos: calcula
-`interest = round(loan_amount * interest_rate / 100)`, reparte el total en
-cuotas iguales con el resto en la última y produce fechas mensuales desde la
-primera fecha de vencimiento, ajustando al último día del mes. El total de las
-cuotas es capital + interés en modo `included` y solo capital en `separate`; en
-ese modo el interés se muestra como una obligación aparte. Los vencimientos son
-`YYYY-MM-DD` y el primer vencimiento no puede ser anterior al desembolso.
+The `Preview installments` button validates the data with `buildLoanPayload` and uses
+`src/client/utils/loanSchedule.js` to generate the schedule before sending
+anything. The helper works in cents: it computes
+`interest = round(loan_amount * interest_rate / 100)`, splits the total into
+equal installments with the remainder in the last one, and produces monthly dates from
+the first due date, adjusting to the last day of the month. The sum of the
+installments is principal + interest in `included` mode and principal only in `separate`;
+in that mode interest is displayed as a separate obligation. Due dates are
+`YYYY-MM-DD` and the first due date cannot be earlier than the disbursement.
 
-La etapa de revisión muestra un resumen y una `Table` con número, vencimiento e
-importe de cada cuota. `Back to edit` conserva los datos; `Approve & create`
-envía `api.post("/loans", payload)` con todos los campos y arreglos normalizados
-y, tras el `201`, vuelve a `/loans` con `state.createdLoanId`. Los errores de
-validación y de API se muestran en una región `role="alert"` con tokens
-`destructive`.
+The review stage displays a summary and a `Table` with the number, due date, and
+amount of each installment. `Back to edit` preserves the data; `Approve & create`
+sends `api.post("/loans", payload)` with all normalized fields and arrays
+and, after `201`, returns to `/loans` with `state.createdLoanId`. Validation and
+API errors are shown in a `role="alert"` region with
+`destructive` tokens.
 
-## Detalle y edición de préstamos
+## Loan detail and editing
 
-La vista `src/client/views/LoanDetails.jsx` compone los componentes de
-`src/components/loans/details/` alrededor del hook `useLoanDetails`, que consume
-`api.get("/loans/:id")` y mantiene estados de carga, error, `404`, aviso de
-actualización y confirmación de eliminación. Muestra los datos del préstamo, las
-cuotas, fiadores, garantías y la obligación de interés. `loanHasPayments` de
-`src/client/utils/loanEdit.js` detecta cuotas pagadas o interés pagado:
-`Delete` queda desactivado y `Edit` abre el formulario reducido. El backend
-sigue siendo la autoridad y responde `409` ante intentos directos.
-`DeleteLoanDialog` usa `Dialog` y, tras
-`api.delete("/loans/:id")`, vuelve a `/loans` con `state.deletedLoanId`.
+The `src/client/views/LoanDetails.jsx` view composes the components in
+`src/components/loans/details/` around the `useLoanDetails` hook, which consumes
+`api.get("/loans/:id")` and maintains loading, error, `404`, update-notice, and
+deletion-confirmation states. It displays the loan data, the
+installments, guarantors, collateral, and the interest obligation.
+`loanHasPayments` from `src/client/utils/loanEdit.js` detects paid installments or
+paid interest: `Delete` becomes disabled and `Edit` opens the reduced form. The backend
+remains the authority and responds `409` to direct attempts.
+`DeleteLoanDialog` uses `Dialog` and, after
+`api.delete("/loans/:id")`, returns to `/loans` with `state.deletedLoanId`.
 
-El registro de pagos se abre desde las acciones `Pay` de cada cuota pendiente y
-`Pay interest` de la obligación separada pendiente. `useLoanPayment` administra
-el destino, la fecha opcional y el envío; `src/components/payments/` contiene
-`InstallmentPaymentModal`, `InterestPaymentModal`, `PaymentModalFields` y
-`PaymentSuccessAlert`. El monto aparece bloqueado con el valor exacto exigido
-por el backend. Si `paid_at` se deja vacío se omite del payload y el servidor
-usa la hora actual; si se completa, `buildPaymentPayload` lo convierte a ISO con
-zona antes de enviarlo. Tras el `201` se cierra el modal, se llama a
-`refreshLoan()` y se muestra un aviso `role="status"`; por eso el detalle
-distingue entre `loading` inicial y `refreshing` posterior.
+Payment recording opens from the `Pay` actions on each pending installment and
+`Pay interest` on the pending separate obligation. `useLoanPayment` manages
+the destination, the optional date, and submission; `src/components/payments/` contains
+`InstallmentPaymentModal`, `InterestPaymentModal`, `PaymentModalFields`, and
+`PaymentSuccessAlert`. The amount appears locked with the exact value required
+by the backend. If `paid_at` is left empty it is omitted from the payload and the
+server uses the current time; if filled, `buildPaymentPayload` converts it to zoned ISO
+before sending. After `201` the modal closes, `refreshLoan()` is called, and a
+`role="status"` notice is displayed; that is why the detail
+distinguishes initial `loading` from subsequent `refreshing`.
 
-La reversión es independiente del registro de pagos: `usePayments` carga
-`/api/payments?loan_id=...`, `paymentHistory.js` asocia cada pago con su cuota o
-interés y `usePaymentRevert` envía `DELETE /api/payments/:id` usando solo el
-`payment_id`. `RevertPaymentDialog` pide confirmación; tras el `204` se recargan
-el préstamo y el historial, se muestra un aviso, `Delete` vuelve a estar
-disponible y `Edit` pasa al formulario completo.
+Reversal is independent of payment recording: `usePayments` loads
+`/api/payments?loan_id=...`, `paymentHistory.js` associates each payment with its
+installment or interest, and `usePaymentRevert` sends `DELETE /api/payments/:id` using only the
+`payment_id`. `RevertPaymentDialog` asks for confirmation; after `204` the
+loan and history are reloaded, a notice is displayed, `Delete` becomes
+available again, and `Edit` switches to the full form.
 
-La edición vive en `src/client/views/EditLoan.jsx`. El hook `useEditLoanForm`
-carga el préstamo, convierte la respuesta al estado del formulario con
-`loanToFormState` y reutiliza `useLoanFormState`, por lo que comparte la
-validación, carga de stakeholders y generación de vista previa con la creación.
-Sin pagos, la vista reutiliza `CreateLoanForm` e `InstallmentPreview` con
-etiquetas opcionales (`Preview changes`, `Save changes`, `Saving...`) y
-`handleApprove` envía `api.put("/loans/:id", payload)` con todos los arreglos;
-el backend recrea cuotas, fiadores y garantías y no se envían IDs de relaciones
-hijas. Con pagos, `EditLockedAlert` explica las restricciones y
-`RestrictedLoanEditForm` muestra solo fiadores, garantías y, para `admin`, el
-prestamista. `buildRestrictedLoanPatchPayload` reutiliza `normalizeGuarantors` y
-`normalizeCollaterals` de `loanForm.js`, valida que prestamista y cliente difieran
-cuando corresponde y omite `lender_id` para cuentas `lender`. `handleApprove`
-envía `api.patch("/loans/:id", payload)` y vuelve al detalle con
+Editing lives in `src/client/views/EditLoan.jsx`. The `useEditLoanForm` hook
+loads the loan, converts the response to form state with
+`loanToFormState`, and reuses `useLoanFormState`, so it shares
+validation, stakeholder loading, and preview generation with creation.
+Without payments, the view reuses `CreateLoanForm` and `InstallmentPreview` with
+optional labels (`Preview changes`, `Save changes`, `Saving...`) and
+`handleApprove` sends `api.put("/loans/:id", payload)` with all the arrays;
+the backend recreates installments, guarantors, and collateral and no child
+relation IDs are sent. With payments, `EditLockedAlert` explains the restrictions and
+`RestrictedLoanEditForm` shows only guarantors, collateral, and, for `admin`, the
+lender. `buildRestrictedLoanPatchPayload` reuses `normalizeGuarantors` and
+`normalizeCollaterals` from `loanForm.js`, validates that lender and customer differ
+when applicable, and omits `lender_id` for `lender` accounts. `handleApprove`
+sends `api.patch("/loans/:id", payload)` and returns to the detail with
 `state.updatedLoanId`.
 
-## Convenciones
+## Conventions
 
-- Las vistas nuevas van en `src/client/views/` y se registran en
+- New views go in `src/client/views/` and are registered in
   `src/client/main.jsx`.
-- Las vistas del panel van en `src/client/views/admin/` y el shell en
+- Panel views go in `src/client/views/admin/` and the shell in
   `src/client/layouts/`.
-- Los primitivos reutilizables van en `src/components/ui/` y los componentes
-  compuestos por dominio en `src/components/<dominio>/`, agrupados por propósito
-  cuando hay más de un flujo (por ejemplo, `loans/create/` y `loans/list/`).
-- Los hooks de las vistas van en `src/client/hooks/`; usar el alias `@/` para
-  importar desde `src/`.
-- El estado de sesión vive en `src/client/contexts/`; consumirlo con
-  `useAuth()` desde cualquier vista.
-- Los helpers puros de dominio van en `src/client/utils/`, como
+- Reusable primitives go in `src/components/ui/` and domain-composed components
+  in `src/components/<domain>/`, grouped by purpose when there is more than one
+  flow (for example, `loans/create/` and `loans/list/`).
+- View hooks go in `src/client/hooks/`; use the `@/` alias to
+  import from `src/`.
+- Session state lives in `src/client/contexts/`; consume it with
+  `useAuth()` from any view.
+- Pure domain helpers go in `src/client/utils/`, such as
   `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanEdit.js`,
-  `loanPayment.js`, `paymentHistory.js`, `userForm.js` y `stakeholderForm.js`.
-- Los tokens de color se definen en `index.css`; evitar colores fijos en los
-  componentes de UI.
-- Todo cambio de comportamiento del frontend se documenta aquí y en
-  `CHANGELOG.md`, siguiendo la skill `documentation`; si afecta al panel,
-  también se actualiza el módulo `admin`.
+  `loanPayment.js`, `paymentHistory.js`, `userForm.js`, and `stakeholderForm.js`.
+- Color tokens are defined in `index.css`; avoid fixed colors in
+  UI components.
+- Every frontend behavior change is documented here and in
+  `CHANGELOG.md`, following the `documentation` skill; if it affects the panel,
+  the `admin` module is also updated.

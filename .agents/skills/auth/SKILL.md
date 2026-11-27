@@ -5,102 +5,102 @@ description: Authentication module: signup and login, password hashing, JWT gene
 
 # auth
 
-Módulo de autenticación: registro (`signup`) e inicio de sesión (`login`).
+Authentication module: signup (`signup`) and login (`login`).
 
-El historial de cambios está en [`CHANGELOG.md`](CHANGELOG.md). El diseño de
-sesiones con refresh tokens, todavía no implementado, está en
+The changelog is in [`CHANGELOG.md`](CHANGELOG.md). The session design with
+refresh tokens, which is not yet implemented, is in
 [`FUTURE_SESSIONS.md`](FUTURE_SESSIONS.md).
 
 ## Endpoints
 
-| Método | Ruta | Controller | Service | Acceso |
+| Method | Route | Controller | Service | Access |
 | --- | --- | --- | --- | --- |
-| `POST` | `/api/auth/signup` | `authController.signup` | `authService.signup` | público |
-| `POST` | `/api/auth/login` | `authController.login` | `authService.login` | público |
+| `POST` | `/api/auth/signup` | `authController.signup` | `authService.signup` | public |
+| `POST` | `/api/auth/login` | `authController.login` | `authService.login` | public |
 
 ## Signup
 
-Recibe `{ email, password, stakeholder_id }`.
+Receives `{ email, password, stakeholder_id }`.
 
-- Valida que los tres campos estén presentes; si falta alguno lanza
-  `ValidationError` (`400`) con la lista de campos faltantes.
-- Exige que `email` y `password` sean strings. El email se normaliza
-  (`trim` + minúsculas) y debe tener formato básico `local@dominio`; una
-  contraseña vacía o solo con espacios responde `400`.
-- `stakeholder_id` debe ser entero positivo (`"2"` se acepta y se normaliza a
-  número). El payload ya no recibe `role_id`: el service consulta `roles` por
-  `role_name = "lender"` y usa ese `role_id`, así que todas las cuentas
-  públicas son prestamistas. Si el rol no existe responde `500`.
-- Hashea `password` con `bcryptjs` (10 rondas) y lo guarda en `password_hash`.
-- Crea el usuario y responde `201`:
-  `{ message: "User created successfully", user }`, donde `user` incluye
-  `user_id`, `stakeholder_id`, `email`, `role_id` y `role_name: "lender"`
-  (nunca `password_hash`).
-- Si el email ya existe, `SequelizeUniqueConstraintError` se traduce a
-  `ConflictError` (`409`). Si `stakeholder_id` no existe,
-  `SequelizeForeignKeyConstraintError` se traduce a `ConflictError` (`409`)
-  con `stakeholder_id does not exist`.
+- Validates that all three fields are present; if any is missing, it throws
+  `ValidationError` (`400`) with the list of missing fields.
+- Requires `email` and `password` to be strings. The email is normalized
+  (`trim` + lowercase) and must have the basic format `local@domain`; an empty
+  or whitespace-only password responds `400`.
+- `stakeholder_id` must be a positive integer (`"2"` is accepted and normalized
+  to a number). The payload no longer receives `role_id`: the service queries
+  `roles` by `role_name = "lender"` and uses that `role_id`, so all public
+  accounts are lenders. If the role does not exist, it responds `500`.
+- Hashes `password` with `bcryptjs` (10 rounds) and stores it in `password_hash`.
+- Creates the user and responds `201`:
+  `{ message: "User created successfully", user }`, where `user` includes
+  `user_id`, `stakeholder_id`, `email`, `role_id`, and `role_name: "lender"`
+  (never `password_hash`).
+- If the email already exists, `SequelizeUniqueConstraintError` is translated to
+  `ConflictError` (`409`). If `stakeholder_id` does not exist,
+  `SequelizeForeignKeyConstraintError` is translated to `ConflictError` (`409`)
+  with `stakeholder_id does not exist`.
 
 ## Login
 
-Recibe `{ email, password }`.
+Receives `{ email, password }`.
 
-- Si falta alguno lanza `ValidationError` (`400`).
-- Exige `email` y `password` strings; el email se normaliza (`trim` +
-  minúsculas) y debe tener formato básico `local@dominio`.
-- Busca el usuario por email normalizado.
-- Usuario inexistente o contraseña incorrecta lanzan `UnauthorizedError`
-  (`401`) con el mensaje genérico `Invalid email or password` (no revela si el
-  email existe).
-- Si la cuenta está desactivada (`is_active = false`), lanza
-  `UnauthorizedError` (`401`) con `Account is inactive`, incluso con la
-  contraseña correcta.
-- Responde `200` con `{ token, user }`; `user` incluye `user_id`,
-  `stakeholder_id`, `email`, `role_id` y `role_name` (nunca `password_hash`).
-- `token` es un JWT firmado por `generateToken` con el payload
-  `{ user_id, role_id, role_name, stakeholder_id }` y expiración
-  `JWT_EXPIRES_IN` o `1h` por defecto.
+- If either is missing, it throws `ValidationError` (`400`).
+- Requires `email` and `password` to be strings; the email is normalized (`trim` +
+  lowercase) and must have the basic format `local@domain`.
+- Looks up the user by normalized email.
+- A nonexistent user or incorrect password throws `UnauthorizedError` (`401`)
+  with the generic message `Invalid email or password` (it does not reveal
+  whether the email exists).
+- If the account is inactive (`is_active = false`), it throws
+  `UnauthorizedError` (`401`) with `Account is inactive`, even with the correct
+  password.
+- Responds `200` with `{ token, user }`; `user` includes `user_id`,
+  `stakeholder_id`, `email`, `role_id`, and `role_name` (never `password_hash`).
+- `token` is a JWT signed by `generateToken` with the payload
+  `{ user_id, role_id, role_name, stakeholder_id }` and expiration
+  `JWT_EXPIRES_IN` or `1h` by default.
 
-## Protección de rutas
+## Route protection
 
-`checkAuth` (`src/server/middlewares/checkAuth.js`) exige el header
-`Authorization: Bearer <token>`. Verifica el JWT y después consulta `users`
-(junto con `Role`) para reconstruir `req.user =
-{ user_id, role_id, role_name, stakeholder_id }` desde la base, de modo que los
-cambios de rol y la desactivación surtan efecto sin esperar a que venza el
-token. Si falta el token, es inválido o el usuario ya no existe responde `401
-Invalid or expired token`; una cuenta con `is_active = false` responde `401
-Account is inactive`. Los services de préstamos usan esos valores para
-resolver permisos y propiedad. En `api.js`, `/auth` se monta antes de
-`checkAuth`; todo lo que se registre después queda protegido.
+`checkAuth` (`src/server/middlewares/checkAuth.js`) requires the
+`Authorization: Bearer <token>` header. It verifies the JWT and then queries
+`users` (along with `Role`) to rebuild `req.user =
+{ user_id, role_id, role_name, stakeholder_id }` from the database, so that role
+changes and deactivation take effect without waiting for the token to expire.
+If the token is missing, invalid, or the user no longer exists, it responds `401
+Invalid or expired token`; an account with `is_active = false` responds `401
+Account is inactive`. Loan services use these values to resolve permissions and
+ownership. In `api.js`, `/auth` is mounted before `checkAuth`; everything
+registered after it is protected.
 
-`requireAdmin` (`src/server/middlewares/requireAdmin.js`) responde `403 Admin
-access required` si `req.user.role_name` no es `admin`. Se aplica en
-`AdminRouter` (`src/server/routes/adminRoutes.js`), montado en `/api/admin`
-después de `checkAuth`; `PATCH /api/admin/users/:userId` se define directamente
-en ese router, sin subrouters. También se aplica a `POST`, `PUT`, `PATCH` y
-`DELETE` en `stakeholderRoutes.js`; los `GET` de stakeholders quedan sin este
-guard para los formularios de préstamos.
+`requireAdmin` (`src/server/middlewares/requireAdmin.js`) responds `403 Admin
+access required` if `req.user.role_name` is not `admin`. It is applied in
+`AdminRouter` (`src/server/routes/adminRoutes.js`), mounted at `/api/admin`
+after `checkAuth`; `PATCH /api/admin/users/:userId` is defined directly in that
+router, without subrouters. It is also applied to `POST`, `PUT`, `PATCH`, and
+`DELETE` in `stakeholderRoutes.js`; stakeholder `GET`s are left without this
+guard for loan forms.
 
 `requireAdminForLenderChange`
-(`src/server/middlewares/requireAdminForLenderChange.js`) permite enviar
-`lender_id` solo a `admin` o cuando el valor coincide con el `stakeholder_id`
-de la cuenta autenticada; cualquier otro valor responde `403 Only admins can
-change the lender`. Se aplica en `POST`, `PUT` y `PATCH` de `loanRoutes.js`. Los
-validadores de dominio mantienen sus reglas habituales.
+(`src/server/middlewares/requireAdminForLenderChange.js`) allows sending
+`lender_id` only to `admin` or when the value matches the `stakeholder_id` of
+the authenticated account; any other value responds `403 Only admins can
+change the lender`. It is applied to `POST`, `PUT`, and `PATCH` in `loanRoutes.js`.
+The domain validators keep their usual rules.
 
-En el cliente, `RequireAdmin` (`src/client/contexts/AuthContext.jsx`) usa
-`user.Role.role_name` para mostrar el panel `/admin` solo a admins; es una
-comprobación de interfaz, no una autorización de API.
+On the client, `RequireAdmin` (`src/client/contexts/AuthContext.jsx`) uses
+`user.Role.role_name` to show the `/admin` panel only to admins; it is a UI
+check, not API authorization.
 
-## Errores
+## Errors
 
-Cualquier error inesperado se registra y responde `500` con
+Any unexpected error is logged and responds `500` with
 `{ error: "Internal Server Error" }`.
 
-## Archivos
+## Files
 
-- `src/server/routes/authRoutes.js` (montado en `/api/auth`)
+- `src/server/routes/authRoutes.js` (mounted at `/api/auth`)
 - `src/server/controllers/authController.js`
 - `src/server/services/authService.js`
 - `src/server/utils/validators/authValidation.js`
@@ -109,4 +109,4 @@ Cualquier error inesperado se registra y responde `500` con
 - `src/server/middlewares/requireAdmin.js`
 - `src/server/middlewares/requireAdminForLenderChange.js`
 - `src/server/routes/adminRoutes.js`
-- `src/client/contexts/AuthContext.jsx` (`RequireAuth` y `RequireAdmin`)
+- `src/client/contexts/AuthContext.jsx` (`RequireAuth` and `RequireAdmin`)

@@ -5,51 +5,51 @@ description: Payment recording for loan installments and separate ordinary inter
 
 # payments
 
-Registro de pagos aplicados a una cuota (`installment_payments`) o a la
-obligación de interés ordinario cobrado por separado
-(`loan_interest_payments`). Cada pago se crea en `loan_payments` con su monto,
-fecha y el usuario autenticado que lo registra. La operación es transaccional y
-actualiza el estado del destino en la misma transacción.
+Recording of payments applied to an installment (`installment_payments`) or to
+the obligation for separately charged ordinary interest
+(`loan_interest_payments`). Each payment is created in `loan_payments` with its
+amount, date, and the authenticated user who records it. The operation is
+transactional and updates the status of the target in the same transaction.
 
-El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
+The change history of this module is in [`CHANGELOG.md`](CHANGELOG.md).
 
-## Validación
+## Validation
 
-Toda la validación de entrada vive en
-`src/server/utils/validators/paymentValidation.js`. El service recibe los
-atributos ya normalizados y solo ejecuta la persistencia y los conflictos de
-estado.
+All input validation lives in
+`src/server/utils/validators/paymentValidation.js`. The service receives the
+already-normalized attributes and only performs persistence and status
+conflicts.
 
-| Campo | Reglas |
+| Field | Rules |
 | --- | --- |
-| `loan_id` | Entero positivo obligatorio; el préstamo debe existir y pertenecer al prestamista autenticado (`admin` ve todos). |
-| `amount` | Número finito obligatorio en `(0, 9999999999.99]`, máximo 2 decimales; debe ser exactamente igual al monto pendiente del destino. No se admiten abonos parciales. |
-| `paid_at` | En `POST` es opcional: ISO 8601 con hora y zona (`Z` u offset); si se omite se usa la hora actual del servidor y se responde en UTC. En `PATCH /api/payments/:id` es obligatorio y es el único campo editable. |
-| `installment_id` | Entero positivo obligatorio en `POST /api/payments/installment`. |
-| `loan_interest_payment_id` | Entero positivo obligatorio en `POST /api/payments/interest`. |
+| `loan_id` | Required positive integer; the loan must exist and belong to the authenticated lender (`admin` sees all). |
+| `amount` | Required finite number in `(0, 9999999999.99]`, with at most 2 decimals; it must be exactly equal to the target's pending amount. Partial payments are not allowed. |
+| `paid_at` | In `POST` it is optional: ISO 8601 with time and zone (`Z` or offset); if omitted, the server's current time is used and the response is in UTC. In `PATCH /api/payments/:id` it is required and is the only editable field. |
+| `installment_id` | Required positive integer in `POST /api/payments/installment`. |
+| `loan_interest_payment_id` | Required positive integer in `POST /api/payments/interest`. |
 
-Cada endpoint exige su propio identificador de destino. El campo del otro
-destino se ignora, por lo que no existe despacho ambiguo por payload. Un `amount`
-distinto al pendiente responde `400`.
+Each endpoint requires its own target identifier. The field for the other
+target is ignored, so there is no ambiguous payload-based dispatch. An `amount`
+different from the pending amount returns `400`.
 
 ## Endpoints
 
-Todas las rutas requieren `Authorization: Bearer <token>`.
+All routes require `Authorization: Bearer <token>`.
 
-| Método | Ruta | Controller | Service | Acceso |
+| Method | Route | Controller | Service | Access |
 | --- | --- | --- | --- | --- |
-| `GET` | `/api/payments` | `paymentController.getAllPayments` | `paymentService.getAllPayments` | lender propio / admin |
-| `GET` | `/api/payments/:id` | `paymentController.getPaymentById` | `paymentService.getPaymentById` | lender propio / admin |
-| `POST` | `/api/payments/installment` | `paymentController.createInstallmentPayment` | `paymentService.createInstallmentPayment` | lender propio / admin |
-| `POST` | `/api/payments/interest` | `paymentController.createInterestPayment` | `paymentService.createInterestPayment` | lender propio / admin |
-| `PATCH` | `/api/payments/:id` | `paymentController.updatePayment` | `paymentService.updatePayment` | lender propio / admin |
-| `DELETE` | `/api/payments/:id` | `paymentController.deletePayment` | `paymentService.deletePayment` | lender propio / admin |
+| `GET` | `/api/payments` | `paymentController.getAllPayments` | `paymentService.getAllPayments` | own lender / admin |
+| `GET` | `/api/payments/:id` | `paymentController.getPaymentById` | `paymentService.getPaymentById` | own lender / admin |
+| `POST` | `/api/payments/installment` | `paymentController.createInstallmentPayment` | `paymentService.createInstallmentPayment` | own lender / admin |
+| `POST` | `/api/payments/interest` | `paymentController.createInterestPayment` | `paymentService.createInterestPayment` | own lender / admin |
+| `PATCH` | `/api/payments/:id` | `paymentController.updatePayment` | `paymentService.updatePayment` | own lender / admin |
+| `DELETE` | `/api/payments/:id` | `paymentController.deletePayment` | `paymentService.deletePayment` | own lender / admin |
 
-No existe un `POST /api/payments` genérico.
+There is no generic `POST /api/payments`.
 
 ### `POST /api/payments/installment`
 
-Cuerpo para pagar una cuota:
+Body for paying an installment:
 
 ```json
 {
@@ -62,7 +62,7 @@ Cuerpo para pagar una cuota:
 
 ### `POST /api/payments/interest`
 
-Cuerpo para pagar el interés separado:
+Body for paying the separate interest:
 
 ```json
 {
@@ -72,33 +72,33 @@ Cuerpo para pagar el interés separado:
 }
 ```
 
-- En `/installment`, la cuota debe pertenecer al `loan_id` indicado. Si ya tiene
-  un `InstallmentPayment` o su `status` es `paid`, responde `409`.
-- En `/interest`, la obligación debe pertenecer al préstamo y el préstamo debe
-  tener `interest_payment_mode = "separate"`. Si ya está pagado, responde `409`.
-- El monto esperado de la cuota es `amount_due`; el del interés es el campo
-  virtual `Loan.interest_amount` (`round(loan_amount * interest_rate / 100, 2)`).
-- `recorded_by` se toma de `req.user.user_id`. El cuerpo no necesita enviarlo y
-  cualquier valor enviado se ignora; no puede suplantar al usuario autenticado.
-- La respuesta (`201`) incluye `recorded_by` y `recordedBy` (`user_id`, `email`)
-  junto con `InstallmentPayment` y su `LoanInstallment`, o `LoanInterestPayment`
-  y su `Loan`.
+- In `/installment`, the installment must belong to the given `loan_id`. If it
+  already has an `InstallmentPayment` or its `status` is `paid`, it returns
+  `409`.
+- In `/interest`, the obligation must belong to the loan and the loan must have
+  `interest_payment_mode = "separate"`. If it is already paid, it returns `409`.
+- The expected amount of an installment is `amount_due`; for interest it is the
+  virtual field `Loan.interest_amount` (`round(loan_amount * interest_rate / 100, 2)`).
+- `recorded_by` is taken from `req.user.user_id`. The body need not send it and
+  any value sent is ignored; it cannot impersonate the authenticated user.
+- The response (`201`) includes `recorded_by` and `recordedBy` (`user_id`,
+  `email`) along with `InstallmentPayment` and its `LoanInstallment`, or
+  `LoanInterestPayment` and its `Loan`.
 
 ### `GET /api/payments`
 
-Devuelve los pagos de los préstamos visibles para el usuario, ordenados por
-`paid_at` descendente y luego `payment_id` descendente. El query param opcional
-`loan_id` filtra por un préstamo; si el préstamo es ajeno a un `lender`, responde
-`404`.
+Returns payments for loans visible to the user, sorted by `paid_at` descending
+and then `payment_id` descending. The optional query param `loan_id` filters by
+a loan; if the loan belongs to another lender, it returns `404`.
 
 ### `GET /api/payments/:id`
 
-Devuelve un pago con las mismas relaciones que los `POST`, o `404` si no existe, no
-tiene una aplicación reconocida o pertenece a otro prestamista.
+Returns a payment with the same relationships as the `POST`s, or `404` if it
+does not exist, has no recognized application, or belongs to another lender.
 
 ### `PATCH /api/payments/:id`
 
-Corrige solo `paid_at` en el registro de `loan_payments`:
+Corrects only `paid_at` on the `loan_payments` record:
 
 ```json
 {
@@ -106,84 +106,86 @@ Corrige solo `paid_at` en el registro de `loan_payments`:
 }
 ```
 
-El cuerpo vacío o sin `paid_at` responde `400`. `amount`, `recorded_by`, el
-préstamo y el destino son inmutables; para corregirlos hay que eliminar y volver
-a registrar el pago. La respuesta (`200`) incluye las mismas relaciones que
-`GET /:id`.
+An empty body or one without `paid_at` returns `400`. `amount`, `recorded_by`,
+the loan, and the target are immutable; to correct them the payment must be
+deleted and recorded again. The response (`200`) includes the same relationships
+as `GET /:id`.
 
 ### `DELETE /api/payments/:id`
 
-Revierte el pago en una sola transacción y responde `204` sin cuerpo:
+Reverses the payment in a single transaction and returns `204` with no body:
 
-- Pago de cuota: elimina el vínculo en `installment_payments` y deja la cuota en
-  `status = "pending"`.
-- Pago de interés: deja `payment_id = null` y `status = "pending"` en
-  `loan_interest_payments`, y elimina el registro en `loan_payments`.
+- Installment payment: deletes the link in `installment_payments` and leaves the
+  installment at `status = "pending"`.
+- Interest payment: sets `payment_id = null` and `status = "pending"` in
+  `loan_interest_payments`, and deletes the record in `loan_payments`.
 
-Un pago inexistente o ajeno responde `404`. La reversión elimina el registro en
-`loan_payments` en ambos casos, así que el préstamo vuelve a aceptar cambios
-financieros y eliminación.
+A nonexistent payment or one belonging to another lender returns `404`. The
+reversal deletes the record in `loan_payments` in both cases, so the loan again
+accepts financial changes and deletion.
 
-## Cliente
+## Client
 
-El detalle de préstamo expone la reversión como una operación independiente del
-registro de pagos. `usePayments` consulta `GET /api/payments?loan_id=...`,
-`paymentHistory.js` asocia cada `payment_id` con su cuota o interés y
-`usePaymentRevert` envía `DELETE /api/payments/:id` sin enviar `loan_id` ni el
-destino. `RevertPaymentDialog` confirma la acción antes de borrar el registro.
-Después del `204`, la vista vuelve a cargar el préstamo y el historial:
-`Delete` vuelve a estar disponible y `Edit` pasa del formulario reducido al
-formulario completo.
+The loan detail view exposes reversal as an operation independent of payment
+recording. `usePayments` queries `GET /api/payments?loan_id=...`,
+`paymentHistory.js` associates each `payment_id` with its installment or
+interest, and `usePaymentRevert` sends `DELETE /api/payments/:id` without
+sending `loan_id` or the target. `RevertPaymentDialog` confirms the action
+before deleting the record. After the `204`, the view reloads the loan and the
+history: `Delete` becomes available again and `Edit` switches from the reduced
+form to the full form.
 
-### Panel de administración
+### Admin panel
 
-`/admin/payments` reemplaza el stub con `AdminPayments`, compuesto desde
-`src/components/admin/payments/` y `src/client/hooks/useAdminPayments.js`. El hook
-consulta `GET /api/payments` para el historial global de `admin` y `GET /api/loans`
-para construir las opciones de registro: solo ofrece cuotas con `status` distinto
-de `paid` e interés separado pendiente sin `payment_id`. `Record payment` usa
-`buildPaymentPayload` y publica en `POST /api/payments/installment` o
-`POST /api/payments/interest`, con `paid_at` opcional; el monto se deriva del
-destino y no se edita. La reversión reutiliza `usePaymentRevert` y
-`RevertPaymentDialog` con `DELETE /api/payments/:id`; tras registrar o revertir
-se recargan pagos y préstamos. No se agregó `PATCH /api/payments/:id` al panel ni
-endpoints bajo `/api/admin`.
+`/admin/payments` replaces the stub with `AdminPayments`, composed from
+`src/components/admin/payments/` and `src/client/hooks/useAdminPayments.js`.
+The hook queries `GET /api/payments` for the global `admin` history and
+`GET /api/loans` to build the recording options: it only offers installments
+with a `status` other than `paid` and pending separate interest without a
+`payment_id`. `Record payment` uses `buildPaymentPayload` and posts to
+`POST /api/payments/installment` or `POST /api/payments/interest`, with optional
+`paid_at`; the amount is derived from the target and is not editable. Reversal
+reuses `usePaymentRevert` and `RevertPaymentDialog` with
+`DELETE /api/payments/:id`; after recording or reversing, payments and loans are
+reloaded. `PATCH /api/payments/:id` was not added to the panel, nor were
+endpoints under `/api/admin`.
 
-## Permisos y propiedad
+## Permissions and ownership
 
-`paymentService` reutiliza `loanScope` de `loanService`: los préstamos de un
-`lender` se filtran por `lender_id = req.user.stakeholder_id`, mientras `admin`
-conserva acceso global. Un usuario `lender` sin `stakeholder_id` responde `403`.
+`paymentService` reuses `loanScope` from `loanService`: a `lender`'s loans are
+filtered by `lender_id = req.user.stakeholder_id`, while `admin` retains global
+access. A `lender` user without a `stakeholder_id` returns `403`.
 
-## Relación con `loans`
+## Relationship with `loans`
 
-La existencia de pagos bloquea los cambios financieros, el reemplazo y la
-eliminación del préstamo con `409` (regla implementada en `loanService`).
-`PATCH /api/loans/:id` sigue permitiendo solo `guarantors` y `collaterals`, más
-`lender_id` para `admin`, cuando hay pagos registrados. Pagar una cuota cambia
-su `status` a `paid`; pagar el interés cambia su `status`
-a `paid` y asigna `payment_id`, cumpliendo la restricción
-`chk_loan_interest_payment_state`. `DELETE /api/payments/:id` invierte estos
-cambios y restaura ambos destinos a `pending`.
+The existence of payments blocks financial changes, replacement, and deletion
+of the loan with `409` (rule implemented in `loanService`).
+`PATCH /api/loans/:id` still allows only `guarantors` and `collaterals`, plus
+`lender_id` for `admin`, when payments are recorded. Paying an installment
+changes its `status` to `paid`; paying interest changes its `status` to `paid`
+and assigns a `payment_id`, satisfying the constraint
+`chk_loan_interest_payment_state`. `DELETE /api/payments/:id` reverses these
+changes and restores both targets to `pending`.
 
-## Errores
+## Errors
 
-- `400` datos inválidos, identificador de destino ausente en el endpoint
-  correspondiente, `paid_at` ausente en `PATCH`, o monto distinto al pendiente.
-- `401` token ausente o inválido (lo aplica `checkAuth`).
-- `403` usuario `lender` sin stakeholder vinculado.
-- `404` préstamo, cuota, obligación de interés o pago inexistente o ajeno.
-- `409` cuota o interés ya pagado, modo de interés incompatible o conflicto de
- unicidad/foreign key al persistir.
-- `500` error inesperado.
+- `400` invalid data, target identifier missing on the corresponding endpoint,
+  `paid_at` missing in `PATCH`, or amount different from the pending amount.
+- `401` token missing or invalid (applied by `checkAuth`).
+- `403` `lender` user without a linked stakeholder.
+- `404` loan, installment, interest obligation, or payment that does not exist
+  or belongs to another lender.
+- `409` installment or interest already paid, incompatible interest mode, or
+  uniqueness/foreign key conflict when persisting.
+- `500` unexpected error.
 
-## Archivos
+## Files
 
-- `src/server/routes/paymentRoutes.js` (montado en `/api/payments`)
+- `src/server/routes/paymentRoutes.js` (mounted on `/api/payments`)
 - `src/server/controllers/paymentController.js`
 - `src/server/services/paymentService.js`
 - `src/server/utils/validators/paymentValidation.js`
-- `src/server/services/loanService.js` (`loanScope` compartido)
+- `src/server/services/loanService.js` (shared `loanScope`)
 - `src/server/models/LoanPayment.js`
 - `src/server/models/InstallmentPayment.js`
 - `src/server/models/LoanInterestPayment.js`

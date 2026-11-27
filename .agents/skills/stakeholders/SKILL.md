@@ -5,17 +5,17 @@ description: Stakeholders CRUD: people who participate in loans, with field vali
 
 # stakeholders
 
-CRUD de personas (`stakeholders`) que participan en préstamos como
-prestamistas, clientes o fiadores.
+CRUD for people (`stakeholders`) who participate in loans as lenders, customers,
+or guarantors.
 
-El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
+The change history of this module is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Endpoints
 
-Todas las rutas requieren `Authorization: Bearer <token>`. Las mutaciones
-adicionalmente exigen el rol `admin`.
+All routes require `Authorization: Bearer <token>`. Mutations additionally
+require the `admin` role.
 
-| Método | Ruta | Controller | Service | Acceso |
+| Method | Route | Controller | Service | Access |
 | --- | --- | --- | --- | --- |
 | `GET` | `/api/stakeholders` | `stakeholderController.getAllStakeholders` | `stakeholderService.getAllStakeholders` | token |
 | `GET` | `/api/stakeholders/:id` | `stakeholderController.getStakeholderById` | `stakeholderService.getStakeholderById` | token |
@@ -24,60 +24,60 @@ adicionalmente exigen el rol `admin`.
 | `PATCH` | `/api/stakeholders/:id` | `stakeholderController.updateStakeholder` | `stakeholderService.updateStakeholder` | admin |
 | `DELETE` | `/api/stakeholders/:id` | `stakeholderController.deleteStakeholder` | `stakeholderService.deleteStakeholder` | admin |
 
-## Campos
+## Fields
 
-| Campo | Tipo | Obligatorio | Reglas |
+| Field | Type | Required | Rules |
 | --- | --- | --- | --- |
-| `stakeholder_id` | entero | — | PK autoincremental; en la URL debe ser entero positivo. |
-| `first_name` | texto | sí | `trim`, no vacío, máximo 100 caracteres. |
-| `last_name` | texto | sí | `trim`, no vacío, máximo 100 caracteres. |
-| `national_id` | texto | no | `trim`, máximo 50; único; `""` se guarda como `null`. |
-| `marital_status` | enum | no | `single` o `married`; `""` se guarda como `null`. |
-| `occupation` | texto | no | `trim`, máximo 100; `""` se guarda como `null`. |
-| `date_of_birth` | fecha | no | Formato `YYYY-MM-DD` y fecha real; `""` se guarda como `null`. |
+| `stakeholder_id` | integer | — | Auto-incrementing PK; in the URL it must be a positive integer. |
+| `first_name` | text | yes | `trim`, non-empty, max 100 characters. |
+| `last_name` | text | yes | `trim`, non-empty, max 100 characters. |
+| `national_id` | text | no | `trim`, max 50; unique; `""` is stored as `null`. |
+| `marital_status` | enum | no | `single` or `married`; `""` is stored as `null`. |
+| `occupation` | text | no | `trim`, max 100; `""` is stored as `null`. |
+| `date_of_birth` | date | no | Format `YYYY-MM-DD` and a valid date; `""` is stored as `null`. |
 
-## Comportamiento por endpoint
+## Endpoint behavior
 
-- `GET /`: devuelve todos los stakeholders ordenados por `last_name` y luego
-  `first_name` (`200`).
-- `GET /:id`: devuelve el stakeholder o `404` si no existe.
-- `GET /` y `GET /:id` siguen disponibles para cualquier cuenta autenticada; el
-  formulario de préstamos depende de `GET /` para elegir prestamista, cliente y
-  fiadores.
-- `GET /` no filtra por cuenta: la API devuelve todos los stakeholders. Solo la
-  vista `/admin/stakeholders` oculta en cliente las personas referenciadas por
-  algún `user.stakeholder_id`, para no mostrar prestamistas ni administradores
-  como registros administrables.
-- `POST`, `PUT`, `PATCH` y `DELETE` pasan por `requireAdmin` en
-  `stakeholderRoutes.js`. Un `lender` recibe `403 Admin access required`.
-- `POST /`: crea el stakeholder (`201`) y devuelve el registro creado. Si el
-  `national_id` ya existe responde `409`.
-- `PUT /:id`: reemplazo completo (`200`). Exige `first_name` y `last_name`; los
-  campos opcionales omitidos se guardan como `null`.
-- `PATCH /:id`: actualización parcial (`200`). Solo cambia los campos enviados y
-  exige al menos uno; con un cuerpo vacío responde `400`.
-- `DELETE /:id`: elimina el stakeholder (`204`, sin cuerpo). Si está referenciado
-  por `users`, `loans` o `loan_guarantors` responde `409` y no lo elimina.
+- `GET /`: returns all stakeholders sorted by `last_name` and then `first_name`
+  (`200`).
+- `GET /:id`: returns the stakeholder or `404` if it does not exist.
+- `GET /` and `GET /:id` remain available to any authenticated account; the
+  loan form depends on `GET /` to choose lenders, customers, and guarantors.
+- `GET /` does not filter by account: the API returns all stakeholders. Only
+  the `/admin/stakeholders` view hides in the client people referenced by any
+  `user.stakeholder_id`, so lenders and administrators are not shown as
+  manageable records.
+- `POST`, `PUT`, `PATCH` and `DELETE` pass through `requireAdmin` in
+  `stakeholderRoutes.js`. A `lender` receives `403 Admin access required`.
+- `POST /`: creates the stakeholder (`201`) and returns the created record. If
+  the `national_id` already exists it returns `409`.
+- `PUT /:id`: full replacement (`200`). Requires `first_name` and `last_name`;
+  omitted optional fields are stored as `null`.
+- `PATCH /:id`: partial update (`200`). Changes only the fields sent and
+  requires at least one; an empty body returns `400`.
+- `DELETE /:id`: deletes the stakeholder (`204`, no body). If referenced by
+  `users`, `loans` or `loan_guarantors`, it returns `409` and does not delete
+  it.
 
-Los campos desconocidos se ignoran. Un `:id` no numérico o menor o igual a cero
-responde `400`.
+Unknown fields are ignored. A non-numeric `:id` or one less than or equal to
+zero returns `400`.
 
-`POST` y `PUT` de `/api/loans` también pueden crear stakeholders inline para
-fiadores. Esos registros usan las mismas reglas de campos y `national_id` único,
-pero se gestionan desde el módulo `loans` y no desde este CRUD.
+`POST` and `PUT` of `/api/loans` can also create inline stakeholders for
+guarantors. Those records use the same field rules and unique `national_id`,
+but are managed from the `loans` module and not from this CRUD.
 
-## Errores
+## Errors
 
-- `400` campos obligatorios, enum, fecha o longitud inválidos; `:id` inválido.
-- `401` token ausente o inválido (lo aplica `checkAuth`).
-- `403` mutación intentada por una cuenta que no es `admin`.
-- `404` stakeholder inexistente.
-- `409` `national_id` duplicado o stakeholder referenciado al eliminar.
-- `500` error inesperado.
+- `400` required fields, invalid enum, date, or length; invalid `:id`.
+- `401` token missing or invalid (applied by `checkAuth`).
+- `403` mutation attempted by an account that is not `admin`.
+- `404` stakeholder nonexistent.
+- `409` duplicate `national_id` or stakeholder referenced on deletion.
+- `500` unexpected error.
 
-## Archivos
+## Files
 
-- `src/server/routes/stakeholderRoutes.js` (montado en `/api/stakeholders`)
+- `src/server/routes/stakeholderRoutes.js` (mounted on `/api/stakeholders`)
 - `src/server/controllers/stakeholderController.js`
 - `src/server/services/stakeholderService.js`
 - `src/server/utils/validators/stakeholderValidation.js`

@@ -1,98 +1,115 @@
 # Changelog — auth
 
-## 2026-11-25 — Guard de prestamista montado en préstamos
+## 2026-11-25 — Lender guard mounted on loans
 
-- Change: `requireAdminForLenderChange` se aplica en `POST`, `PUT` y `PATCH` de
-  `/api/loans` desde `loanRoutes.js`.
-- Impact: un `lender` que envía un `lender_id` distinto de su `stakeholder_id`
-  recibe `403 Only admins can change the lender`; un `admin` continúa con acceso
-  global y los validadores de dominio siguen aplicando.
-- Verification: `pnpm build` compiló correctamente. Sin pruebas de API en vivo.
+- Change: `requireAdminForLenderChange` is applied to `POST`, `PUT`, and `PATCH`
+  on `/api/loans` from `loanRoutes.js`.
+- Impact: a `lender` that sends a `lender_id` different from its `stakeholder_id`
+  receives `403 Only admins can change the lender`; an `admin` continues to have
+  global access and the domain validators still apply.
+- Verification: `pnpm build` built successfully. No live API tests.
 
-## 2026-11-25 — `requireAdmin` en mutaciones de stakeholders
+## 2026-11-25 — `requireAdmin` on stakeholder mutations
 
-- Change: `requireAdmin` se aplicó a `POST`, `PUT`, `PATCH` y `DELETE` en
-  `stakeholderRoutes.js`. Los dos `GET` siguen protegidos solo por `checkAuth`.
-- Impact: las cuentas `lender` pueden leer stakeholders para préstamos, pero
-  reciben `403 Admin access required` si intentan modificarlos.
-- Verification: `pnpm build` compiló correctamente. Sin pruebas de API en vivo.
+- Change: `requireAdmin` was applied to `POST`, `PUT`, `PATCH`, and `DELETE` in
+  `stakeholderRoutes.js`. The two `GET`s remain protected only by `checkAuth`.
+- Impact: `lender` accounts can read stakeholders for loans, but receive
+  `403 Admin access required` if they try to modify them.
+- Verification: `pnpm build` built successfully. No live API tests.
 
-## 2026-11-25 — Mutaciones de usuario bajo `/api/admin`
+## 2026-11-25 — User mutations under `/api/admin`
 
-- Change: `AdminRouter` define `PATCH /users/:userId` directamente. `requireAdmin`
-  se aplica a todo el router, por lo que `PATCH /api/admin/users/:userId` queda
-  restringido al rol `admin`; `checkAuth` sigue resolviendo el rol desde la base
-  en cada petición.
-- Impact: un `lender` recibe `403 Admin access required`; cambiar el rol o
-  desactivar una cuenta surte efecto en la siguiente solicitud.
-- Verification: `pnpm build` compiló correctamente. Sin pruebas de API en vivo.
+- Change: `AdminRouter` defines `PATCH /users/:userId` directly. `requireAdmin`
+  is applied to the entire router, so `PATCH /api/admin/users/:userId` is
+  restricted to the `admin` role; `checkAuth` continues to resolve the role from
+  the database on every request.
+- Impact: a `lender` receives `403 Admin access required`; changing a role or
+  deactivating an account takes effect on the next request.
+- Verification: `pnpm build` built successfully. No live API tests.
 
-## 2026-11-25 — Guard de admin en el cliente
+## 2026-11-25 — Admin guard on the client
 
-- Change: `AuthContext.jsx` exporta `RequireAdmin`, que espera la hidratación,
-  redirige a `/login` sin sesión y a `/loans` si `user.Role.role_name` no es
-  `admin`. `LoanListHeader` usa el mismo valor para mostrar el enlace `Admin`.
-- Impact: el panel `/admin` queda oculto para cuentas `lender`; la autorización
-  real sigue en `requireAdmin` y en `/api/admin/*`.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `AuthContext.jsx` exports `RequireAdmin`, which waits for hydration,
+  redirects to `/login` without a session, and to `/loans` if
+  `user.Role.role_name` is not `admin`. `LoanListHeader` uses the same value to
+  display the `Admin` link.
+- Impact: the `/admin` panel is hidden for `lender` accounts; real authorization
+  remains in `requireAdmin` and in `/api/admin/*`.
+- Verification: `pnpm build` built successfully. Not tested in a browser or
+  against a server, at the user's request.
 
-## 2026-11-25 — Sesión validada contra la base y middlewares de admin
+## 2026-11-25 — Session validated against the database and admin middlewares
 
-- Change: `checkAuth` consulta `users` y `Role` después de verificar el JWT,
-  reconstruye `req.user` desde la base y rechaza cuentas con `is_active = false`.
-  `login` también rechaza cuentas desactivadas. Se agregaron `requireAdmin` y
-  `requireAdminForLenderChange`, y `api.js` monta `AdminRouter` en `/api/admin`,
-  que centraliza `requireAdmin` y todavía no define endpoints.
-- Impact: los cambios de rol y la desactivación surten efecto de inmediato
-  aunque el token siga vigente. `/api/admin/*` queda restringido a `admin` y un
-  `lender` no puede asignar un `lender_id` distinto del suyo. El signup público
-  no cambia.
-- Verification: `pnpm build` y revisión del diff. Sin pruebas de API en vivo ni
-  migración aplicada en esta sesión, según la preferencia de verificación.
+- Change: `checkAuth` queries `users` and `Role` after verifying the JWT,
+  rebuilds `req.user` from the database, and rejects accounts with
+  `is_active = false`. `login` also rejects inactive accounts. `requireAdmin`
+  and `requireAdminForLenderChange` were added, and `api.js` mounts `AdminRouter`
+  at `/api/admin`, which centralizes `requireAdmin` and does not yet define any
+  endpoints.
+- Impact: role changes and deactivation take effect immediately even if the
+  token is still valid. `/api/admin/*` is restricted to `admin`, and a `lender`
+  cannot assign a `lender_id` other than its own. Public signup is unchanged.
+- Verification: `pnpm build` and diff review. No live API tests and no migration
+  applied in this session, according to the verification preference.
 
-## 2026-11-17 — Signup solo para lenders e identidad en el JWT
+## 2026-11-17 — Signup for lenders only and identity in the JWT
 
-- Change: `validateSignupPayload` ya no exige `role_id`; `authService.signup`
-  resuelve el rol `lender` desde `roles` por nombre y lo asigna. `login`
-  incluye `role_name` consultando la asociación con `Role`, y `generateToken`
-  firma `{ user_id, role_id, role_name, stakeholder_id }`. `checkAuth` expone
-  esos cuatro valores en `req.user`.
-- Impact: el registro público ya no puede crear cuentas `admin`; los services
-  de préstamos pueden derivar el prestamista autenticado. Los tokens emitidos
-  antes del cambio no incluyen `role_name` ni `stakeholder_id` y expiran en 1 h.
-- Verification: migración aplicada; signup con `role_id: 1` devolvió
-  `role_id: 2, role_name: "lender"`; login devolvió `role_name: "lender"` y el
-  JWT decodificado contuvo `role_name` y `stakeholder_id`. Datos temporales
-  eliminados.
+- Change: `validateSignupPayload` no longer requires `role_id`;
+  `authService.signup` resolves the `lender` role from `roles` by name and
+  assigns it. `login` includes `role_name` by querying the association with
+  `Role`, and `generateToken` signs
+  `{ user_id, role_id, role_name, stakeholder_id }`. `checkAuth` exposes those
+  four values in `req.user`.
+- Impact: public signup can no longer create `admin` accounts; loan services can
+  derive the authenticated lender. Tokens issued before the change do not
+  include `role_name` or `stakeholder_id` and expire in 1 h.
+- Verification: migration applied; signup with `role_id: 1` returned
+  `role_id: 2, role_name: "lender"`; login returned `role_name: "lender"` and the
+  decoded JWT contained `role_name` and `stakeholder_id`. Temporary data removed.
 
-## 2026-11-16 — Validadores por módulo y endurecimiento de signup
+## 2026-11-16 — Validators by module and signup hardening
 
-- Change: `authValidation.js` se movió a `src/server/utils/validators/` y ahora devuelve los valores normalizados que usa `authService`. Se exige que `email`/`password` sean strings, email con formato básico `local@dominio`, contraseña no vacía y `role_id`/`stakeholder_id` enteros positivos. `signup` traduce `SequelizeForeignKeyConstraintError` a `409 role_id or stakeholder_id does not exist`.
-- Impact: Los payloads inválidos que antes llegaban a la base y producían `500` ahora responden `400`; referencias inexistentes a rol/stakeholder responden `409`. El login normaliza el email desde el validador y mantiene `401 Invalid email or password`. También se eliminó el log del JWT en `authController.login`.
-- Verification: Pruebas de runtime contra el servidor: signup `{}` → `400`; email numérico/inválido → `400`; password en blanco → `400`; `role_id` no numérico → `400`; rol/stakeholder inexistente → `409`; signup válido con email/IDs normalizados → `201`; email duplicado → `409`; login con password incorrecta → `401`; login válido → `200` y token aceptado en `/api/users`. Datos temporales eliminados.
+- Change: `authValidation.js` was moved to `src/server/utils/validators/` and now
+  returns the normalized values used by `authService`. `email`/`password` are
+  required to be strings, email with the basic format `local@domain`, a
+  non-empty password, and `role_id`/`stakeholder_id` positive integers. `signup`
+  translates `SequelizeForeignKeyConstraintError` to `409 role_id or stakeholder_id does not exist`.
+- Impact: Invalid payloads that previously reached the database and produced
+  `500` now respond `400`; nonexistent role/stakeholder references respond `409`.
+  Login normalizes the email from the validator and keeps
+  `401 Invalid email or password`. The JWT log in `authController.login` was also
+  removed.
+- Verification: Runtime tests against the server: signup `{}` → `400`; numeric or
+  invalid email → `400`; blank password → `400`; non-numeric `role_id` → `400`;
+  nonexistent role/stakeholder → `409`; valid signup with normalized email/IDs →
+  `201`; duplicate email → `409`; login with incorrect password → `401`; valid
+  login → `200` and token accepted at `/api/users`. Temporary data removed.
 
-## 2026-11-16 — Validación de auth movida a utilidades compartidas
+## 2026-11-16 — Auth validation moved to shared utilities
 
-- Change: Se extrajeron la validación de payloads de signup/login y la normalización de email de `authService` a `src/server/utils/authValidation.js`, conservando los mismos campos requeridos, normalización (`trim` + minúsculas) y mensajes de error.
-- Impact: Sin cambios en el comportamiento de `POST /api/auth/signup` y `POST /api/auth/login`; la lógica de validación ahora reside en una utilidad compartida.
-- Verification: `node --check` en `src/server/services/authService.js` y `src/server/utils/authValidation.js` (sin errores). No se ejecutaron pruebas funcionales de endpoints en esta sesión.
+- Change: Signup/login payload validation and email normalization were extracted
+  from `authService` to `src/server/utils/authValidation.js`, preserving the same
+  required fields, normalization (`trim` + lowercase), and error messages.
+- Impact: No change in the behavior of `POST /api/auth/signup` and
+  `POST /api/auth/login`; the validation logic now resides in a shared utility.
+- Verification: `node --check` on `src/server/services/authService.js` and
+  `src/server/utils/authValidation.js` (no errors). No functional endpoint tests
+  were run in this session.
 
-## 2026-11-13 — Login y protección con JWT
+## 2026-11-13 — Login and JWT protection
 
-- Change: Se agregó `POST /api/auth/login` con validación, búsqueda de usuario
-  y `bcrypt.compare`. La generación del token vive en
-  `utils/generateToken.js` (payload `{ user_id, role_id }`, expiración de 1 h
-  por defecto). Se agregó el middleware `checkAuth` para exigir un Bearer token.
-- Impact: `/api/auth/signup` y `/api/auth/login` son públicos. El resto de las
-  rutas montadas después de `checkAuth` en `api.js` (hoy `/api/users` y
-  `/api/roles`) requiere `Authorization: Bearer <token>`; sin token o con token
-  inválido responden `401`. Login responde `200`, `400` por campos faltantes y
-  `401` por credenciales inválidas.
-- Verification: `GET /api/users` y `GET /api/roles` sin token → `401`; con token
-  válido generado por `generateToken` → `200`; token inválido → `401`;
-  `POST /api/auth/login` con cuerpo vacío → `400` y con credenciales
-  incorrectas → `401`. El login exitoso queda pendiente de credenciales de
-  prueba.
-- Nota: El diseño de sesiones con refresh tokens quedó documentado en
-  `FUTURE_SESSIONS.md`; no está implementado.
+- Change: `POST /api/auth/login` was added with validation, user lookup, and
+  `bcrypt.compare`. Token generation lives in `utils/generateToken.js` (payload
+  `{ user_id, role_id }`, 1 h expiration by default). The `checkAuth` middleware
+  was added to require a Bearer token.
+- Impact: `/api/auth/signup` and `/api/auth/login` are public. The remaining
+  routes mounted after `checkAuth` in `api.js` (currently `/api/users` and
+  `/api/roles`) require `Authorization: Bearer <token>`; without a token or with
+  an invalid token they respond `401`. Login responds `200`, `400` for missing
+  fields, and `401` for invalid credentials.
+- Verification: `GET /api/users` and `GET /api/roles` without a token → `401`;
+  with a valid token generated by `generateToken` → `200`; invalid token → `401`;
+  `POST /api/auth/login` with an empty body → `400` and with incorrect
+  credentials → `401`. Successful login is pending test credentials.
+- Note: The session design with refresh tokens was documented in
+  `FUTURE_SESSIONS.md`; it is not implemented.

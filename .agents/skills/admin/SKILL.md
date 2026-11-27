@@ -5,111 +5,110 @@ description: Client admin shell, /admin routes, RequireAdmin guard, and the cont
 
 # admin
 
-Panel de administración del cliente. La autoridad es la API: `/api/admin/*`
-está protegido por `requireAdmin` (ver módulo `auth`). El guard del cliente solo
-evita mostrar interfaces que el usuario no puede usar.
+Client admin shell. The API is the authority: `/api/admin/*`
+is protected by `requireAdmin` (see the `auth` module). The client guard only
+prevents showing interfaces the user cannot use.
 
-El historial de cambios está en [`CHANGELOG.md`](CHANGELOG.md).
+The change history is in [`CHANGELOG.md`](CHANGELOG.md).
 
-## Rutas
+## Routes
 
-`src/client/main.jsx` registra `/admin` dentro de `RequireAuth`, después aplica
-`RequireAdmin` y monta `AdminLayout`:
+`src/client/main.jsx` registers `/admin` inside `RequireAuth`, then applies
+`RequireAdmin` and mounts `AdminLayout`:
 
-| Ruta | Vista | Archivo | Estado |
+| Route | View | File | Status |
 | --- | --- | --- | --- |
-| `/admin` | redirección | `src/client/main.jsx` | va a `/admin/dashboard` |
-| `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | implementado |
-| `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | implementado |
-| `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | implementado |
-| `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | implementado |
-| `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | implementado |
+| `/admin` | redirect | `src/client/main.jsx` | goes to `/admin/dashboard` |
+| `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | implemented |
+| `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | implemented |
+| `/admin/stakeholders` | `AdminStakeholders` | `src/client/views/admin/AdminStakeholders.jsx` | implemented |
+| `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | implemented |
+| `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | implemented |
 
-## Permisos
+## Permissions
 
-`RequireAdmin` (`src/client/contexts/AuthContext.jsx`) espera la hidratación de
-la sesión, redirige a `/login` si no hay usuario y a `/loans` si
-`user.Role.role_name` no es `admin`. Lee el usuario cargado por
-`GET /api/users/auth`; no hace verificaciones propias contra la API.
-`LoanListHeader` muestra el enlace `Admin` solo cuando ese mismo valor es
-`admin`. Un `403` del backend sigue siendo la última línea de defensa.
+`RequireAdmin` (`src/client/contexts/AuthContext.jsx`) waits for session
+hydration, redirects to `/login` if there is no user and to `/loans` if
+`user.Role.role_name` is not `admin`. It reads the user loaded by
+`GET /api/users/auth`; it does not perform its own checks against the API.
+`LoanListHeader` shows the `Admin` link only when that same value is
+`admin`. A `403` from the backend remains the last line of defense.
 
-## Componentes
+## Components
 
-- `src/client/layouts/AdminLayout.jsx`: shell con título, `AdminNav` y `Outlet`.
-- `src/components/admin/AdminNav.jsx`: navegación con `NavLink`; el activo usa
-  `buttonVariants` con `variant="default"` y los demás con `"outline"`.
-- `src/components/admin/AdminPlaceholder.jsx`: tarjeta de marcador de posición
-  reutilizable; ya no es usada por las vistas del panel.
-- `src/components/admin/users/`: UI de usuarios (`AdminUsersHeader`,
-  `AdminUsersAlerts`, `AdminUsersTable`, `AdminUserRow` y
-  `AdminUserEditDialog`). La tabla lista desde `GET /api/users`; el diálogo
-  envía `PATCH /api/admin/users/:userId` para rol y estado y, si hay persona
-  vinculada, `PUT /api/stakeholders/:id` para sus datos.
-- `src/components/admin/stakeholders/`: UI de stakeholders
+- `src/client/layouts/AdminLayout.jsx`: shell with a title, `AdminNav` and `Outlet`.
+- `src/components/admin/AdminNav.jsx`: navigation with `NavLink`; the active item uses
+  `buttonVariants` with `variant="default"` and the others with `"outline"`.
+- `src/components/admin/AdminPlaceholder.jsx`: reusable placeholder card;
+  no longer used by the panel views.
+- `src/components/admin/users/`: users UI (`AdminUsersHeader`,
+  `AdminUsersAlerts`, `AdminUsersTable`, `AdminUserRow` and
+  `AdminUserEditDialog`). The table lists from `GET /api/users`; the dialog
+  sends `PATCH /api/admin/users/:userId` for role and status and, if there is
+  a linked person, `PUT /api/stakeholders/:id` for their data.
+- `src/components/admin/stakeholders/`: stakeholders UI
   (`AdminStakeholdersHeader`, `AdminStakeholdersAlerts`,
   `AdminStakeholdersTable`, `AdminStakeholderRow`,
-  `StakeholderFormFields`, `AdminStakeholderFormDialog` y
-  `DeleteStakeholderDialog`). Usa los endpoints existentes de
-  `/api/stakeholders` para crear, editar y eliminar; `StakeholderFormFields` se
-  reutiliza también en el diálogo de usuarios. La tabla oculta las personas
-  vinculadas a cuentas.
-- `src/client/hooks/useAdminLoans.js` y `src/components/admin/loans/`
-  (`AdminLoansHeader`, `AdminLoansAlerts`, `AdminLoansTable`, `AdminLoanRow` y
-  `ReassignLenderDialog`): listan préstamos con `GET /api/loans` y reasignan el
-  prestamista con `PATCH /api/loans/:id`. Las opciones del diálogo vienen de
-  `GET /api/users` filtrado a cuentas con rol `lender`; se excluye al cliente
-  del préstamo y se muestran estados de carga, error y éxito.
-- `src/client/hooks/useAdminPayments.js` y `src/components/admin/payments/`
+  `StakeholderFormFields`, `AdminStakeholderFormDialog` and
+  `DeleteStakeholderDialog`). It uses the existing endpoints of
+  `/api/stakeholders` to create, edit and delete; `StakeholderFormFields` is
+  also reused in the users dialog. The table hides people linked to accounts.
+- `src/client/hooks/useAdminLoans.js` and `src/components/admin/loans/`
+  (`AdminLoansHeader`, `AdminLoansAlerts`, `AdminLoansTable`, `AdminLoanRow` and
+  `ReassignLenderDialog`): list loans with `GET /api/loans` and reassign the
+  lender with `PATCH /api/loans/:id`. The dialog options come from
+  `GET /api/users` filtered to accounts with the `lender` role; the loan's
+  customer is excluded and loading, error and success statuses are shown.
+- `src/client/hooks/useAdminPayments.js` and `src/components/admin/payments/`
   (`AdminPaymentsHeader`, `AdminPaymentsAlerts`, `AdminPaymentsTable`,
-  `AdminPaymentRow` y `AdminPaymentRecordDialog`): listan pagos con
-  `GET /api/payments`, registran cuotas o interés pendiente con los endpoints
-  existentes y reutilizan `usePaymentRevert` con `RevertPaymentDialog` para la
-  reversión. Las opciones de registro salen de `GET /api/loans`.
+  `AdminPaymentRow` and `AdminPaymentRecordDialog`): list payments with
+  `GET /api/payments`, record installments or pending interest with the
+  existing endpoints and reuse `usePaymentRevert` with `RevertPaymentDialog`
+  for reversals. The recording options come from `GET /api/loans`.
 - `src/client/hooks/useAdminDashboard.js`, `src/client/utils/adminDashboard.js`
-  y `src/components/admin/dashboard/` (`AdminDashboardHeader`,
+  and `src/components/admin/dashboard/` (`AdminDashboardHeader`,
   `AdminDashboardAlerts`, `AdminDashboardCards`, `AdminDashboardStatus`,
-  `AdminDashboardPaymentTrend` y `AdminDashboardRecentPayments`): calculan en el
-  cliente las métricas de préstamos, cuotas, interés y pagos a partir de
-  `GET /api/loans` y `GET /api/payments`.
-- `src/client/views/admin/*.jsx`: las fases de dominio reemplazan solo el
-  contenido de su archivo; ninguna vista del panel sigue siendo stub.
-- `src/components/loans/list/LoanListHeader.jsx`: enlace `Admin` para admins.
+  `AdminDashboardPaymentTrend` and `AdminDashboardRecentPayments`): calculate
+  loan, installment, interest and payment metrics on the client from
+  `GET /api/loans` and `GET /api/payments`.
+- `src/client/views/admin/*.jsx`: domain phases replace only the content of
+  their own file; no panel view is still a stub.
+- `src/components/loans/list/LoanListHeader.jsx`: `Admin` link for admins.
 
-## Contrato de fases posteriores
+## Contract for future phases
 
-- P3 users: `/admin/users` reutiliza `GET /api/users` para listar y usa
-  `PATCH /api/admin/users/:userId` para cambiar `role_name` e `is_active`.
-  El mismo diálogo edita los datos del stakeholder vinculado con
-  `GET /api/stakeholders/:id` y `PUT /api/stakeholders/:id`; si la cuenta no
-  tiene persona vinculada solo se muestran rol y estado. No hay un `GET`
-  duplicado bajo `/api/admin/users` ni un endpoint combinado.
-- P4 stakeholders: el panel reutiliza el CRUD de `/api/stakeholders`. `POST`,
-  `PUT`, `PATCH` y `DELETE` usan `requireAdmin`; ambos `GET` siguen disponibles
-  para cualquier cuenta autenticada y los formularios de préstamos no cambian.
-  La vista oculta las personas referenciadas por `user.stakeholder_id`, sin
-  filtrar la API.
-- P5 loans: `POST`, `PUT` y `PATCH` de `/api/loans` aplican
-  `requireAdminForLenderChange`; la vista admin lista con `GET /api/loans` y
-  reasigna prestamistas con `PATCH /api/loans/:id`, sin endpoints bajo
-  `/api/admin`. El desplegable solo ofrece cuentas con rol `lender` leídas de
-  `GET /api/users`; el listado y el diálogo reutilizan los helpers de formato de
-  `loans` y los primitivos shadcn existentes.
-- P6 payments: `/admin/payments` lista `GET /api/payments` para `admin` y usa
-  `GET /api/loans` para ofrecer solo cuotas pendientes e interés separado sin
-  pagar. El registro envía `POST /api/payments/installment` o
-  `POST /api/payments/interest` con el monto calculado por el destino; la
-  reversión reutiliza `DELETE /api/payments/:id` mediante `usePaymentRevert`.
-  No hay `POST /api/payments` genérico ni endpoints duplicados bajo `/admin`.
-- P7 dashboard: `/admin/dashboard` calcula métricas en el cliente desde
-  `GET /api/loans` y `GET /api/payments`, sin un endpoint propio. `adminDashboard.js`
-  resume préstamos, cuotas pagadas/pendientes/vencidas, interés incluido o
-  separado y pagos por mes; la vista muestra tarjetas, estado de la cartera,
-  tendencia de pagos y los pagos más recientes.
-- No se duplican funcionalidades bajo `/admin`; solo la administración de
-  usuarios vive en ese prefijo.
+- P3 users: `/admin/users` reuses `GET /api/users` for listing and uses
+  `PATCH /api/admin/users/:userId` to change `role_name` and `is_active`.
+  The same dialog edits the linked stakeholder's data with
+  `GET /api/stakeholders/:id` and `PUT /api/stakeholders/:id`; if the account
+  has no linked person, only role and status are shown. There is no duplicate
+  `GET` under `/api/admin/users` and no combined endpoint.
+- P4 stakeholders: the panel reuses the `/api/stakeholders` CRUD. `POST`,
+  `PUT`, `PATCH` and `DELETE` use `requireAdmin`; both `GET`s remain available
+  to any authenticated account and the loan forms are unchanged.
+  The view hides people referenced by `user.stakeholder_id`, without
+  filtering the API.
+- P5 loans: `POST`, `PUT` and `PATCH` of `/api/loans` apply
+  `requireAdminForLenderChange`; the admin view lists with `GET /api/loans` and
+  reassigns lenders with `PATCH /api/loans/:id`, with no endpoints under
+  `/api/admin`. The dropdown only offers accounts with the `lender` role read
+  from `GET /api/users`; the listing and the dialog reuse the formatting
+  helpers from `loans` and the existing shadcn primitives.
+- P6 payments: `/admin/payments` lists `GET /api/payments` for `admin` and uses
+  `GET /api/loans` to offer only pending installments and `separate`, unpaid
+  interest. Recording sends `POST /api/payments/installment` or
+  `POST /api/payments/interest` with the amount calculated by the destination;
+  the reversal reuses `DELETE /api/payments/:id` via `usePaymentRevert`.
+  There is no generic `POST /api/payments` and no duplicate endpoints under `/admin`.
+- P7 dashboard: `/admin/dashboard` calculates metrics on the client from
+  `GET /api/loans` and `GET /api/payments`, with no dedicated endpoint.
+  `adminDashboard.js` summarizes loans, paid/pending/overdue installments,
+  `included` or `separate` interest and payments by month; the view shows
+  cards, portfolio status, payment trend and the most recent payments.
+- No functionality is duplicated under `/admin`; only user administration
+  lives under that prefix.
 
-## Archivos
+## Files
 
 - `src/client/main.jsx`
 - `src/client/contexts/AuthContext.jsx`

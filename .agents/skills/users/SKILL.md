@@ -5,64 +5,67 @@ description: User module: listing and admin-only role/active-state and linked st
 
 # users
 
-Módulo de consulta de usuarios y de administración de rol y estado de cuenta.
+Module for querying users and for admin management of role and account status.
 
-El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
+This module's change history is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Endpoint
 
-| Método | Ruta | Controller | Service |
+| Method | Route | Controller | Service |
 | --- | --- | --- | --- |
 | `GET` | `/api/users` | `userController.getAllUsers` | `userService.getAllUsers` |
 | `GET` | `/api/users/auth` | `userController.authUser` | `userService.authUser` |
 | `PATCH` | `/api/admin/users/:userId` | `adminUserController.updateAdminUser` | `adminUserService.updateAdminUser` |
 
-## Comportamiento
+## Behavior
 
-- Ambas rutas requieren autenticación: `Authorization: Bearer <token>`; sin
-  token o con token inválido responde `401`. Lo aplica `checkAuth` en `api.js`.
-- Excluyen `password_hash` de la respuesta y ante un error inesperado responden
-  `500` con `{ error: "Internal Server Error" }`.
-- `GET /api/users` devuelve `200` con el arreglo de todos los usuarios, con su
-  `Stakeholder` (`stakeholder_id`, `first_name`, `last_name`) y su `Role`
+- Both routes require authentication: `Authorization: Bearer <token>`; without
+  a token or with an invalid token they respond `401`. This is applied by
+  `checkAuth` in `api.js`.
+- They exclude `password_hash` from the response and, on an unexpected error,
+  respond `500` with `{ error: "Internal Server Error" }`.
+- `GET /api/users` returns `200` with the array of all users, with their
+  `Stakeholder` (`stakeholder_id`, `first_name`, `last_name`) and their `Role`
   (`role_id`, `role_name`).
-- `GET /api/users/auth` devuelve `200` con el usuario actual, resuelto desde
-  `req.user.user_id`. Incluye `Stakeholder` (`stakeholder_id`, `first_name`,
-  `last_name`, `national_id`, `marital_status`, `occupation`, `date_of_birth`) y
-  `Role` (`role_id`, `role_name`). Las claves de Sequelize se mantienen como
-  `Stakeholder` y `Role` (inicial mayúscula). Si no hay `user_id` responde `401`;
-  si el usuario no existe responde `404` con `{ error: "User not found" }`.
-  Es la ruta que usa `AuthProvider` en el cliente para hidratar la sesión.
-- `PATCH /api/admin/users/:userId` está protegido por `checkAuth` y `requireAdmin`;
-  un token de `lender` responde `403 Admin access required`.
-- El payload acepta `role_name` (`admin` o `lender`) y `is_active` (booleano),
-  solos o juntos; cualquier otro campo se ignora. La validación vive en
-  `adminUserValidation`, que también exige un `user_id` entero positivo y al
-  menos un campo. Un `role_name` inválido responde `400`.
-- Si el usuario no existe responde `404 User not found`; si el rol no está en
-  la base responde `409 Role <nombre> does not exist`. Un error inesperado
-  responde `500 Internal Server Error`.
-- La respuesta es `200` con el usuario actualizado en la misma proyección que
-  `GET /api/users/auth`, sin `password_hash` y con `Stakeholder` y `Role`.
+- `GET /api/users/auth` returns `200` with the current user, resolved from
+  `req.user.user_id`. It includes `Stakeholder` (`stakeholder_id`, `first_name`,
+  `last_name`, `national_id`, `marital_status`, `occupation`, `date_of_birth`)
+  and `Role` (`role_id`, `role_name`). The Sequelize keys are kept as
+  `Stakeholder` and `Role` (capitalized). If there is no `user_id` it responds
+  `401`; if the user does not exist it responds `404` with
+  `{ error: "User not found" }`.
+  This is the route `AuthProvider` uses on the client to hydrate the session.
+- `PATCH /api/admin/users/:userId` is protected by `checkAuth` and `requireAdmin`;
+  a `lender` token responds `403 Admin access required`.
+- The payload accepts `role_name` (`admin` or `lender`) and `is_active`
+  (boolean), alone or together; any other field is ignored. Validation lives in
+  `adminUserValidation`, which also requires a positive integer `user_id` and at
+  least one field. An invalid `role_name` responds `400`.
+- If the user does not exist it responds `404 User not found`; if the role is
+  not in the database it responds `409 Role <name> does not exist`. An
+  unexpected error responds `500 Internal Server Error`.
+- The response is `200` with the updated user in the same projection as
+  `GET /api/users/auth`, without `password_hash` and with `Stakeholder` and `Role`.
 
-## Cliente administrativo
+## Admin client
 
-- `/admin/users` lista con `GET /api/users` y abre un diálogo que combina rol,
-  estado y los datos de la persona vinculada al usuario.
-- Si `user.stakeholder_id` existe, `useAdminUsers` carga
-  `GET /api/stakeholders/:id` con `stakeholderToForm` y valida con
-  `validateStakeholderForm` antes de guardar. Si no existe o la carga falla, el
-  diálogo ofrece solo las opciones de rol y estado.
-- `saveEdit` envía primero `PATCH /api/admin/users/:userId` y después
-  `PUT /api/stakeholders/:stakeholder_id` cuando hay datos de persona. No se
-  creó un endpoint combinado: el backend sigue siendo la autoridad y los
-  mensajes de error de cada ruta se muestran tal cual.
-- Si el `PATCH` termina y el `PUT` falla, el cliente recarga la lista y avisa
-  explícitamente que el estado se actualizó pero los datos de la persona no.
-- Los campos de stakeholder se reutilizan desde
+- `/admin/users` lists with `GET /api/users` and opens a dialog that combines
+  role, status and the data of the person linked to the user.
+- If `user.stakeholder_id` exists, `useAdminUsers` loads
+  `GET /api/stakeholders/:id` with `stakeholderToForm` and validates with
+  `validateStakeholderForm` before saving. If it does not exist or loading
+  fails, the dialog offers only role and status options.
+- `saveEdit` sends `PATCH /api/admin/users/:userId` first and then
+  `PUT /api/stakeholders/:stakeholder_id` when there is person data. No combined
+  endpoint was created: the backend remains the authority and error messages
+  from each route are shown as-is.
+- If the `PATCH` finishes and the `PUT` fails, the client reloads the listing
+  and explicitly notifies that the status was updated but the person's data
+  was not.
+- The stakeholder fields are reused from
   `src/components/admin/stakeholders/StakeholderFormFields.jsx`.
 
-## Archivos
+## Files
 
 - `src/server/routes/userRoutes.js`
 - `src/server/routes/adminRoutes.js`
@@ -72,7 +75,7 @@ El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
 - `src/server/services/adminUserService.js`
 - `src/server/utils/validators/adminUserValidation.js`
 
-La creación de usuarios no vive aquí: pertenece al módulo `auth` mediante
-`POST /api/auth/signup`, que siempre crea cuentas `lender` (rol resuelto desde
-la base, no recibido en el payload). La lista de `/api/users` sigue siendo
-global y no filtra por rol.
+User creation does not live here: it belongs to the `auth` module via
+`POST /api/auth/signup`, which always creates `lender` accounts (role resolved
+from the database, not received in the payload). The `/api/users` listing
+remains global and does not filter by role.

@@ -1,73 +1,72 @@
 # Changelog — models
 
-## 2026-11-25 — Flag `is_active` en `User`
+## 2026-11-25 — `is_active` flag on `User`
 
-- Change: `User.js` declara `is_active` como booleano no nulo con valor por
-  defecto `true`, reflejando la columna agregada por
+- Change: `User.js` declares `is_active` as a non-null boolean with a default
+  value of `true`, reflecting the column added by
   `database/migrations/2026-11-25-admin-user-management.sql`.
-- Impact: `checkAuth` y `login` pueden rechazar cuentas desactivadas. El esquema
-  se aplica manualmente; los modelos siguen sin usar `sequelize.sync()`.
-- Verification: `pnpm build` y revisión del diff; la migración no se aplicó en
-  esta sesión.
+- Impact: `checkAuth` and `login` can reject inactive accounts. The schema is
+  applied manually; models still do not use `sequelize.sync()`.
+- Verification: `pnpm build` and diff review; the migration was not applied in
+  this session.
 
-## 2026-11-17 — Roles `admin` y `lender`
+## 2026-11-17 — `admin` and `lender` roles
 
-- Change: se documenta que `roles` contiene `admin` y `lender` tras renombrar
-  `operator` con `database/migrations/2026-11-17-rename-operator-role-to-lender.sql`.
-- Impact: el modelo `Role` no cambia; el cambio es de datos y afecta al signup,
-  que resuelve el rol `lender` por nombre.
-- Verification: consulta a `roles` en MySQL devolvió `(1, admin), (2, lender)`.
+- Change: it is documented that `roles` contains `admin` and `lender` after
+  renaming `operator` with
+  `database/migrations/2026-11-17-rename-operator-role-to-lender.sql`.
+- Impact: the `Role` model does not change; the change is to data and affects
+  signup, which resolves the `lender` role by name.
+- Verification: a query to `roles` in MySQL returned `(1, admin), (2, lender)`.
 
-## 2026-11-17 — Índice único de `national_id` declarado en `Stakeholder`
+## 2026-11-17 — Unique index on `national_id` declared in `Stakeholder`
 
-- Change: `Stakeholder.js` declara `uq_stakeholders_national_id` como índice
-  único sobre `national_id`, con el mismo nombre que la restricción existente
-  en MySQL.
-- Impact: el modelo refleja la restricción existente. Como Sequelize informa la
-  violación con el nombre del índice, el service reconoce también ese nombre
-  para distinguir el conflicto de otros registros relacionados duplicados. No
-  hay cambios de esquema ni de `sequelize.sync()`.
-- Verification: una violación duplicada responde
-  `409 A stakeholder with that national ID already exists` y la transacción se
-  revierte sin dejar préstamos almacenados.
+- Change: `Stakeholder.js` declares `uq_stakeholders_national_id` as a unique
+  index on `national_id`, with the same name as the existing constraint in MySQL.
+- Impact: the model reflects the existing constraint. Since Sequelize reports
+  the violation with the index name, the service also recognizes that name to
+  distinguish the conflict from other duplicate related records. There are no
+  schema changes or changes to `sequelize.sync()`.
+- Verification: a duplicate violation responds
+  `409 A stakeholder with that national ID already exists` and the transaction
+  is rolled back without leaving stored loans.
 
-## 2026-11-16 — Modo de interés y obligación pendiente por préstamo
+## 2026-11-16 — Interest mode and pending obligation per loan
 
-- Change: `Loan` agregó `interest_payment_mode` y los virtuales
-  `interest_amount`/`total_to_pay`; `LoanInterestPayment` ahora tiene
-  `payment_id` nullable, `loan_id` único y `status` (`pending`/`paid`).
-  `associations.js` expone `guarantors`, `collaterals` e `interestPayment`
-  (`hasOne`). La migración
-  `database/migrations/2026-11-16-loan-interest-payment-mode.sql` aplica los
-  cambios de columnas, el índice único y la restricción de estado.
-- Impact: las consultas de préstamos incluyen una sola obligación de interés;
-  `included` no tiene fila y `separate` usa una fila pendiente con
-  `payment_id = null`. Los totales se calculan desde `loan_amount` e
-  `interest_rate`, sin almacenarse.
-- Verification: importación de modelos/asociaciones sin errores; préstamo de
-  `1000` al 20% devolvió `interest_amount = 200` y `total_to_pay = 1200`;
-  migración aplicada y verificada contra MySQL 8.4.3.
+- Change: `Loan` added `interest_payment_mode` and the virtuals
+  `interest_amount`/`total_to_pay`; `LoanInterestPayment` now has nullable
+  `payment_id`, unique `loan_id`, and `status` (`pending`/`paid`).
+  `associations.js` exposes `guarantors`, `collaterals`, and `interestPayment`
+  (`hasOne`). The migration
+  `database/migrations/2026-11-16-loan-interest-payment-mode.sql` applies the
+  column changes, the unique index, and the status constraint.
+- Impact: loan queries include a single interest obligation; `included` has no
+  row and `separate` uses a pending row with `payment_id = null`. Totals are
+  calculated from `loan_amount` and `interest_rate`, without being stored.
+- Verification: models/associations imported without errors; a loan of `1000` at
+  20% returned `interest_amount = 200` and `total_to_pay = 1200`; migration
+  applied and verified against MySQL 8.4.3.
 
-## 2026-11-13 — `date_of_birth` como `DATEONLY`
+## 2026-11-13 — `date_of_birth` as `DATEONLY`
 
-- Change: `Stakeholder.date_of_birth` pasó de `DataTypes.DATE` a
-  `DataTypes.DATEONLY` para coincidir con la columna `date` de MySQL.
-- Impact: Las fechas de nacimiento se leen y escriben como `YYYY-MM-DD`, sin
-  componente de hora ni conversión de zona horaria.
-- Verification: El CRUD de stakeholders devolvió `"1990-05-15"` tal como se
-  envió.
+- Change: `Stakeholder.date_of_birth` changed from `DataTypes.DATE` to
+  `DataTypes.DATEONLY` to match MySQL's `date` column.
+- Impact: Birth dates are read and written as `YYYY-MM-DD`, with no time
+  component or timezone conversion.
+- Verification: Stakeholder CRUD returned `"1990-05-15"` as sent.
 
-## 2026-11-13 — Modelos de préstamos, cuotas, garantías y pagos
+## 2026-11-13 — Models for loans, installments, collateral, and payments
 
-- Change: Se agregaron los modelos `Loan`, `LoanInstallment`, `LoanGuarantor`,
-  `LoanCollateral`, `LoanPayment`, `InstallmentPayment` y `LoanInterestPayment`,
-  y se registraron sus asociaciones en `associations.js` (incluyendo alias para
-  las dos relaciones de `Loan` con `Stakeholder` y para la relación 1:1 de pagos).
-- Impact: `associations.js` ahora carga las diez entidades del dominio; las
-  consultas con `include` sobre préstamos, cuotas, garantías y pagos ya resuelven
-  sus joins. No se modificaron rutas, controladores ni el esquema de la base.
-- Verification: importación de `associations.js` sin errores; `Loan.findAll` con
-  `lender`, `customer`, `installments`, `LoanGuarantors`, `LoanCollaterals` e
-  `interestPayments`, y `LoanPayment.findAll` con `recordedBy`,
-  `InstallmentPayment` y `LoanInterestPayment` ejecutaron correctamente contra
+- Change: The models `Loan`, `LoanInstallment`, `LoanGuarantor`,
+  `LoanCollateral`, `LoanPayment`, `InstallmentPayment`, and
+  `LoanInterestPayment` were added, and their associations were registered in
+  `associations.js` (including aliases for the two `Loan` relationships with
+  `Stakeholder` and for the 1:1 payment relationship).
+- Impact: `associations.js` now loads the ten domain entities; queries with
+  `include` over loans, installments, collateral, and payments now resolve their
+  joins. Routes, controllers, and the database schema were not modified.
+- Verification: `associations.js` imported without errors; `Loan.findAll` with
+  `lender`, `customer`, `installments`, `LoanGuarantors`, `LoanCollaterals`, and
+  `interestPayments`, and `LoanPayment.findAll` with `recordedBy`,
+  `InstallmentPayment`, and `LoanInterestPayment` ran successfully against
   MySQL 8.4.3.
