@@ -16,9 +16,10 @@ The change history for this module is in [`CHANGELOG.md`](CHANGELOG.md).
 `src/client/main.jsx` creates the router with `createBrowserRouter` and mounts
 `RouterProvider` inside `React.StrictMode`. A route without `path` mounts
 `AuthProvider` as the root layout; inside it, `RequireAuth` protects
-`/change-password`, `/loans`, `/create-loan`, `/loans/:id`, and
-`/loans/:id/edit`, while `RequireAdmin` protects `/admin` and its children.
-The remaining routes are public:
+`/change-password`, `/loans`, `/create-loan`, `/loans/:id`, `/loans/:id/edit`,
+and `/payments`, `RequireLender` keeps `/payments` and `/stakeholders` for
+lender accounts, and `RequireAdmin` protects `/admin` and its children. The
+remaining routes are public:
 
 | Route | View | File | Access |
 | --- | --- | --- | --- |
@@ -29,6 +30,8 @@ The remaining routes are public:
 | `/create-loan` | `CreateLoan` | `src/client/views/CreateLoan.jsx` | protected |
 | `/loans/:id` | `LoanDetails` | `src/client/views/LoanDetails.jsx` | protected |
 | `/loans/:id/edit` | `EditLoan` | `src/client/views/EditLoan.jsx` | protected |
+| `/payments` | `Payments` | `src/client/views/Payments.jsx` | lender |
+| `/stakeholders` | `Stakeholders` | `src/client/views/Stakeholders.jsx` | lender |
 | `/admin` | redirect | `src/client/main.jsx` | admin |
 | `/admin/dashboard` | `AdminDashboard` | `src/client/views/admin/AdminDashboard.jsx` | admin |
 | `/admin/users` | `AdminUsers` | `src/client/views/admin/AdminUsers.jsx` | admin |
@@ -37,6 +40,12 @@ The remaining routes are public:
 | `/admin/loans` | `AdminLoans` | `src/client/views/admin/AdminLoans.jsx` | admin |
 | `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | admin |
 | `/test` | `Test` (test view) | `src/client/Test.jsx` | public |
+
+`LenderLayout` (`src/client/layouts/LenderLayout.jsx`) wraps the general
+authenticated views and shows a top bar with `Loans`, `Payments`, and
+`Stakeholders` text links plus `LogoutButton`; `ChangePassword` and the
+`/admin` panel stay outside that shell. The button calls `useAuth().logout()`
+and navigates to `/login` with `replace: true`.
 
 `Login` consumes `/api/auth/login` through the shared service
 `src/lib/axiosService.js` (`api.post`): it validates the fields, disables the button
@@ -63,7 +72,16 @@ there you navigate to `/loans/:id/edit` and delete the loan with `Dialog` only i
 there are no recorded payments. `EditLoan` retrieves the same loan: without payments
 it fills the shared form and sends `PUT /api/loans/:id` with all the
 arrays; with payments it shows a reduced form and sends `PATCH /api/loans/:id`
-only with guarantors, collateral, and, for `admin`, `lender_id`.
+only with guarantors, collateral, and, for `admin`, `lender_id`. `Payments` is
+the lender-facing history at `/payments`: `usePaymentsOverview` calls
+`GET /api/payments` without `loan_id`, and the table lists linked loans,
+targets, amounts, dates, recorders, and a total. `RequireLender` redirects
+admins to `/admin/payments`; the loans page links lenders to the view.
+`Stakeholders` is the read-only lender view at `/stakeholders`:
+`useLenderStakeholders` reads `GET /api/stakeholders` and the lender-scoped
+`GET /api/loans`, while `lenderStakeholders.js` keeps customers and guarantors
+from those loans and excludes the signed-in lender. `RequireLender` accepts an
+`adminRedirect` prop, so admins go to `/admin/stakeholders` from that route.
 `App.jsx` remains the example Vite counter.
 The `/test` route uses `api.get("/roles")`; that server route is
 currently disabled in `src/server/api.js`, so it is not part of the
@@ -86,10 +104,11 @@ authentication flow.
 - `axios` is used only through `src/lib/axiosService.js`; `Login`,
   `ChangePassword`, `Test.jsx`, and the hooks `useChangePassword`, `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
-  `usePayments`, `usePaymentRevert`, `useAdminUsers`, `useAdminStakeholders`,
-  `useAdminStakeholderProfile`, `useAdminLoans`, `useAdminPayments`, and
-  `useAdminDashboard` import that instance instead of creating their own
-  clients.
+  `usePayments`, `usePaymentRevert`, `usePaymentsOverview`,
+  `useLenderStakeholders`, `useAdminUsers`,
+  `useAdminStakeholders`, `useAdminStakeholderProfile`, `useAdminLoans`,
+  `useAdminPayments`, and `useAdminDashboard` import that instance instead of
+  creating their own clients.
 
 ## UI components
 
@@ -112,6 +131,26 @@ the alias declared in `components.json`, but the components do not use it yet.
 Keep this in mind when adding new components.
 
 ### Domain components
+
+`src/components/auth/LogoutButton.jsx` clears the session through
+`useAuth().logout()` and returns to `/login`; `LenderLayout` renders it in the
+general top bar.
+
+`src/components/payments/` also holds the lender history components:
+
+| File | Responsibility |
+| --- | --- |
+| `PaymentsHeader.jsx` | title, description, `Back to loans`, and `Refresh` actions |
+| `PaymentsTable.jsx` | read-only history table with loading, empty, and total states |
+| `PaymentRow.jsx` | payment, loan link, target, amount, date, and recording user |
+
+`src/components/stakeholders/` holds the lender view components:
+
+| File | Responsibility |
+| --- | --- |
+| `StakeholdersHeader.jsx` | title, description, `Back to loans`, and `Refresh` actions |
+| `StakeholdersTable.jsx` | table with loading, empty, roles, loan links, and totals |
+| `StakeholderRow.jsx` | person, national ID, occupation, loan roles, and linked loans |
 
 `src/components/admin/` brings together the admin panel UI:
 
@@ -362,9 +401,9 @@ endpoints with an amount calculated by the destination, and reversal reuses
 exposed in the panel. `/admin/dashboard` uses `useAdminDashboard` and
 `src/client/utils/adminDashboard.js` to aggregate `GET /api/loans`,
 `GET /api/payments` and `GET /api/stakeholders` on the client: cards of amounts,
-a list of overdue installments, a compact stakeholder card with profile links,
-portfolio status, monthly trend, and recent payments, with no dedicated
-endpoint. `src/client/utils/loanStatus.js` defines the shared date-overdue rule
+a list of overdue installments, portfolio status, monthly trend, and recent
+payments, with no dedicated endpoint. Stakeholder management stays on
+`/admin/stakeholders`. `src/client/utils/loanStatus.js` defines the shared date-overdue rule
 for the card, list and detail badge, while `stakeholderProfile.js` supplies the
 stakeholder summaries and role labels. Each overdue row links to `/loans/:id`
 with `state: { focusInstallmentId }` and separate interest is excluded because
@@ -480,7 +519,8 @@ sends `api.patch("/loans/:id", payload)` and returns to the detail with
 - New views go in `src/client/views/` and are registered in
   `src/client/main.jsx`.
 - Panel views go in `src/client/views/admin/` and the shell in
-  `src/client/layouts/`.
+  `src/client/layouts/`. General authenticated views share
+  `src/client/layouts/LenderLayout.jsx`, which exposes the logout action.
 - Reusable primitives go in `src/components/ui/` and domain-composed components
   in `src/components/<domain>/`, grouped by purpose when there is more than one
   flow (for example, `loans/create/` and `loans/list/`).
@@ -491,8 +531,8 @@ sends `api.patch("/loans/:id", payload)` and returns to the detail with
 - Pure domain helpers go in `src/client/utils/`, such as
   `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanStatus.js`,
   `loanEdit.js`, `loanPayment.js`, `paymentHistory.js`, `userForm.js`,
-  `stakeholderForm.js`, `stakeholderCategory.js`, `adminDashboard.js`, and
-  `stakeholderProfile.js`.
+  `stakeholderForm.js`, `stakeholderCategory.js`, `adminDashboard.js`,
+  `stakeholderProfile.js`, and `lenderStakeholders.js`.
 - Color tokens are defined in `index.css`; avoid fixed colors in
   UI components.
 - Every frontend behavior change is documented here and in

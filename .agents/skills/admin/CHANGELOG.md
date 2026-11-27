@@ -1,5 +1,15 @@
 # Changelog — admin
 
+## 2026-11-26 — Stakeholder management kept in the panel
+
+- Change: removed the dashboard stakeholder card and the profile's separate
+  loan-participation summary section. Clickable stakeholder names in the
+  existing table and the associated-loans table remain.
+- Impact: `/admin/dashboard` focuses on portfolio, overdue-installment, trend,
+  and payment data; stakeholder management stays on `/admin/stakeholders` and
+  its profile. The table design, `Edit`, and `Delete` actions are unchanged.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
 ## 2026-11-26 — Log out from the admin navigation
 
 - Change: `AdminNav` gained a right-aligned `Log out` button that calls

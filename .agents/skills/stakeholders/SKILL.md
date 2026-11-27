@@ -74,8 +74,9 @@ the person with `GET /api/stakeholders/:id`, the loan list with `GET /api/loans`
 when they are its `lender_id`, its `customer_id`, or a
 `guarantors[].guarantor_stakeholder_id`. One loan can produce several roles.
 The profile displays personal information, linked account data, counts by role,
-and one row per associated loan with links to `/loans/:id`. The dashboard uses
-the same helper for its compact stakeholder card.
+and one row per associated loan with links to `/loans/:id`. The dashboard no
+longer shows a stakeholder card; stakeholder management stays on
+`/admin/stakeholders`.
 
 Collateral remains an asset with a description and estimated value; it has no
 stakeholder link in the schema. People who back a loan are represented as
@@ -89,6 +90,17 @@ including those linked to accounts. Above the table, the `All`, `Admins`,
 account is a customer. The account role wins when that person is also a
 customer on loans; the profile still shows those loans in its customer count
 and loan note.
+
+## Lender stakeholders view
+
+`/stakeholders` is a client-only, read-only view for `lender` accounts. It adds
+no API route. `useLenderStakeholders` reads `GET /api/stakeholders` and the
+already lender-scoped `GET /api/loans`, then `lenderStakeholders.js` derives one
+row per customer or guarantor found on those loans. The authenticated lender is
+excluded, using `user.stakeholder_id` or the `lender_id` of the scoped loans.
+Each row shows name, national ID, occupation, loan roles, and links to the
+associated loans. `RequireLender` redirects admins to `/admin/stakeholders`, and
+`LenderLayout` links to the view.
 
 ## Errors
 
@@ -108,7 +120,12 @@ and loan note.
 - `src/server/models/Stakeholder.js`
 - `src/client/utils/stakeholderProfile.js`
 - `src/client/utils/stakeholderCategory.js`
+- `src/client/utils/lenderStakeholders.js`
 - `src/client/hooks/useAdminStakeholderProfile.js`
+- `src/client/hooks/useLenderStakeholders.js`
 - `src/client/views/admin/AdminStakeholderProfile.jsx`
+- `src/client/views/Stakeholders.jsx`
 - `src/components/admin/stakeholders/` (profile sections and linked table name)
-- `src/components/admin/dashboard/AdminDashboardStakeholders.jsx`
+- `src/components/stakeholders/` (lender stakeholder header, table, and row)
+- `src/components/admin/dashboard/AdminDashboardStakeholders.jsx` (unused after
+  the dashboard section was removed)

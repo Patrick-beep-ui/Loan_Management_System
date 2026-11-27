@@ -12,7 +12,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
-  --background: oklch(0.9181 0.0098 72.66);
+  --background:   oklch(0.9181 0.0098 72.66);
   --foreground: oklch(0.1684 0 89.88);
   --card: oklch(0.9433 0.0029 84.56);
   --card-foreground: oklch(0.1684 0 89.88);

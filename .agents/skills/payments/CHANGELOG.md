@@ -1,5 +1,17 @@
 # Changelog — payments
 
+### 2026-11-26 — General lender payments view
+
+- Change: added `/payments` with `usePaymentsOverview` and components under
+  `src/components/payments/` for a read-only payment history. `RequireLender`
+  redirects admins to `/admin/payments`, and the loans list links lenders to the
+  new view.
+- Impact: a lender can review all payments on their loans in one place, with
+  loan links, target, amount, date, recorder, and total. The page relies on the
+  existing lender-scoped `GET /api/payments`; no backend route or schema changed.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ### 2026-11-25 — P6 payment administration
 
 - Change: `/admin/payments` was no longer a stub. `useAdminPayments` and five

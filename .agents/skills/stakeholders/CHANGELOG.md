@@ -1,5 +1,18 @@
 # Changelog — stakeholders
 
+## 2026-11-26 — Read-only lender stakeholders view
+
+- Change: added `/stakeholders` for lender accounts with `Stakeholders`,
+  `useLenderStakeholders`, `lenderStakeholders.js`, and components under
+  `src/components/stakeholders/`. `RequireLender` takes an `adminRedirect` so
+  admins land on `/admin/stakeholders`.
+- Impact: lenders can review the customers and guarantors linked to their own
+  loans, with roles and loan links, without any stakeholder CRUD controls. The
+  page combines the existing global stakeholder read with the existing
+  lender-scoped loan read; no API, schema, or backend behavior changed.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed the
+  derivation. Not tested in a browser or against a server.
+
 ## 2026-11-26 — Admin, lender, and customer filters
 
 - Change: `/admin/stakeholders` now has `All`, `Admins`, `Lenders`, and

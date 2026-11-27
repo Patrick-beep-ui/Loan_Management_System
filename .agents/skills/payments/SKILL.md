@@ -135,6 +135,16 @@ before deleting the record. After the `204`, the view reloads the loan and the
 history: `Delete` becomes available again and `Edit` switches from the reduced
 form to the full form.
 
+### Lender payments page
+
+`/payments` is a read-only history for `lender` accounts. `RequireLender` sends
+admins to `/admin/payments`, and `usePaymentsOverview` calls `GET /api/payments`
+without `loan_id`, so the existing `loanScope` limits the result to loans owned
+by the authenticated lender. `PaymentsHeader`, `PaymentsTable`, and `PaymentRow`
+show the payment ID, linked loan, installment or interest target, amount, paid
+date, recording user, and a total; the loans page links to the view. No API or
+schema changes were needed.
+
 ### Admin panel
 
 `/admin/payments` replaces the stub with `AdminPayments`, composed from
@@ -189,6 +199,11 @@ changes and restores both targets to `pending`.
 - `src/server/models/LoanPayment.js`
 - `src/server/models/InstallmentPayment.js`
 - `src/server/models/LoanInterestPayment.js`
+- `src/client/views/Payments.jsx`
+- `src/client/hooks/usePaymentsOverview.js`
+- `src/components/payments/PaymentsHeader.jsx`
+- `src/components/payments/PaymentsTable.jsx`
+- `src/components/payments/PaymentRow.jsx`
 - `src/client/views/admin/AdminPayments.jsx`
 - `src/client/hooks/useAdminPayments.js`
 - `src/components/admin/payments/`

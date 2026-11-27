@@ -1,5 +1,14 @@
 # Changelog — auth
 
+## 2026-11-26 — Lender route guard
+
+- Change: added `RequireLender` to `src/client/contexts/AuthContext.jsx`. It
+  keeps `/payments` for lender accounts and redirects admins to
+  `/admin/payments`.
+- Impact: the general payment history and the admin payment panel stay separate
+  without adding a new API authorization rule.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
 ## 2026-11-26 — Admin-created users and forced password change
 
 - Change: public `POST /api/auth/signup` was removed. `authService` now exposes

@@ -9,8 +9,14 @@ import {
 } from "react-router-dom";
 
 import App from "./App";
-import { AuthProvider, RequireAdmin, RequireAuth } from "./contexts/AuthContext";
+import {
+  AuthProvider,
+  RequireAdmin,
+  RequireAuth,
+  RequireLender,
+} from "./contexts/AuthContext";
 import AdminLayout from "./layouts/AdminLayout";
+import LenderLayout from "./layouts/LenderLayout";
 
 // Views
 import Login from "./views/Login";
@@ -19,6 +25,8 @@ import Loan from "./views/Loans";
 import CreateLoan from "./views/CreateLoan";
 import LoanDetails from "./views/LoanDetails";
 import EditLoan from "./views/EditLoan";
+import Payments from "./views/Payments";
+import Stakeholders from "./views/Stakeholders";
 import AdminDashboard from "./views/admin/AdminDashboard";
 import AdminUsers from "./views/admin/AdminUsers";
 import AdminStakeholders from "./views/admin/AdminStakeholders";
@@ -47,20 +55,45 @@ const router = createBrowserRouter([
             element: <ChangePassword />,
           },
           {
-            path: "/loans",
-            element: <Loan />,
-          },
-          {
-            path: "/create-loan",
-            element: <CreateLoan />,
-          },
-          {
-            path: "/loans/:id",
-            element: <LoanDetails />,
-          },
-          {
-            path: "/loans/:id/edit",
-            element: <EditLoan />,
+            element: <LenderLayout />,
+            children: [
+              {
+                path: "/loans",
+                element: <Loan />,
+              },
+              {
+                path: "/create-loan",
+                element: <CreateLoan />,
+              },
+              {
+                path: "/loans/:id",
+                element: <LoanDetails />,
+              },
+              {
+                path: "/loans/:id/edit",
+                element: <EditLoan />,
+              },
+              {
+                element: <RequireLender />,
+                children: [
+                  {
+                    path: "/payments",
+                    element: <Payments />,
+                  },
+                ],
+              },
+              {
+                element: (
+                  <RequireLender adminRedirect="/admin/stakeholders" />
+                ),
+                children: [
+                  {
+                    path: "/stakeholders",
+                    element: <Stakeholders />,
+                  },
+                ],
+              },
+            ],
           },
           {
             element: <RequireAdmin />,

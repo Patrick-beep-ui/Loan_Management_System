@@ -136,10 +136,10 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
   payments by month and builds a list of overdue installments sorted by due
   date. `loanStatus.js` provides the shared date-overdue rule and day count, so
   the card, list and loan-detail badge agree. `stakeholderProfile.js` supplies
-  a compact stakeholder card with clickable profile links and a
-  `Manage stakeholders` action. The view shows cards, the overdue list, the
-  stakeholder card, portfolio status, payment trend and the most recent
-  payments. Each overdue row links to `/loans/:id` with
+  stakeholder summaries used by the panel. The view shows cards, the overdue
+  list, portfolio status, payment trend and the most recent payments;
+  stakeholder management stays on `/admin/stakeholders`. Each overdue row links
+  to `/loans/:id` with
   `state: { focusInstallmentId }`; separate interest is excluded because it has
   no due date.
 - No functionality is duplicated under `/admin`; user administration

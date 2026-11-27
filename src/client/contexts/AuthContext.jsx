@@ -161,3 +161,32 @@ export function RequireAdmin() {
 
   return <Outlet />;
 }
+
+export function RequireLender({ adminRedirect = "/admin/payments" }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+        Checking session...
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: { pathname: location.pathname } }}
+      />
+    );
+  }
+
+  if (user.Role?.role_name === "admin") {
+    return <Navigate to={adminRedirect} replace />;
+  }
+
+  return <Outlet />;
+}

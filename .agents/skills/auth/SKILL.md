@@ -95,8 +95,9 @@ The domain validators keep their usual rules.
 On the client, `RequireAuth` redirects accounts with `must_change_password` to
 `/change-password`, where the user submits the current (temporary) password and
 a new one. `RequireAdmin` (`src/client/contexts/AuthContext.jsx`) uses
-`user.Role.role_name` to show the `/admin` panel only to admins; it is a UI
-check, not API authorization.
+`user.Role.role_name` to show the `/admin` panel only to admins, while
+`RequireLender` sends admins to `/admin/payments` so `/payments` remains the
+lender view; both are UI checks, not API authorization.
 
 ## Errors
 
@@ -115,4 +116,5 @@ Any unexpected error is logged and responds `500` with
 - `src/server/middlewares/requireAdmin.js`
 - `src/server/middlewares/requireAdminForLenderChange.js`
 - `src/server/routes/adminRoutes.js`
-- `src/client/contexts/AuthContext.jsx` (`RequireAuth` and `RequireAdmin`)
+- `src/client/contexts/AuthContext.jsx` (`RequireAuth`, `RequireAdmin`, and
+  `RequireLender`)

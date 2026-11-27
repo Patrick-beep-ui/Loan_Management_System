@@ -1,5 +1,40 @@
 # Changelog — frontend
 
+### 2026-11-26 — Lender stakeholders view at `/stakeholders`
+
+- Change: added `Stakeholders`, `useLenderStakeholders`,
+  `lenderStakeholders.js`, and three components under
+  `src/components/stakeholders/`. `RequireLender` now accepts `adminRedirect`,
+  and `LenderLayout` has `Loans`, `Payments`, and `Stakeholders` text links.
+- Impact: lenders see a read-only list of customers and guarantors connected to
+  their loans, with loan roles and links to loan details. The signed-in lender
+  is excluded. Admins are redirected to `/admin/stakeholders`; no backend,
+  database, or API changes were made.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed the
+  lender-scoped derivation. Not tested in a browser or against a server.
+
+### 2026-11-26 — Lender logout action
+
+- Change: added `LogoutButton` in `src/components/auth/` and `LenderLayout` in
+  `src/client/layouts/`. The general authenticated routes now share a top bar
+  with a `Log out` action; the admin panel and forced password change are
+  unchanged.
+- Impact: lenders can end their session from loans, loan create/edit/details,
+  and payments pages. The button uses `useAuth().logout()` and navigates to
+  `/login` with `replace: true`.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
+### 2026-11-26 — Lender payments view at `/payments`
+
+- Change: added `Payments`, `usePaymentsOverview`, and three components under
+  `src/components/payments/`. A `RequireLender` guard protects the route and the
+  loans list links to it for non-admin users.
+- Impact: lenders get a read-only history of all payments on their loans,
+  including loan links, target labels, amounts, dates, recorders, and a total.
+  Admins continue to use `/admin/payments`; no API or schema changed.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ### 2026-11-26 — Admin log out action
 
 - Change: added a `Log out` button to `AdminNav`; it uses the existing

@@ -165,10 +165,14 @@ loans.
 The React client starts in `src/client/main.jsx`, where `createBrowserRouter`
 defines the routes and `RouterProvider` mounts the application. `AuthProvider`
 is the root layout, `RequireAuth` protects loan routes and `/change-password`,
-and `RequireAdmin` protects `/admin`. Views live in `src/client/views/`,
+`RequireLender` protects `/payments` and `/stakeholders`, and `RequireAdmin`
+protects `/admin`.
+Views live in `src/client/views/`,
 reusable primitives in `src/components/ui/`, and domain components in
 `src/components/<domain>/`, grouped by purpose when there is more than one
-flow.
+flow. `LenderLayout` wraps the general authenticated pages with a top bar that
+includes `Loans`, `Payments`, and `Stakeholders` links plus a `Log out` button;
+`/change-password` and `/admin` remain outside it.
 
 | Route | View | Access |
 | --- | --- | --- |
@@ -179,6 +183,8 @@ flow.
 | `/create-loan` | `CreateLoan` | protected |
 | `/loans/:id` | `LoanDetails` | protected |
 | `/loans/:id/edit` | `EditLoan` | protected |
+| `/payments` | `Payments` | lender |
+| `/stakeholders` | `Stakeholders` | lender |
 | `/admin` | redirect to `/admin/dashboard` | admin |
 | `/admin/dashboard` | `AdminDashboard` | admin |
 | `/admin/users` | `AdminUsers` | admin |
@@ -197,9 +203,11 @@ interceptor that clears the token and emits `auth:unauthorized` on `401`
 (except on `/auth/login` and `/users/me/password`, so credential errors are not
 hidden).
 `src/client/contexts/AuthContext.jsx` exposes `AuthProvider`, `useAuth()`,
-`RequireAuth`, and `RequireAdmin`: the session is hydrated with
+`RequireAuth`, `RequireAdmin`, and `RequireLender`: the session is hydrated with
 `GET /api/users/auth`; loan routes and `/change-password` are protected,
-`/admin/*` requires the `admin` role, and the rest are public. `login(token)`
+`/payments` and `/stakeholders` are for lenders (admins go to
+`/admin/payments` and `/admin/stakeholders`), `/admin/*` requires the `admin`
+role, and the rest are public. `login(token)`
 and `refreshUser()` return the `must_change_password` flag. `RequireAuth`
 redirects a user with that flag to `/change-password` unless they are already
 there. `ChangePassword` submits `{ current_password, new_password }` to
@@ -224,7 +232,16 @@ are no payments, and supports recording and reverting payments from the
 components in `src/components/payments/`. `LoanInstallmentsTable` marks
 date-overdue installments and, when the route state contains
 `focusInstallmentId`, highlights and scrolls to that specific installment.
-`EditLoan` reuses the creation form
+`Payments` provides the lender-facing history at `/payments` through
+`usePaymentsOverview` and `api.get("/payments")` without a `loan_id`; the
+existing API scope returns only that lender's loans. The read-only table shows
+linked loans, installment or interest targets, amounts, dates, recording users,
+and a total, with a link from the loans list. `Stakeholders` is the read-only
+lender view at `/stakeholders`: `useLenderStakeholders` reads
+`api.get("/stakeholders")` and the already scoped `api.get("/loans")`, and
+`lenderStakeholders.js` keeps the customers and guarantors on those loans while
+excluding the signed-in lender. Top-bar links make both lender views
+discoverable. `EditLoan` reuses the creation form
 without payments and a restricted form when payments exist (guarantors,
 collateral, and, for admins, the lender), created from
 `src/components/loans/edit/`.
@@ -275,11 +292,10 @@ payment, and stakeholder metrics from `GET /api/loans`, `GET /api/payments`,
 and `GET /api/stakeholders`, with no dedicated endpoint. The same data produces
 a list of overdue installments sorted by due date; each item links to
 `/loans/:id` with `state.focusInstallmentId` so the specific installment is
-highlighted on the detail page. A compact stakeholder card links names to
-their profiles and offers a `Manage stakeholders` action.
-`src/client/utils/loanStatus.js` is the shared date-overdue rule for the card,
-the list, and the detail badge; `stakeholderProfile.js` supplies the stakeholder
-summaries.
+highlighted on the detail page. Stakeholder management stays on
+`/admin/stakeholders`. `src/client/utils/loanStatus.js` is the shared
+date-overdue rule for the card, the list, and the detail badge;
+`stakeholderProfile.js` supplies the stakeholder summaries.
 
 | Route | View | Status |
 | --- | --- | --- |
@@ -313,26 +329,30 @@ database/
 
 src/
 ├─ client/                  React interface (Vite)
-│  ├─ main.jsx              entry, routes, `RequireAuth` and `RequireAdmin`
+│  ├─ main.jsx              entry, routes, and the auth guards
 │  ├─ App.jsx               main component (Vite demo)
 │  ├─ App.css / index.css   base styles and Tailwind/shadcn tokens
 │  ├─ contexts/             AuthContext: provider, hook, and guards
 │  ├─ hooks/                useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails,
-│  │                       useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert,
+│  │                       useEditLoanForm, useLoanPayment, usePayments,
+│  │                       usePaymentRevert, usePaymentsOverview,
+│  │                       useLenderStakeholders,
 │  │                       useChangePassword, useAdminUsers, useAdminStakeholders,
 │  │                       useAdminStakeholderProfile, useAdminLoans,
 │  │                       useAdminPayments, useAdminDashboard
-│  ├─ layouts/              `AdminLayout` shell
+│  ├─ layouts/              `AdminLayout` and `LenderLayout` shells
 │  ├─ Test.jsx              test view (/test)
-│  ├─ views/                Login, ChangePassword, Loans, CreateLoan, LoanDetails, EditLoan
+│  ├─ views/                Login, ChangePassword, Loans, CreateLoan, LoanDetails,
+│  │                        EditLoan, Payments, Stakeholders
 │  │  └─ admin/             panel views: Dashboard, Users, Stakeholders,
 │  │                        Stakeholder profile, Loans, Payments
 │  ├─ utils/                loanFormat, loanStatus, loanForm, loanSchedule, loanEdit,
 │  │                       loanPayment, paymentHistory, userForm, stakeholderForm,
 │  │                       adminDashboard, stakeholderProfile,
-│  │                       stakeholderCategory
+│  │                       stakeholderCategory, lenderStakeholders
 │  └─ assets/
 ├─ components/
+│  ├─ auth/                 LogoutButton shared by the lender top bar
 │  ├─ admin/                AdminNav, AdminPlaceholder, users/, stakeholders/, loans/,
 │  │                       payments/, and dashboard/ (tables, shared fields, forms,
 │  │                       reassignment, recording, metrics, confirmations)
@@ -341,7 +361,8 @@ src/
 │  │  ├─ list/              header, notices, and listing table
 │  │  ├─ details/           summary, tables, notices, and delete confirmation
 │  │  └─ edit/              header, errors, notice, and restricted form with payments
-│  ├─ payments/             payment modals, history, reversal, and notices
+│  ├─ payments/             payment modals, history, reversal, notices, and lender page
+│  ├─ stakeholders/         lender stakeholder header, table, and row
 │  └─ ui/                   shadcn components: button, card, dialog, input, label,
 │                           select, table, textarea
 ├─ lib/
