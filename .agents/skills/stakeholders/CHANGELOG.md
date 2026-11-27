@@ -1,5 +1,13 @@
 # Changelog — stakeholders
 
+### 2026-11-27 — Lender stakeholders header simplified
+
+- Change: removed `Back to loans` from `StakeholdersHeader`; `LenderLayout`
+  remains the navigation entry point for the view.
+- Impact: the read-only list and its data loading are unchanged, and no API or
+  schema changed. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
 ## 2026-11-26 — Read-only lender stakeholders view
 
 - Change: added `/stakeholders` for lender accounts with `Stakeholders`,

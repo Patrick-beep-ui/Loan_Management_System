@@ -11,35 +11,35 @@ const links = [
 
 export default function LenderLayout() {
   return (
-    <>
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-6">
-            <span className="whitespace-nowrap font-heading text-lg text-foreground">
-              Loan Management
-            </span>
-            <nav aria-label="Main sections" className="flex gap-4">
+    <main className="min-h-screen bg-background px-4 py-10">
+      <div className="mx-auto w-full max-w-6xl">
+        <h1 className="mb-6 font-heading text-3xl text-foreground">
+          Loan Management System
+        </h1>
+        <nav aria-label="Lender sections" className="mb-8 border-b border-border">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex min-w-0 gap-6 overflow-x-auto">
               {links.map(({ to, label }) => (
                 <NavLink
                   key={to}
                   to={to}
                   className={({ isActive }) =>
                     cn(
-                      "whitespace-nowrap text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                      "relative -mb-px whitespace-nowrap border-b-2 border-transparent pb-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
                       "focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                      isActive && "text-foreground underline underline-offset-4",
+                      isActive && "border-primary text-foreground",
                     )
                   }
                 >
                   {label}
                 </NavLink>
               ))}
-            </nav>
+            </div>
+            <LogoutButton className="shrink-0 text-muted-foreground hover:text-foreground" />
           </div>
-          <LogoutButton className="shrink-0 text-muted-foreground hover:text-foreground" />
-        </div>
-      </header>
-      <Outlet />
-    </>
+        </nav>
+        <Outlet />
+      </div>
+    </main>
   );
 }

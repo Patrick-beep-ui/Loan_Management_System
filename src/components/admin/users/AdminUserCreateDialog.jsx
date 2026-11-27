@@ -179,13 +179,7 @@ export default function AdminUserCreateDialog({
                                             : undefined
                                     }
                                 >
-                                    <SelectValue
-                                        placeholder={
-                                            loading
-                                                ? "Loading stakeholders..."
-                                                : "Select a stakeholder"
-                                        }
-                                    />
+                                    <SelectValue placeholder="Select a stakeholder" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {stakeholders.map((stakeholder) => (

@@ -25,29 +25,21 @@ export default function StakeholdersTable({ rows, loading }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {loading ? (
-            <TableRow>
-              <TableCell
-                colSpan={6}
-                className="text-center text-muted-foreground"
-              >
-                Loading stakeholders...
-              </TableCell>
-            </TableRow>
-          ) : rows.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={6}
-                className="text-center text-muted-foreground"
-              >
-                No stakeholders found.
-              </TableCell>
-            </TableRow>
-          ) : (
-            rows.map((row) => (
-              <StakeholderRow key={row.stakeholderId} row={row} />
-            ))
-          )}
+          {!loading &&
+            (rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
+                  No stakeholders found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((row) => (
+                <StakeholderRow key={row.stakeholderId} row={row} />
+              ))
+            ))}
         </TableBody>
       </Table>
     </div>

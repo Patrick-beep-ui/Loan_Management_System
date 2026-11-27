@@ -1,5 +1,52 @@
 # Changelog — frontend
 
+### 2026-11-27 — Lender payment recording
+
+- Change: the lender `/payments` page now has a `Record payment` action. It
+  reuses `useAdminPayments` and `AdminPaymentRecordDialog` with lender-scoped
+  `GET /api/loans`, and the read-only `usePaymentsOverview` hook was removed.
+- Impact: lenders can pay a pending installment or separate interest from
+  `Payments`, with the same validation, locked amount, optional paid date, and
+  success/error states as admins. Routes and API endpoints are unchanged.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
+### 2026-11-27 — Lender navigation buttons removed
+
+- Change: removed `Back to loans` from the lender Payments and Stakeholders
+  headers and the `Payments` button from the loans list. Those pages keep their
+  `Refresh` action, and `LenderLayout` remains the navigation entry point.
+- Impact: lenders open Payments and Stakeholders from the shared top bar and
+  return to Loans from the same bar. Routes, data loading, and API behavior are
+  unchanged; admins keep the `Admin` link on the loans list.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
+### 2026-11-27 — Visible loading text removed
+
+- Change: removed the visible loading messages from the Administration and
+  Lenders areas, including `Checking session...`, `Loading dashboard...`,
+  `Loading loan...`, `Loading users...`, `Loading loans...`,
+  `Loading payments...`, `Loading stakeholders...`, and the equivalent
+  dialog/select placeholders. Guards and views now render nothing while loading;
+  selects use
+  their normal placeholder text.
+- Impact: loading state logic still prevents incomplete data from rendering,
+  and empty/error/success states are unchanged. Action button labels such as
+  `Refreshing...` and `Saving...` remain.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
+### 2026-11-26 — Lender layout aligned with the admin shell
+
+- Change: `LenderLayout` now uses the Administration spacing and structure:
+  `px-4 py-10`, a centered `max-w-6xl` container, a `Lenders` heading, and an
+  `mb-8` bottom-bordered navigation bar with the same active-link styling as
+  `AdminNav`. The loans, create/edit/details, payments, and stakeholder views
+  no longer render their own outer `main`.
+- Impact: `Loans`, `Payments`, and `Stakeholders` keep their content, routes,
+  and behavior; only the surrounding shell and spacing change. The shared
+  logout button remains at the right end of the navigation.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
 ### 2026-11-26 — Route admins to the admin dashboard after sign-in
 
 - Change: `login(token)` now returns the loaded user, and `Login` uses the

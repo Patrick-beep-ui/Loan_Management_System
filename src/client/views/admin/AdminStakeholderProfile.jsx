@@ -41,16 +41,13 @@ export default function AdminStakeholderProfile() {
           </div>
         )}
 
-        {loading ? (
-          <p className="text-muted-foreground">Loading stakeholder...</p>
-        ) : (
+        {!loading &&
           profile && (
             <div className="space-y-6">
               <AdminStakeholderPersonalInfo profile={profile} />
               <AdminStakeholderLoansTable records={profile.loanRecords} />
             </div>
-          )
-        )}
+          )}
       </CardContent>
     </Card>
   );

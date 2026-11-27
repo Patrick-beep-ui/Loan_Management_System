@@ -30,13 +30,6 @@ export default function AdminStakeholdersTable({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {loading && (
-                        <TableRow>
-                            <TableCell colSpan={7}>
-                                Loading stakeholders...
-                            </TableCell>
-                        </TableRow>
-                    )}
                     {!loading && stakeholders.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={7}>

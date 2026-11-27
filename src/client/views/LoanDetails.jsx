@@ -39,7 +39,7 @@ export default function LoanDetails() {
     revert.reverting;
 
   return (
-    <main className="min-h-screen bg-background px-4 py-10">
+    <>
       <Card className="mx-auto w-full max-w-6xl">
         <LoanDetailsHeader
           loanId={details.id}
@@ -73,9 +73,7 @@ export default function LoanDetails() {
             onBack={details.goBack}
           />
 
-          {details.loading ? (
-            <p className="text-muted-foreground">Loading loan...</p>
-          ) : (
+          {!details.loading &&
             details.loan && (
               <div className="space-y-8">
                 {details.locked && <LoanLockedAlert />}
@@ -118,8 +116,7 @@ export default function LoanDetails() {
                   paymentDisabled={actionsDisabled}
                 />
               </div>
-            )
-          )}
+            )}
         </CardContent>
       </Card>
 
@@ -164,6 +161,6 @@ export default function LoanDetails() {
         onClose={revert.close}
         onConfirm={revert.confirmRevert}
       />
-    </main>
+    </>
   );
 }

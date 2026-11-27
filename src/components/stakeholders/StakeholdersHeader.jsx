@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function StakeholdersHeader({ refreshing, onRefresh, onBack }) {
+export default function StakeholdersHeader({ refreshing, onRefresh }) {
   return (
     <CardHeader>
       <CardTitle className="text-2xl">Stakeholders</CardTitle>
@@ -14,20 +14,15 @@ export default function StakeholdersHeader({ refreshing, onRefresh, onBack }) {
         People connected to your loans as customers or guarantors.
       </CardDescription>
       <CardAction>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onBack}>
-            Back to loans
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={refreshing}
-          >
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onRefresh}
+          disabled={refreshing}
+        >
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </Button>
       </CardAction>
     </CardHeader>
   );

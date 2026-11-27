@@ -64,11 +64,9 @@ export default function AdminPaymentRecordDialog({
               <SelectTrigger id="admin-payment-loan" className="w-full">
                 <SelectValue
                   placeholder={
-                    loadingLoans
-                      ? "Loading loans..."
-                      : loanOptions.length === 0
-                        ? "No loans with pending targets"
-                        : "Select a loan"
+                    !loadingLoans && loanOptions.length === 0
+                      ? "No loans with pending targets"
+                      : "Select a loan"
                   }
                 />
               </SelectTrigger>

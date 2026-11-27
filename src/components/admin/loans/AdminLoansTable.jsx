@@ -26,11 +26,6 @@ export default function AdminLoansTable({ loans, loading, onReassign }) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {loading && (
-                        <TableRow>
-                            <TableCell colSpan={9}>Loading loans...</TableCell>
-                        </TableRow>
-                    )}
                     {!loading && loans.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={9}>No loans found.</TableCell>

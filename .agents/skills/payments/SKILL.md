@@ -137,13 +137,18 @@ form to the full form.
 
 ### Lender payments page
 
-`/payments` is a read-only history for `lender` accounts. `RequireLender` sends
-admins to `/admin/payments`, and `usePaymentsOverview` calls `GET /api/payments`
-without `loan_id`, so the existing `loanScope` limits the result to loans owned
-by the authenticated lender. `PaymentsHeader`, `PaymentsTable`, and `PaymentRow`
-show the payment ID, linked loan, installment or interest target, amount, paid
-date, recording user, and a total; the loans page links to the view. No API or
-schema changes were needed.
+`/payments` is the lender-facing history and recording page. `RequireLender`
+sends admins to `/admin/payments`. The view reuses `useAdminPayments`, which
+calls `GET /api/payments` without `loan_id` and `GET /api/loans`; the existing
+`loanScope` limits both to loans owned by the authenticated lender.
+`PaymentsHeader`, `PaymentsTable`, and `PaymentRow` show the payment ID, linked
+loan, installment or interest target, amount, paid date, recording user, and a
+total. `Record payment` opens the shared `AdminPaymentRecordDialog` with only
+pending installments and unpaid separate interest, then posts to the same
+installment or interest endpoint as the admin panel with a locked amount and
+optional `paid_at`; `PaymentSuccessAlert` confirms the result. `LenderLayout`
+provides the only in-app link to the view, and the loans list has no `Payments`
+button. No API or schema changes were needed.
 
 ### Admin panel
 
@@ -200,10 +205,10 @@ changes and restores both targets to `pending`.
 - `src/server/models/InstallmentPayment.js`
 - `src/server/models/LoanInterestPayment.js`
 - `src/client/views/Payments.jsx`
-- `src/client/hooks/usePaymentsOverview.js`
+- `src/client/hooks/useAdminPayments.js` (shared by the admin and lender pages)
 - `src/components/payments/PaymentsHeader.jsx`
 - `src/components/payments/PaymentsTable.jsx`
 - `src/components/payments/PaymentRow.jsx`
+- `src/components/payments/PaymentSuccessAlert.jsx`
 - `src/client/views/admin/AdminPayments.jsx`
-- `src/client/hooks/useAdminPayments.js`
 - `src/components/admin/payments/`

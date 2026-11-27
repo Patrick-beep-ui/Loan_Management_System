@@ -1,28 +1,72 @@
-import { useNavigate } from "react-router-dom";
-
+import PaymentRecordDialog from "@/components/admin/payments/AdminPaymentRecordDialog";
 import ErrorAlert from "@/components/loans/create/ErrorAlert";
+import PaymentSuccessAlert from "@/components/payments/PaymentSuccessAlert";
 import PaymentsHeader from "@/components/payments/PaymentsHeader";
 import PaymentsTable from "@/components/payments/PaymentsTable";
 import { Card, CardContent } from "@/components/ui/card";
-import { usePaymentsOverview } from "@/client/hooks/usePaymentsOverview";
+import { useAdminPayments } from "@/client/hooks/useAdminPayments";
 
 export default function Payments() {
-  const navigate = useNavigate();
-  const { payments, loading, error, refresh } = usePaymentsOverview();
+  const {
+    payments,
+    loading,
+    loadingLoans,
+    error,
+    success,
+    dismissSuccess,
+    refresh,
+    recordOpen,
+    loanOptions,
+    selectedLoanId,
+    targetOptions,
+    selectedTargetKey,
+    selectedTarget,
+    paidAt,
+    recordError,
+    submitting,
+    openRecord,
+    closeRecord,
+    changeLoan,
+    changeTarget,
+    changePaidAt,
+    confirmRecord,
+  } = useAdminPayments();
 
   return (
-    <main className="min-h-screen bg-background px-4 pt-4 pb-10">
-      <Card className="mx-auto w-full max-w-6xl">
-        <PaymentsHeader
-          refreshing={loading}
-          onRefresh={refresh}
-          onBack={() => navigate("/loans")}
+    <Card className="mx-auto w-full max-w-6xl">
+      <PaymentsHeader
+        refreshing={loading || loadingLoans}
+        recording={submitting}
+        onRefresh={refresh}
+        onRecord={openRecord}
+      />
+      <CardContent className="space-y-4">
+        <PaymentSuccessAlert
+          visible={Boolean(success)}
+          message={success}
+          onDismiss={dismissSuccess}
         />
-        <CardContent className="space-y-4">
-          <ErrorAlert message={error} />
-          <PaymentsTable payments={payments} loading={loading} />
-        </CardContent>
-      </Card>
-    </main>
+        <ErrorAlert message={error} />
+        <PaymentsTable payments={payments} loading={loading} />
+      </CardContent>
+
+      <PaymentRecordDialog
+        open={recordOpen}
+        loanOptions={loanOptions}
+        targetOptions={targetOptions}
+        selectedLoanId={selectedLoanId}
+        selectedTargetKey={selectedTargetKey}
+        selectedTarget={selectedTarget}
+        paidAt={paidAt}
+        error={recordError}
+        loadingLoans={loadingLoans}
+        submitting={submitting}
+        onLoanChange={changeLoan}
+        onTargetChange={changeTarget}
+        onPaidAtChange={changePaidAt}
+        onClose={closeRecord}
+        onConfirm={confirmRecord}
+      />
+    </Card>
   );
 }

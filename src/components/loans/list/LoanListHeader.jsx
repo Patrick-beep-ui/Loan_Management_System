@@ -19,14 +19,6 @@ export default function LoanListHeader({ description, onCreateLoan }) {
       <CardDescription>{description}</CardDescription>
       <CardAction>
         <div className="flex gap-2">
-          {!isAdmin && (
-            <Link
-              to="/payments"
-              className={buttonVariants({ variant: "outline" })}
-            >
-              Payments
-            </Link>
-          )}
           {isAdmin && (
             <Link
               to="/admin/dashboard"

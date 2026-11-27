@@ -170,9 +170,13 @@ protects `/admin`.
 Views live in `src/client/views/`,
 reusable primitives in `src/components/ui/`, and domain components in
 `src/components/<domain>/`, grouped by purpose when there is more than one
-flow. `LenderLayout` wraps the general authenticated pages with a top bar that
-includes `Loans`, `Payments`, and `Stakeholders` links plus a `Log out` button;
-`/change-password` and `/admin` remain outside it.
+flow. `LenderLayout` mirrors `AdminLayout`: `px-4 py-10`, a centered `max-w-6xl`
+container, a `Lenders` heading, a `mb-8` underlined navigation bar with
+`Loans`, `Payments`, and `Stakeholders`, and a right-aligned `Log out` button.
+The general views render only their cards inside that shell;
+`/change-password` and `/admin` remain outside it. The bar is the only in-app
+link to the lender Payments and Stakeholders views; the Payments header also
+offers `Record payment`, while Stakeholders keeps only `Refresh`.
 
 | Route | View | Access |
 | --- | --- | --- |
@@ -235,11 +239,13 @@ are no payments, and supports recording and reverting payments from the
 components in `src/components/payments/`. `LoanInstallmentsTable` marks
 date-overdue installments and, when the route state contains
 `focusInstallmentId`, highlights and scrolls to that specific installment.
-`Payments` provides the lender-facing history at `/payments` through
-`usePaymentsOverview` and `api.get("/payments")` without a `loan_id`; the
-existing API scope returns only that lender's loans. The read-only table shows
+`Payments` is the lender-facing page at `/payments`: it reuses the shared
+`useAdminPayments` hook to call `api.get("/payments")` without a `loan_id` and
+load the lender-scoped `api.get("/loans")` for pending targets. The table shows
 linked loans, installment or interest targets, amounts, dates, recording users,
-and a total, with a link from the loans list. `Stakeholders` is the read-only
+and a total, and `Record payment` opens the same dialog as `/admin/payments` to
+pay a pending installment or separate interest. The existing API scope returns
+only that lender's loans. `Stakeholders` is the read-only
 lender view at `/stakeholders`: `useLenderStakeholders` reads
 `api.get("/stakeholders")` and the already scoped `api.get("/loans")`, and
 `lenderStakeholders.js` keeps the customers and guarantors on those loans while
@@ -338,8 +344,7 @@ src/
 │  ├─ contexts/             AuthContext: provider, hook, and guards
 │  ├─ hooks/                useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails,
 │  │                       useEditLoanForm, useLoanPayment, usePayments,
-│  │                       usePaymentRevert, usePaymentsOverview,
-│  │                       useLenderStakeholders,
+│  │                       usePaymentRevert, useLenderStakeholders,
 │  │                       useChangePassword, useAdminUsers, useAdminStakeholders,
 │  │                       useAdminStakeholderProfile, useAdminLoans,
 │  │                       useAdminPayments, useAdminDashboard

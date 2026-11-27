@@ -36,29 +36,21 @@ export default function PaymentsTable({ payments, loading }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {loading ? (
-            <TableRow>
-              <TableCell
-                colSpan={6}
-                className="text-center text-muted-foreground"
-              >
-                Loading payments...
-              </TableCell>
-            </TableRow>
-          ) : payments.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={6}
-                className="text-center text-muted-foreground"
-              >
-                No payments found.
-              </TableCell>
-            </TableRow>
-          ) : (
-            payments.map((payment) => (
-              <PaymentRow key={payment.payment_id} payment={payment} />
-            ))
-          )}
+          {!loading &&
+            (payments.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
+                  No payments found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              payments.map((payment) => (
+                <PaymentRow key={payment.payment_id} payment={payment} />
+              ))
+            ))}
         </TableBody>
         {!loading && payments.length > 0 && (
           <TableFooter>

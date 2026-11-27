@@ -110,11 +110,7 @@ export default function AdminUserEditDialog({
                                     Details linked to this account.
                                 </p>
                             </div>
-                            {stakeholderLoading ? (
-                                <p className="text-sm text-muted-foreground">
-                                    Loading stakeholder details...
-                                </p>
-                            ) : stakeholderReady ? (
+                            {stakeholderLoading ? null : stakeholderReady ? (
                                 <StakeholderFormFields
                                     values={stakeholderValues}
                                     fieldErrors={stakeholderFieldErrors}

@@ -80,7 +80,9 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
   `AdminPaymentRow` and `AdminPaymentRecordDialog`): list payments with
   `GET /api/payments`, record installments or pending interest with the
   existing endpoints and reuse `usePaymentRevert` with `RevertPaymentDialog`
-  for reversals. The recording options come from `GET /api/loans`.
+  for reversals. The recording options come from `GET /api/loans`. The same
+  hook and `AdminPaymentRecordDialog` are reused by the lender `/payments` page;
+  the API scopes its loans and payments to that lender.
 - `src/client/hooks/useAdminDashboard.js`, `src/client/utils/adminDashboard.js`,
   `src/client/utils/loanStatus.js`, `src/client/utils/stakeholderProfile.js`
   and `src/components/admin/dashboard/`
@@ -128,7 +130,9 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
   interest. Recording sends `POST /api/payments/installment` or
   `POST /api/payments/interest` with the amount calculated by the destination;
   the reversal reuses `DELETE /api/payments/:id` via `usePaymentRevert`.
-  There is no generic `POST /api/payments` and no duplicate endpoints under `/admin`.
+  The lender `/payments` page reuses the same hook and recording dialog with
+  lender-scoped reads. There is no generic `POST /api/payments` and no duplicate
+  endpoints under `/admin`.
 - P7 dashboard: `/admin/dashboard` calculates metrics on the client from
   `GET /api/loans`, `GET /api/payments` and `GET /api/stakeholders`, with no
   dedicated endpoint. `adminDashboard.js` summarizes loans,

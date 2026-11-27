@@ -103,13 +103,7 @@ export function RequireAuth() {
   const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
-        Checking session...
-      </main>
-    );
-  }
+  if (loading) return null;
 
   if (!isAuthenticated) {
     return (
@@ -138,13 +132,7 @@ export function RequireAdmin() {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
-        Checking session...
-      </main>
-    );
-  }
+  if (loading) return null;
 
   if (!user) {
     return (
@@ -167,13 +155,7 @@ export function RequireLender({ adminRedirect = "/admin/payments" }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
-        Checking session...
-      </main>
-    );
-  }
+  if (loading) return null;
 
   if (!user) {
     return (

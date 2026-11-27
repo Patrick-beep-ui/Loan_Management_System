@@ -22,11 +22,6 @@ export default function AdminUsersTable({ users, loading, onEdit, onReset }) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {loading && (
-                        <TableRow>
-                            <TableCell colSpan={5}>Loading users...</TableCell>
-                        </TableRow>
-                    )}
                     {!loading && users.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={5}>No users found.</TableCell>

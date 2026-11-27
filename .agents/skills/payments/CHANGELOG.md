@@ -1,5 +1,25 @@
 # Changelog — payments
 
+### 2026-11-27 — Lender payment recording
+
+- Change: `/payments` now lets lenders record a pending installment or separate
+  interest using the shared `useAdminPayments` hook and recording dialog. The
+  read-only `usePaymentsOverview` hook was removed.
+- Impact: lenders use the same validated form and endpoints as admins, with
+  loans and payments scoped by the API to their own account. No API or schema
+  changed; reversal remains on `/loans/:id`. Details are in
+  [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
+### 2026-11-27 — Lender payments header simplified
+
+- Change: removed `Back to loans` from `PaymentsHeader` and the `Payments`
+  button from `LoanListHeader`; navigation now stays in `LenderLayout`.
+- Impact: the read-only history and its data loading are unchanged, and no API
+  or schema changed. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
 ### 2026-11-26 — General lender payments view
 
 - Change: added `/payments` with `usePaymentsOverview` and components under

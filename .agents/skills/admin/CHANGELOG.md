@@ -1,5 +1,15 @@
 # Changelog — admin
 
+### 2026-11-27 — Payment recording shared with lenders
+
+- Change: `useAdminPayments` and `AdminPaymentRecordDialog` are now also used
+  by the lender `/payments` page; no admin route or endpoint was added.
+- Impact: lenders record installments and separate interest with the same form
+  and API calls as admins, while the backend keeps its lender scope. Details
+  are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ## 2026-11-26 — Stakeholder management kept in the panel
 
 - Change: removed the dashboard stakeholder card and the profile's separate

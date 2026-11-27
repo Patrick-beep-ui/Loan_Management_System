@@ -68,13 +68,7 @@ export default function ReassignLenderDialog({
                             id="admin-loan-lender"
                             className="w-full"
                         >
-                            <SelectValue
-                                placeholder={
-                                    loadingLenders
-                                        ? "Loading lender accounts..."
-                                        : "Select a lender"
-                                }
-                            />
+                            <SelectValue placeholder="Select a lender" />
                         </SelectTrigger>
                         <SelectContent>
                             {options.map((option) => (

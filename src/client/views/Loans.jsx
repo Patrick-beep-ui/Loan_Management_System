@@ -10,31 +10,29 @@ export default function Loan() {
   const loanList = useLoans();
 
   return (
-    <main className="min-h-screen bg-background px-4 py-10">
-      <Card className="mx-auto w-full max-w-6xl">
-        <LoanListHeader
-          description={loanList.description}
-          onCreateLoan={loanList.goToCreateLoan}
-        />
+    <Card className="mx-auto w-full max-w-6xl">
+      <LoanListHeader
+        description={loanList.description}
+        onCreateLoan={loanList.goToCreateLoan}
+      />
 
-        <CardContent>
-          <LoanCreatedAlert
-            visible={loanList.showCreated}
-            createdLoanId={loanList.createdLoanId}
-            onDismiss={loanList.dismissCreated}
-          />
-          <LoanDeletedAlert
-            visible={loanList.showDeleted}
-            deletedLoanId={loanList.deletedLoanId}
-            onDismiss={loanList.dismissDeleted}
-          />
-          <LoanLoadErrorAlert
-            message={loanList.error}
-            onRetry={loanList.fetchLoans}
-          />
-          <LoanTable loans={loanList.loans} loading={loanList.loading} />
-        </CardContent>
-      </Card>
-    </main>
+      <CardContent>
+        <LoanCreatedAlert
+          visible={loanList.showCreated}
+          createdLoanId={loanList.createdLoanId}
+          onDismiss={loanList.dismissCreated}
+        />
+        <LoanDeletedAlert
+          visible={loanList.showDeleted}
+          deletedLoanId={loanList.deletedLoanId}
+          onDismiss={loanList.dismissDeleted}
+        />
+        <LoanLoadErrorAlert
+          message={loanList.error}
+          onRetry={loanList.fetchLoans}
+        />
+        <LoanTable loans={loanList.loans} loading={loanList.loading} />
+      </CardContent>
+    </Card>
   );
 }

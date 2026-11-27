@@ -41,10 +41,15 @@ remaining routes are public:
 | `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | admin |
 | `/test` | `Test` (test view) | `src/client/Test.jsx` | public |
 
-`LenderLayout` (`src/client/layouts/LenderLayout.jsx`) wraps the general
-authenticated views and shows a top bar with `Loans`, `Payments`, and
-`Stakeholders` text links plus `LogoutButton`; `ChangePassword` and the
-`/admin` panel stay outside that shell. The button calls `useAuth().logout()`
+`LenderLayout` (`src/client/layouts/LenderLayout.jsx`) mirrors `AdminLayout`:
+`main` with `px-4 py-10`, a centered `max-w-6xl` container, a `Lenders` heading
+with `mb-6`, and a `mb-8` bottom-bordered navigation bar. The bar keeps the
+`Loans`, `Payments`, and `Stakeholders` text links with the same active-border
+styling as `AdminNav`, plus a right-aligned `LogoutButton`. The general views
+now render only their cards inside the shell; `ChangePassword` and the `/admin`
+panel stay outside it. That bar is the only in-app navigation to the lender
+`Payments` and `Stakeholders` views; the Payments header adds `Record payment`,
+while Stakeholders keeps just `Refresh`. The button calls `useAuth().logout()`
 and navigates to `/login` with `replace: true`.
 
 `Login` consumes `/api/auth/login` through the shared service
@@ -67,17 +72,21 @@ and error states with retry, a `New loan` button that navigates to `/create-loan
 `401` clears the session and `RequireAuth` returns to `/login`. `CreateLoan` is a functional
 form: it loads `GET /api/stakeholders`, allows selecting or creating guarantors,
 generates an installment preview, and sends `POST /api/loans` after approval;
-it does not record payments; that action occurs from `LoanDetails`. `LoanDetails` consumes `GET /api/loans/:id` and displays
+it does not record payments; that action occurs from `LoanDetails` or the lender
+`Payments` page. `LoanDetails` consumes `GET /api/loans/:id` and displays
 the summary, schedule, guarantors, collateral, and interest status; from
 there you navigate to `/loans/:id/edit` and delete the loan with `Dialog` only if
 there are no recorded payments. `EditLoan` retrieves the same loan: without payments
 it fills the shared form and sends `PUT /api/loans/:id` with all the
 arrays; with payments it shows a reduced form and sends `PATCH /api/loans/:id`
 only with guarantors, collateral, and, for `admin`, `lender_id`. `Payments` is
-the lender-facing history at `/payments`: `usePaymentsOverview` calls
-`GET /api/payments` without `loan_id`, and the table lists linked loans,
-targets, amounts, dates, recorders, and a total. `RequireLender` redirects
-admins to `/admin/payments`; the loans page links lenders to the view.
+the lender-facing page at `/payments`: the shared `useAdminPayments` hook lists
+`GET /api/payments` without `loan_id` and loads the lender-scoped `GET /api/loans`
+to build pending targets. The table lists linked loans, targets, amounts, dates,
+recorders, and a total, while `Record payment` opens the same dialog as
+`/admin/payments` and posts to the installment or interest endpoint.
+`RequireLender` redirects admins to `/admin/payments`; `LenderLayout` links to
+the view.
 `Stakeholders` is the read-only lender view at `/stakeholders`:
 `useLenderStakeholders` reads `GET /api/stakeholders` and the lender-scoped
 `GET /api/loans`, while `lenderStakeholders.js` keeps customers and guarantors
@@ -105,7 +114,7 @@ authentication flow.
 - `axios` is used only through `src/lib/axiosService.js`; `Login`,
   `ChangePassword`, `Test.jsx`, and the hooks `useChangePassword`, `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
-  `usePayments`, `usePaymentRevert`, `usePaymentsOverview`,
+  `usePayments`, `usePaymentRevert`,
   `useLenderStakeholders`, `useAdminUsers`,
   `useAdminStakeholders`, `useAdminStakeholderProfile`, `useAdminLoans`,
   `useAdminPayments`, and `useAdminDashboard` import that instance instead of
@@ -134,22 +143,26 @@ Keep this in mind when adding new components.
 ### Domain components
 
 `src/components/auth/LogoutButton.jsx` clears the session through
-`useAuth().logout()` and returns to `/login`; `LenderLayout` renders it in the
-general top bar.
+`useAuth().logout()` and returns to `/login`; `LenderLayout` renders it at the
+right end of the general navigation bar.
 
 `src/components/payments/` also holds the lender history components:
 
 | File | Responsibility |
 | --- | --- |
-| `PaymentsHeader.jsx` | title, description, `Back to loans`, and `Refresh` actions |
+| `PaymentsHeader.jsx` | title, description, `Refresh`, and `Record payment` actions |
 | `PaymentsTable.jsx` | read-only history table with loading, empty, and total states |
 | `PaymentRow.jsx` | payment, loan link, target, amount, date, and recording user |
+
+The lender page reuses `AdminPaymentRecordDialog` from
+`src/components/admin/payments/`, so the recording form matches the admin panel
+while the API applies the lender scope.
 
 `src/components/stakeholders/` holds the lender view components:
 
 | File | Responsibility |
 | --- | --- |
-| `StakeholdersHeader.jsx` | title, description, `Back to loans`, and `Refresh` actions |
+| `StakeholdersHeader.jsx` | title, description, and `Refresh` action |
 | `StakeholdersTable.jsx` | table with loading, empty, roles, loan links, and totals |
 | `StakeholderRow.jsx` | person, national ID, occupation, loan roles, and linked loans |
 
@@ -219,7 +232,7 @@ the corresponding folder with the `@/` alias.
 
 | File | Responsibility |
 | --- | --- |
-| `LoanListHeader.jsx` | title, description based on the user, and `New loan` button |
+| `LoanListHeader.jsx` | title, description based on the user, `Admin` link for admins, and `New loan` button; no `Payments` button for lenders |
 | `LoanCreatedAlert.jsx` | dismissible `role="status"` notice after creation |
 | `LoanDeletedAlert.jsx` | dismissible `role="status"` notice after deletion |
 | `LoanLoadErrorAlert.jsx` | load error with `Retry` action |
@@ -335,7 +348,7 @@ for that event and clears the user.
   loading, login, logout, refreshUser }`, and renders `<Outlet />`.
 - `useAuth()` lets you read the user and session actions from any
   view; it fails if used outside the provider.
-- `RequireAuth` shows "Checking session..." while hydrating and redirects to
+- `RequireAuth` renders nothing while hydrating and redirects to
   `/login` with `state.from` if there is no session. If
   `user.must_change_password` is true it redirects to `/change-password`
   (unless already there), passing the original path in `state.from`; otherwise
@@ -522,7 +535,9 @@ sends `api.patch("/loans/:id", payload)` and returns to the detail with
   `src/client/main.jsx`.
 - Panel views go in `src/client/views/admin/` and the shell in
   `src/client/layouts/`. General authenticated views share
-  `src/client/layouts/LenderLayout.jsx`, which exposes the logout action.
+  `src/client/layouts/LenderLayout.jsx`, which mirrors `AdminLayout` spacing
+  and exposes the logout action. Shell views own the `main` padding; nested
+  views return only their content and cards.
 - Reusable primitives go in `src/components/ui/` and domain-composed components
   in `src/components/<domain>/`, grouped by purpose when there is more than one
   flow (for example, `loans/create/` and `loans/list/`).

@@ -29,11 +29,6 @@ export default function AdminPaymentsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {loading && (
-            <TableRow>
-              <TableCell colSpan={7}>Loading payments...</TableCell>
-            </TableRow>
-          )}
           {!loading && payments.length === 0 && (
             <TableRow>
               <TableCell colSpan={7}>No payments found.</TableCell>

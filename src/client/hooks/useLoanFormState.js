@@ -157,7 +157,7 @@ export function useLoanFormState() {
     (stakeholder) => String(stakeholder.stakeholder_id) !== String(lenderId),
   );
   const stakeholderPlaceholder = loadingStakeholders
-    ? "Loading stakeholders..."
+    ? "Select a stakeholder"
     : stakeholders.length === 0
       ? "No stakeholders found"
       : "Select a stakeholder";

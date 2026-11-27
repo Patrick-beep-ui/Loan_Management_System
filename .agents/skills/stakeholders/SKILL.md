@@ -100,7 +100,8 @@ row per customer or guarantor found on those loans. The authenticated lender is
 excluded, using `user.stakeholder_id` or the `lender_id` of the scoped loans.
 Each row shows name, national ID, occupation, loan roles, and links to the
 associated loans. `RequireLender` redirects admins to `/admin/stakeholders`, and
-`LenderLayout` links to the view.
+`LenderLayout` is the only in-app link to the view; its header keeps just
+`Refresh`.
 
 ## Errors
 

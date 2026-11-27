@@ -25,9 +25,7 @@ export default function AdminDashboard() {
       <CardContent className="space-y-6">
         <AdminDashboardAlerts error={error} />
 
-        {loading ? (
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        ) : (
+        {!loading && (
           <>
             <AdminDashboardCards metrics={metrics} />
             <AdminDashboardOverdue installments={overdueInstallments} />
