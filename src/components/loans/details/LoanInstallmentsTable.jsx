@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -9,10 +11,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatAmount, formatDate } from "@/client/utils/loanFormat";
+import { isInstallmentOverdue } from "@/client/utils/loanStatus";
 import { findInstallmentPayment } from "@/client/utils/paymentHistory";
 
 export default function LoanInstallmentsTable({
   installments,
+  focusInstallmentId,
   payments = [],
   onPay,
   onRevert,
@@ -24,6 +28,16 @@ export default function LoanInstallmentsTable({
           Number(left.installment_number) - Number(right.installment_number),
       )
     : [];
+  const focusedRowRef = useRef(null);
+
+  useEffect(() => {
+    if (focusInstallmentId == null) return;
+
+    focusedRowRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [focusInstallmentId]);
 
   return (
     <section className="space-y-3">
@@ -53,6 +67,12 @@ export default function LoanInstallmentsTable({
             rows.map((installment) => {
               const isPaid =
                 String(installment.status).toLowerCase() === "paid";
+              const isFocused =
+                focusInstallmentId != null &&
+                String(
+                  installment.installment_id ?? installment.installment_number,
+                ) === String(focusInstallmentId);
+              const overdue = isInstallmentOverdue(installment);
               const recordedPayment = findInstallmentPayment(
                 payments,
                 installment.installment_id,
@@ -63,13 +83,28 @@ export default function LoanInstallmentsTable({
                   key={
                     installment.installment_id ?? installment.installment_number
                   }
+                  ref={isFocused ? focusedRowRef : null}
+                  data-state={isFocused ? "selected" : undefined}
+                  aria-current={isFocused ? "true" : undefined}
+                  className={
+                    isFocused ? "ring-1 ring-inset ring-primary/40" : undefined
+                  }
                 >
                   <TableCell>{installment.installment_number}</TableCell>
                   <TableCell>{formatDate(installment.due_date)}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatAmount(installment.amount_due)}
                   </TableCell>
-                  <TableCell>{installment.status || "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>{installment.status || "—"}</span>
+                      {overdue && (
+                        <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+                          Overdue
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">
                     {isPaid ? (
                       <Button

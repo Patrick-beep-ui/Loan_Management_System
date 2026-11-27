@@ -1,5 +1,19 @@
 # Changelog — admin
 
+## 2026-11-26 — Overdue installments in the dashboard
+
+- Change: the dashboard now renders an overdue-installment table from the
+  existing `GET /api/loans` data. `buildOverdueInstallments` and the shared
+  `loanStatus.js` helper drive the card count, the sorted list and the
+  `Overdue` badge in loan details. Each row links to `/loans/:id` with
+  `state.focusInstallmentId` to highlight and scroll to that installment.
+- Impact: admins can see and open overdue installments directly. Separate
+  interest remains outside the list because it has no `due_date`; no API,
+  endpoint or status-transition behavior changed.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed the
+  helper marks a past-due pending installment, accepts a due-today installment
+  and ignores paid ones. Not tested in a browser or against a server.
+
 ## 2026-11-26 — Admin user creation and password reset UI
 
 - Change: `/admin/users` gained a `New user` dialog and a per-row `Reset

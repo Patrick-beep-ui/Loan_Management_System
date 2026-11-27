@@ -82,6 +82,7 @@ export default function LoanDetails() {
                 <LoanSummary loan={details.loan} />
                 <LoanInstallmentsTable
                   installments={details.loan.installments}
+                  focusInstallmentId={details.focusInstallmentId}
                   payments={payments.payments}
                   onPay={payment.openInstallment}
                   onRevert={(recordedPayment, installment) =>

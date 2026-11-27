@@ -144,6 +144,7 @@ Keep this in mind when adding new components.
 | `dashboard/AdminDashboardHeader.jsx` | title, description, and refresh button |
 | `dashboard/AdminDashboardAlerts.jsx` | panel error notice |
 | `dashboard/AdminDashboardCards.jsx` | cards of amounts, payments, and overdue installments |
+| `dashboard/AdminDashboardOverdue.jsx` | sorted overdue-installment table with highlighted-detail links |
 | `dashboard/AdminDashboardStatus.jsx` | status of installments, interest, and portfolio |
 | `dashboard/AdminDashboardPaymentTrend.jsx` | payments grouped by month |
 | `dashboard/AdminDashboardRecentPayments.jsx` | table of the most recent payments |
@@ -183,7 +184,7 @@ the corresponding folder with the `@/` alias.
 | --- | --- |
 | `LoanDetailsHeader.jsx` | title, `Back to loans`, `Edit`, and `Delete` actions |
 | `LoanSummary.jsx` | summary of lender, customer, amounts, and terms |
-| `LoanInstallmentsTable.jsx` | schedule sorted by installment number, with `Pay` and `Revert` actions |
+| `LoanInstallmentsTable.jsx` | schedule sorted by installment number, with `Overdue` badges, optional focused-row highlight and scroll, and `Pay`/`Revert` actions |
 | `LoanGuarantorsList.jsx` | guarantors and their stakeholder IDs |
 | `LoanCollateralsList.jsx` | collateral with estimated value |
 | `LoanInterestStatus.jsx` | ordinary interest status and its `Pay interest` and `Revert interest` actions |
@@ -342,8 +343,12 @@ endpoints with an amount calculated by the destination, and reversal reuses
 `usePaymentRevert` with `RevertPaymentDialog`. `PATCH /api/payments/:id` is not
 exposed in the panel. `/admin/dashboard` uses `useAdminDashboard` and
 `src/client/utils/adminDashboard.js` to aggregate `GET /api/loans` and
-`GET /api/payments` on the client: cards of amounts, portfolio status,
-monthly trend, and recent payments, with no dedicated endpoint.
+`GET /api/payments` on the client: cards of amounts, a list of overdue
+installments, portfolio status, monthly trend, and recent payments, with no
+dedicated endpoint. `src/client/utils/loanStatus.js` defines the shared
+date-overdue rule for the card, list and detail badge. Each overdue row links
+to `/loans/:id` with `state: { focusInstallmentId }` and separate interest is
+excluded because it has no due date.
 `LoanListHeader` shows the `Admin` link only when
 `user.Role.role_name === "admin"`. The full contract, including
 the order of later phases, lives in the `admin`
@@ -412,6 +417,9 @@ paid interest: `Delete` becomes disabled and `Edit` opens the reduced form. The 
 remains the authority and responds `409` to direct attempts.
 `DeleteLoanDialog` uses `Dialog` and, after
 `api.delete("/loans/:id")`, returns to `/loans` with `state.deletedLoanId`.
+`useLoanDetails` also reads `state.focusInstallmentId`: `LoanInstallmentsTable`
+uses it to highlight and scroll to the requested installment and marks any
+date-overdue installment with an `Overdue` badge.
 
 Payment recording opens from the `Pay` actions on each pending installment and
 `Pay interest` on the pending separate obligation. `useLoanPayment` manages
@@ -461,8 +469,9 @@ sends `api.patch("/loans/:id", payload)` and returns to the detail with
 - Session state lives in `src/client/contexts/`; consume it with
   `useAuth()` from any view.
 - Pure domain helpers go in `src/client/utils/`, such as
-  `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanEdit.js`,
-  `loanPayment.js`, `paymentHistory.js`, `userForm.js`, and `stakeholderForm.js`.
+  `loanSchedule.js`, `loanForm.js`, `loanFormat.js`, `loanStatus.js`,
+  `loanEdit.js`, `loanPayment.js`, `paymentHistory.js`, `userForm.js`, and
+  `stakeholderForm.js`.
 - Color tokens are defined in `index.css`; avoid fixed colors in
   UI components.
 - Every frontend behavior change is documented here and in

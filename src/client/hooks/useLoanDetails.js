@@ -9,6 +9,7 @@ export function useLoanDetails() {
   const location = useLocation();
   const navigate = useNavigate();
   const updatedLoanId = location.state?.updatedLoanId;
+  const focusInstallmentId = location.state?.focusInstallmentId;
   const [showUpdated, setShowUpdated] = useState(Boolean(updatedLoanId));
   const [loan, setLoan] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -96,6 +97,7 @@ export function useLoanDetails() {
   return {
     id,
     loan,
+    focusInstallmentId,
     loading,
     refreshing,
     error,

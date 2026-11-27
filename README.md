@@ -16,8 +16,8 @@ payment was received and who recorded it.
   the installments or charged separately).
 - Record the full payment of an installment or of the separately charged
   ordinary interest obligation, with the date and the user who recorded it.
-- Identify pending, paid, overdue, or rescheduled installments, and calculate
-  the daily late fee for each installment.
+- Identify pending, paid, overdue, or rescheduled installments from their due
+  dates and statuses.
 - Query a person's loan history as a customer, lender, or guarantor.
 
 ## Entities
@@ -28,7 +28,7 @@ payment was received and who recorded it.
 | `users` | Access accounts linked to a person, with `is_active` for deactivation and `must_change_password` for forced password changes. |
 | `roles` | Access roles: `admin` and `lender`. |
 | `loans` | A loan linking a lender with a customer, recording the disbursement terms and the interest mode (`included`/`separate`). |
-| `loan_installments` | Loan installments. Each has its own amount, due date, status, and daily late-fee rate. |
+| `loan_installments` | Loan installments. Each has its own amount, due date, and status. |
 | `loan_guarantors` | People acting as guarantors for a specific loan. |
 | `loan_collaterals` | Assets pledged as collateral, with a description and estimated value when known. |
 | `loan_payments` | Payments received, with their amount, date, and recording user. |
@@ -220,7 +220,10 @@ calculated by `src/client/utils/loanSchedule.js` before sending
 and `api.get("/loans/:id")`: it shows the summary, installments, guarantors,
 collateral, and interest, allows editing always and deletion only when there
 are no payments, and supports recording and reverting payments from the
-components in `src/components/payments/`. `EditLoan` reuses the creation form
+components in `src/components/payments/`. `LoanInstallmentsTable` marks
+date-overdue installments and, when the route state contains
+`focusInstallmentId`, highlights and scrolls to that specific installment.
+`EditLoan` reuses the creation form
 without payments and a restricted form when payments exist (guarantors,
 collateral, and, for admins, the lender), created from
 `src/components/loans/edit/`.
@@ -253,7 +256,11 @@ history from `GET /api/payments`, records pending installments or interest from
 `RevertPaymentDialog`. `/admin/dashboard` uses `useAdminDashboard` and
 `src/client/utils/adminDashboard.js` to aggregate loan, installment, interest,
 and payment metrics from `GET /api/loans` and `GET /api/payments`, with no
-dedicated endpoint.
+dedicated endpoint. The same data produces a list of overdue installments
+sorted by due date; each item links to `/loans/:id` with
+`state.focusInstallmentId` so the specific installment is highlighted on the
+detail page. `src/client/utils/loanStatus.js` is the shared date-overdue rule
+for the card, the list, and the detail badge.
 
 | Route | View | Status |
 | --- | --- | --- |
@@ -298,8 +305,9 @@ src/
 │  ├─ Test.jsx              test view (/test)
 │  ├─ views/                Login, ChangePassword, Loans, CreateLoan, LoanDetails, EditLoan
 │  │  └─ admin/             panel views: Dashboard, Users, Stakeholders, Loans, Payments
-│  ├─ utils/                loanFormat, loanForm, loanSchedule, loanEdit, loanPayment,
-│  │                       paymentHistory, userForm, stakeholderForm, adminDashboard
+│  ├─ utils/                loanFormat, loanStatus, loanForm, loanSchedule, loanEdit,
+│  │                       loanPayment, paymentHistory, userForm, stakeholderForm,
+│  │                       adminDashboard
 │  └─ assets/
 ├─ components/
 │  ├─ admin/                AdminNav, AdminPlaceholder, users/, stakeholders/, loans/,

@@ -72,12 +72,15 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
   `GET /api/payments`, record installments or pending interest with the
   existing endpoints and reuse `usePaymentRevert` with `RevertPaymentDialog`
   for reversals. The recording options come from `GET /api/loans`.
-- `src/client/hooks/useAdminDashboard.js`, `src/client/utils/adminDashboard.js`
-  and `src/components/admin/dashboard/` (`AdminDashboardHeader`,
-  `AdminDashboardAlerts`, `AdminDashboardCards`, `AdminDashboardStatus`,
+- `src/client/hooks/useAdminDashboard.js`, `src/client/utils/adminDashboard.js`,
+  `src/client/utils/loanStatus.js` and `src/components/admin/dashboard/`
+  (`AdminDashboardHeader`, `AdminDashboardAlerts`, `AdminDashboardCards`,
+  `AdminDashboardOverdue`, `AdminDashboardStatus`,
   `AdminDashboardPaymentTrend` and `AdminDashboardRecentPayments`): calculate
   loan, installment, interest and payment metrics on the client from
-  `GET /api/loans` and `GET /api/payments`.
+  `GET /api/loans` and `GET /api/payments`. The overdue table reuses the same
+  helper as the metric and links each installment to `/loans/:id` with a focus
+  state.
 - `src/client/views/admin/*.jsx`: domain phases replace only the content of
   their own file; no panel view is still a stub.
 - `src/components/loans/list/LoanListHeader.jsx`: `Admin` link for admins.
@@ -113,8 +116,13 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
 - P7 dashboard: `/admin/dashboard` calculates metrics on the client from
   `GET /api/loans` and `GET /api/payments`, with no dedicated endpoint.
   `adminDashboard.js` summarizes loans, paid/pending/overdue installments,
-  `included` or `separate` interest and payments by month; the view shows
-  cards, portfolio status, payment trend and the most recent payments.
+  `included` or `separate` interest and payments by month and builds a list of
+  overdue installments sorted by due date. `loanStatus.js` provides the shared
+  date-overdue rule and day count, so the card, list and loan-detail badge agree.
+  The view shows cards, the overdue list, portfolio status, payment trend and
+  the most recent payments. Each overdue row links to `/loans/:id` with
+  `state: { focusInstallmentId }`; separate interest is excluded because it has
+  no due date.
 - No functionality is duplicated under `/admin`; user administration
   (create, reset, role and status) lives under that prefix.
 
@@ -140,5 +148,6 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
 - `src/client/utils/userForm.js`
 - `src/client/utils/stakeholderForm.js`
 - `src/client/utils/adminDashboard.js`
+- `src/client/utils/loanStatus.js`
 - `src/client/views/admin/`
 - `src/components/loans/list/LoanListHeader.jsx`

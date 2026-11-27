@@ -1,5 +1,19 @@
 # Changelog — frontend
 
+### 2026-11-26 — Dashboard overdue installments with detailed focus
+
+- Change: added `AdminDashboardOverdue`, `buildOverdueInstallments` and the
+  shared `loanStatus.js` helpers. `LoanInstallmentsTable` now shows `Overdue`
+  badges and can highlight and scroll to an installment passed through
+  `state.focusInstallmentId` by the dashboard links.
+- Impact: admins can review overdue installments on `/admin/dashboard` and open
+  the exact installment in `/loans/:id`. The card count, list and detail badge
+  share one date-overdue rule; separate interest is not included because it has
+  no `due_date`.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed
+  past-due, due-today and paid cases in `loanStatus.js`. Not tested in a browser
+  or against a server.
+
 ### 2026-11-26 — Admin-only provisioning and forced password change
 
 - Change: the `/signup` route and view were removed. `ChangePassword` and
