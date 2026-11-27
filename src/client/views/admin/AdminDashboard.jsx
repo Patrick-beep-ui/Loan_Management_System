@@ -5,7 +5,6 @@ import AdminDashboardHeader from "@/components/admin/dashboard/AdminDashboardHea
 import AdminDashboardOverdue from "@/components/admin/dashboard/AdminDashboardOverdue";
 import AdminDashboardPaymentTrend from "@/components/admin/dashboard/AdminDashboardPaymentTrend";
 import AdminDashboardRecentPayments from "@/components/admin/dashboard/AdminDashboardRecentPayments";
-import AdminDashboardStakeholders from "@/components/admin/dashboard/AdminDashboardStakeholders";
 import AdminDashboardStatus from "@/components/admin/dashboard/AdminDashboardStatus";
 import { useAdminDashboard } from "@/client/hooks/useAdminDashboard";
 
@@ -15,7 +14,6 @@ export default function AdminDashboard() {
     monthlyPayments,
     recentPayments,
     overdueInstallments,
-    stakeholderSummaries,
     loading,
     error,
     refresh,
@@ -33,7 +31,6 @@ export default function AdminDashboard() {
           <>
             <AdminDashboardCards metrics={metrics} />
             <AdminDashboardOverdue installments={overdueInstallments} />
-            <AdminDashboardStakeholders stakeholders={stakeholderSummaries} />
             <div className="grid gap-6 lg:grid-cols-2">
               <AdminDashboardStatus metrics={metrics} />
               <AdminDashboardPaymentTrend payments={monthlyPayments} />

@@ -1,4 +1,3 @@
-import AdminStakeholderLoanRoles from "@/components/admin/stakeholders/AdminStakeholderLoanRoles";
 import AdminStakeholderLoansTable from "@/components/admin/stakeholders/AdminStakeholderLoansTable";
 import AdminStakeholderPersonalInfo from "@/components/admin/stakeholders/AdminStakeholderPersonalInfo";
 import AdminStakeholderProfileHeader from "@/components/admin/stakeholders/AdminStakeholderProfileHeader";
@@ -48,7 +47,6 @@ export default function AdminStakeholderProfile() {
           profile && (
             <div className="space-y-6">
               <AdminStakeholderPersonalInfo profile={profile} />
-              <AdminStakeholderLoanRoles profile={profile} />
               <AdminStakeholderLoansTable records={profile.loanRecords} />
             </div>
           )
