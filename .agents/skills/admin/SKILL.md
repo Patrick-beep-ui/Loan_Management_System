@@ -40,8 +40,11 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
 ## Components
 
 - `src/client/layouts/AdminLayout.jsx`: shell with a title, `AdminNav` and `Outlet`.
-- `src/components/admin/AdminNav.jsx`: navigation with `NavLink`; the active item uses
-  `buttonVariants` with `variant="default"` and the others with `"outline"`.
+- `src/components/admin/AdminNav.jsx`: horizontal text navigation with
+  `NavLink`; items use muted text and an active bottom border instead of
+  button variants. The stakeholder profile keeps `Stakeholders` active. A
+  right-aligned `Log out` button calls `useAuth().logout()` and navigates to
+  `/login`.
 - `src/components/admin/AdminPlaceholder.jsx`: reusable placeholder card;
   no longer used by the panel views.
 - `src/components/admin/users/`: users UI (`AdminUsersHeader`,

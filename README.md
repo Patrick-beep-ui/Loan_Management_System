@@ -233,7 +233,9 @@ collateral, and, for admins, the lender), created from
 
 The client panel lives under `/admin` and uses `AdminLayout`
 (`src/client/layouts/`), `AdminNav` (`src/components/admin/`), and views in
-`src/client/views/admin/`. `RequireAdmin`, defined in `AuthContext.jsx`,
+`src/client/views/admin/`. The navigation bar includes a `Log out` action that
+clears the session and returns to `/login`. `RequireAdmin`, defined in
+`AuthContext.jsx`,
 redirects non-admins to `/loans`; real authorization stays in the API, where
 `/api/admin/*` is protected by `requireAdmin`. `LoanListHeader` shows the
 `Admin` link only to admins.

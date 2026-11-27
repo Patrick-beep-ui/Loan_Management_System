@@ -117,7 +117,7 @@ Keep this in mind when adding new components.
 
 | File | Responsibility |
 | --- | --- |
-| `AdminNav.jsx` | navigation with `NavLink`; the active one uses `variant="default"` and the others `"outline"` |
+| `AdminNav.jsx` | horizontal text navigation with `NavLink`, active bottom border, and a right-aligned `Log out` button |
 | `AdminPlaceholder.jsx` | reusable placeholder card; no longer used by the panel |
 | `users/AdminUsersHeader.jsx` | title, description, `Refresh` and `New user` actions |
 | `users/AdminUsersAlerts.jsx` | error and success notices for the user flow |

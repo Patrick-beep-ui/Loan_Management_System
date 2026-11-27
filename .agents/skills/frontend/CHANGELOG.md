@@ -1,5 +1,24 @@
 # Changelog — frontend
 
+### 2026-11-26 — Admin log out action
+
+- Change: added a `Log out` button to `AdminNav`; it uses the existing
+  `useAuth().logout()` action and replaces the current history entry with
+  `/login`.
+- Impact: the session is cleared from any admin page without adding a new
+  authentication route or changing the navigation links.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
+### 2026-11-26 — Admin navigation redesigned as text links
+
+- Change: `AdminNav` replaced `buttonVariants` links with a horizontal,
+  text-only navigation bar using an active bottom border, muted idle text, and
+  a clear hover/focus state.
+- Impact: the admin shell looks like a conventional dashboard navigation; the
+  five routes, active tracking, and nested stakeholder profile behavior are
+  unchanged.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
 ### 2026-11-26 — Stakeholder type filters in the admin table
 
 - Change: `AdminStakeholdersFilter` and `stakeholderCategory.js` were added.

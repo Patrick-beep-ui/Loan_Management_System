@@ -1,5 +1,23 @@
 # Changelog — admin
 
+## 2026-11-26 — Log out from the admin navigation
+
+- Change: `AdminNav` gained a right-aligned `Log out` button that calls
+  `useAuth().logout()` and navigates to `/login` with `replace: true`.
+- Impact: admins can end the session from any panel page. The token and user
+  state are cleared through the existing auth context; routes and guards are
+  unchanged.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
+## 2026-11-26 — Text-based admin navigation
+
+- Change: `AdminNav` now renders a horizontal bar of text links with a subtle
+  bottom border and an active underline instead of five button-styled links.
+- Impact: the same five admin sections and routes are available; active state
+  remains automatic through `NavLink`, including the stakeholder profile.
+  Authorization and views are unchanged.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
+
 ## 2026-11-26 — Stakeholder type filters
 
 - Change: added `AdminStakeholdersFilter` and `stakeholderCategory.js`.
