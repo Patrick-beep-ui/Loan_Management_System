@@ -25,6 +25,17 @@ nullable, adds `status`, adds the unique key on `loan_id`, and adds
 `2026-11-25-admin-user-management.sql` adds `users.is_active` as a non-null
 boolean defaulting to `TRUE`; `checkAuth` reads it on every authenticated
 request.
+`2026-11-26-user-provisioning.sql` adds `users.must_change_password` as a non-null
+boolean defaulting to `FALSE`; accounts created by an admin are inserted with
+`TRUE` and must change their password before using the rest of the API.
+
+## Seeding the first admin
+
+With public signup removed, `database/seeds/createFirstAdmin.js` creates the
+first `admin` account from `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and
+`ADMIN_STAKEHOLDER_ID`. Run it with `pnpm seed:admin` after applying the
+migrations. It refuses to run when an admin already exists and marks the new
+account with `must_change_password = TRUE`.
 
 Run a migration with the same `mysql2` connection method described below, then
 verify the affected columns, keys, and constraints with `information_schema`.

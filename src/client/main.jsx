@@ -14,7 +14,7 @@ import AdminLayout from "./layouts/AdminLayout";
 
 // Views
 import Login from "./views/Login";
-import Signup from "./views/Signup";
+import ChangePassword from "./views/ChangePassword";
 import Loan from "./views/Loans";
 import CreateLoan from "./views/CreateLoan";
 import LoanDetails from "./views/LoanDetails";
@@ -39,12 +39,12 @@ const router = createBrowserRouter([
         element: <Login />,
       },
       {
-        path: "/signup",
-        element: <Signup />,
-      },
-      {
         element: <RequireAuth />,
         children: [
+          {
+            path: "/change-password",
+            element: <ChangePassword />,
+          },
           {
             path: "/loans",
             element: <Loan />,

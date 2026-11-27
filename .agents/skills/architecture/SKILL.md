@@ -51,9 +51,10 @@ imports `models/associations.js`, registers the public routers, and then applies
 `checkAuth` to everything that follows:
 
 ```js
-api.use("/auth", AuthRouter); // public: /api/auth
+api.use("/auth", AuthRouter); // public: login
 
 api.use(checkAuth); // protects everything registered below
+api.use(requirePasswordChanged); // temporary passwords can only be changed
 
 api.use("/admin", AdminRouter); // /api/admin (admin only)
 api.use("/users", UserRouter); // /api/users
@@ -67,7 +68,9 @@ Order matters: any router registered after `checkAuth` requires
 `Authorization: Bearer <token>`.
 
 `AdminRouter` (`src/server/routes/adminRoutes.js`) applies `requireAdmin` to
-everything registered below it and directly defines `PATCH /users/:userId` →
+everything registered below it and directly defines `POST /users` →
+`POST /api/admin/users`, `POST /users/:userId/reset-password` →
+`POST /api/admin/users/:userId/reset-password`, and `PATCH /users/:userId` →
 `PATCH /api/admin/users/:userId`. There are no per-resource subrouters; the
 listing remains at `GET /api/users`.
 
@@ -75,9 +78,13 @@ listing remains at `GET /api/users`.
 
 - `src/server/middlewares/checkAuth.js`: validates the JWT from the
   `Authorization: Bearer <token>` header, queries `users` and `Role` in the
-  database, and sets `req.user = { user_id, role_id, role_name, stakeholder_id }`
-  with up-to-date values. Responds `401` if the token is missing, invalid, the
-  user does not exist, or the account is inactive (`is_active = false`).
+  database, and sets `req.user = { user_id, role_id, role_name, stakeholder_id,
+  must_change_password }` with up-to-date values. Responds `401` if the token is
+  missing, invalid, the user does not exist, or the account is inactive
+  (`is_active = false`).
+- `src/server/middlewares/requirePasswordChanged.js`: when
+  `req.user.must_change_password` is true, allows only `/users/auth` and
+  `/users/me/password`; every other path responds `403 Password change required`.
 - `src/server/middlewares/requireAdmin.js`: responds `403` if the authenticated
   user's role is not `admin`; `api.js` applies it to the `/api/admin` router and
   `stakeholderRoutes.js` applies it to its mutations. Stakeholder `GET`s remain
@@ -100,8 +107,8 @@ method per line:
 UserRouter.route("/")
     .get(getAllUsers);
 
-AuthRouter.route("/signup")
-    .post(signup);
+UserRouter.route("/me/password")
+    .patch(changePassword);
 ```
 
 ## Error handling

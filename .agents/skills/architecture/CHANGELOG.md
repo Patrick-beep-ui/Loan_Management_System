@@ -1,5 +1,16 @@
 # Changelog — architecture
 
+## 2026-11-26 — Admin user provisioning and forced password change
+
+- Change: `api.js` mounts `requirePasswordChanged` after `checkAuth`;
+  `AdminRouter` gained `POST /users` and `POST /users/:userId/reset-password`;
+  `UserRouter` gained `PATCH /me/password`. Public signup was removed.
+- Impact: accounts with `must_change_password = true` can reach only session
+  hydration and password change until they set a new password. All new routes
+  keep the routes → controllers → services → models layering and typed errors.
+- Verification: `node --check` on modified backend files, validator smoke
+  tests, and middleware path checks passed; no live API tests.
+
 ## 2026-11-25 — Admin guard on stakeholder mutations
 
 - Change: `stakeholderRoutes.js` passes `requireAdmin` to `POST`, `PUT`, `PATCH`,

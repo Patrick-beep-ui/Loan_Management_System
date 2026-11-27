@@ -16,14 +16,15 @@ The change history for this module is in [`CHANGELOG.md`](CHANGELOG.md).
 `src/client/main.jsx` creates the router with `createBrowserRouter` and mounts
 `RouterProvider` inside `React.StrictMode`. A route without `path` mounts
 `AuthProvider` as the root layout; inside it, `RequireAuth` protects
-`/loans`, `/create-loan`, `/loans/:id`, and `/loans/:id/edit`, while `RequireAdmin`
-protects `/admin` and its children. The remaining routes are public:
+`/change-password`, `/loans`, `/create-loan`, `/loans/:id`, and
+`/loans/:id/edit`, while `RequireAdmin` protects `/admin` and its children.
+The remaining routes are public:
 
 | Route | View | File | Access |
 | --- | --- | --- | --- |
 | `/` | `App` (initial Vite demo) | `src/client/App.jsx` | public |
 | `/login` | `Login` | `src/client/views/Login.jsx` | public |
-| `/signup` | `Signup` | `src/client/views/Signup.jsx` | public |
+| `/change-password` | `ChangePassword` | `src/client/views/ChangePassword.jsx` | protected, forced |
 | `/loans` | `Loan` | `src/client/views/Loans.jsx` | protected |
 | `/create-loan` | `CreateLoan` | `src/client/views/CreateLoan.jsx` | protected |
 | `/loans/:id` | `LoanDetails` | `src/client/views/LoanDetails.jsx` | protected |
@@ -36,14 +37,16 @@ protects `/admin` and its children. The remaining routes are public:
 | `/admin/payments` | `AdminPayments` | `src/client/views/admin/AdminPayments.jsx` | admin |
 | `/test` | `Test` (test view) | `src/client/Test.jsx` | public |
 
-`Login` and `Signup` consume `/api/auth` through the shared service
-`src/lib/axiosService.js` (`api.post`): they validate the fields, disable the button
-while submitting, and show `error.response?.data?.error` or a network message in
+`Login` consumes `/api/auth/login` through the shared service
+`src/lib/axiosService.js` (`api.post`): it validates the fields, disables the button
+while submitting, and shows `error.response?.data?.error` or a network message in
 a `role="alert"` region with `destructive` tokens. `Login` uses
 `useAuth().login(token)` to save the JWT in `localStorage`, load the
 user with `/users/auth`, and navigate to the original route (`state.from`) or
-`/loans`. `Signup` sends `email`, `password`, and `stakeholder_id` as a positive
-integer and, after `201`, navigates to `/login` with a successful registration notice.
+`/loans`. Public signup was removed. `ChangePassword` uses
+`useChangePassword` to validate current/new/confirm fields, sends
+`PATCH /users/me/password`, calls `refreshUser()`, and navigates to
+`state.from` or `/loans` after success.
 `Loan` consumes `/api/loans` with `api.get("/loans")` and displays a table
 listing with ID, lender, customer, amount, rate, mode, disbursement date, and
 total to pay; it uses `useAuth().user` only to display the name and role, because the
@@ -80,7 +83,7 @@ authentication flow.
   provides routing. The CLI installation also added `shadcn` and
   `install` as dependencies; the current code does not use them.
 - `axios` is used only through `src/lib/axiosService.js`; `Login`,
-  `Signup`, `Test.jsx`, and the hooks `useLoans`, `useLoanFormState`,
+  `ChangePassword`, `Test.jsx`, and the hooks `useChangePassword`, `useLoans`, `useLoanFormState`,
   `useCreateLoanForm`, `useLoanDetails`, `useEditLoanForm`, `useLoanPayment`,
   `usePayments`, `usePaymentRevert`, `useAdminUsers`, `useAdminStakeholders`,
   `useAdminLoans`, `useAdminPayments`, and `useAdminDashboard` import that
@@ -114,11 +117,13 @@ Keep this in mind when adding new components.
 | --- | --- |
 | `AdminNav.jsx` | navigation with `NavLink`; the active one uses `variant="default"` and the others `"outline"` |
 | `AdminPlaceholder.jsx` | reusable placeholder card; no longer used by the panel |
-| `users/AdminUsersHeader.jsx` | title, description, and refresh button |
+| `users/AdminUsersHeader.jsx` | title, description, `Refresh` and `New user` actions |
 | `users/AdminUsersAlerts.jsx` | error and success notices for the user flow |
 | `users/AdminUsersTable.jsx` | table with loading and empty states |
-| `users/AdminUserRow.jsx` | row with role, status, and edit action |
+| `users/AdminUserRow.jsx` | row with role, status, `Password pending` badge, edit and reset actions |
 | `users/AdminUserEditDialog.jsx` | single dialog with role, status, and linked stakeholder data |
+| `users/AdminUserCreateDialog.jsx` | email, role and stakeholder selection; shows the one-time temporary password |
+| `users/AdminUserResetPasswordDialog.jsx` | reset confirmation; shows the one-time temporary password |
 | `stakeholders/AdminStakeholdersHeader.jsx` | title, description, and `Refresh` and `New stakeholder` actions |
 | `stakeholders/AdminStakeholdersAlerts.jsx` | error and success notices for the stakeholder flow |
 | `stakeholders/AdminStakeholdersTable.jsx` | table with loading and empty states |
@@ -259,14 +264,16 @@ That is why views call methods with paths relative to `/api`
 (`api.post("/auth/login")`, `api.get("/roles")`, `api.get("/users")`,
 `api.get("/stakeholders")`, `api.get("/stakeholders/:id")`,
 `api.post("/stakeholders")`, `api.put("/stakeholders/:id")`,
-`api.delete("/stakeholders/:id")`, `api.patch("/admin/users/:userId")`,
+`api.delete("/stakeholders/:id")`, `api.post("/admin/users")`,
+`api.post("/admin/users/:userId/reset-password")`,
+`api.patch("/admin/users/:userId")`, `api.patch("/users/me/password")`,
 `api.post("/loans")`,
 `api.put("/loans/:id")`, `api.patch("/loans/:id")`,
 `api.post("/payments/installment")`, `api.post("/payments/interest")`,
 `api.get("/payments")`, `api.delete("/payments/:id")`) and do not need to build the header or repeat the
 `/api` prefix. The response interceptor removes
 `token` and emits `auth:unauthorized` on a `401`, except on `/auth/login` and
-`/auth/signup` so credential errors are not hidden. `AuthProvider` listens
+`/users/me/password` so credential errors are not hidden. `AuthProvider` listens
 for that event and clears the user.
 
 ## Client authentication
@@ -276,30 +283,33 @@ for that event and clears the user.
 
 - `AuthProvider` is the root layout: on mount it hydrates the user with
   `api.get("/users/auth")` if there is a `token`, exposes `{ user, isAuthenticated,
-  loading, login, logout }`, and renders `<Outlet />`.
+  loading, login, logout, refreshUser }`, and renders `<Outlet />`.
 - `useAuth()` lets you read the user and session actions from any
   view; it fails if used outside the provider.
 - `RequireAuth` shows "Checking session..." while hydrating and redirects to
-  `/login` with `state.from` if there is no session; if there is, it renders `<Outlet />`.
+  `/login` with `state.from` if there is no session. If
+  `user.must_change_password` is true it redirects to `/change-password`
+  (unless already there), passing the original path in `state.from`; otherwise
+  it renders `<Outlet />`.
 - `RequireAdmin` uses the same hydration state, redirects to `/login` without
   a session and to `/loans` if `user.Role.role_name` is not `admin`; if it is,
   it renders `<Outlet />`.
 - `login(token)` saves the JWT, loads `/users/auth`, and updates the state;
-  `logout()` clears the token and the user. Both are available via
-  `useAuth()`.
+  `refreshUser()` reloads `/users/auth` and returns the updated user;
+  `logout()` clears the token and the user. All are available via `useAuth()`.
 - The exposed user retains the Sequelize `Stakeholder` and `Role` keys
   (`user.Stakeholder.first_name`, `user.Role.role_name`, etc.). `CreateLoan`
   takes `lender_id` from `user.stakeholder_id` for `lender` accounts; `admin` selects
   it in the form.
-- Requests to `/auth/login` and `/auth/signup` use `api.post` from the
-  shared service; the final URL resolves with the configured `baseURL`. The JWT is
+- Requests to `/auth/login` and `/users/me/password` use `api.post`/`api.patch`
+  from the shared service; the final URL resolves with the configured `baseURL`. The JWT is
   saved in `localStorage` with the key `token` and the interceptor attaches it as
   `Authorization: Bearer <token>` to all requests, even public ones
   when a session already exists. That is the mechanism required by `checkAuth`.
 - Errors are read from `error.response?.data?.error`; if there is no response,
   a generic message is displayed. Both cases use a `role="alert"` region with
   `text-destructive` and `bg-destructive/10`.
-- Both views share the same composition: `Card`, `CardHeader`,
+- `Login` and `ChangePassword` share the same composition: `Card`, `CardHeader`,
   `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Label`, `Input`,
   and `Button`, with no fixed colors.
 
@@ -308,11 +318,16 @@ for that event and clears the user.
 `src/client/layouts/AdminLayout.jsx` is the shell for `/admin`: title, `AdminNav`,
 and `Outlet`. The views in `src/client/views/admin/` are replaced by each
 domain phase without touching the router; `/admin/users` lists accounts with
-`useAdminUsers` from `GET /api/users` and uses a single dialog for role, status, and
-linked stakeholder data. Those data are loaded with
+`useAdminUsers` from `GET /api/users` and `GET /api/stakeholders`, marking
+accounts with `must_change_password` as `Password pending`. The edit dialog
+combines role, status, and linked stakeholder data. Those data are loaded with
 `GET /api/stakeholders/:id` and saved with `PATCH /api/admin/users/:userId`
 plus `PUT /api/stakeholders/:id`; if there is no linked person, only
-role and status are shown. `/admin/stakeholders` uses `useAdminStakeholders` over
+role and status are shown. The `New user` dialog creates an `admin` or `lender`
+account for a stakeholder not yet linked to one through `POST /api/admin/users`
+and shows the one-time `temporary_password`. Each row can reset a password with
+`POST /api/admin/users/:userId/reset-password`, also showing the password once.
+`/admin/stakeholders` uses `useAdminStakeholders` over
 the existing CRUD of `/api/stakeholders`: listing with `GET`, creation with `POST`,
 editing with `PUT`, and deletion with `DELETE`, with local validation and
 confirmation before deleting; it hides people linked to accounts on the client. `/admin/loans` uses
@@ -441,8 +456,8 @@ sends `api.patch("/loans/:id", payload)` and returns to the detail with
 - Reusable primitives go in `src/components/ui/` and domain-composed components
   in `src/components/<domain>/`, grouped by purpose when there is more than one
   flow (for example, `loans/create/` and `loans/list/`).
-- View hooks go in `src/client/hooks/`; use the `@/` alias to
-  import from `src/`.
+- View hooks go in `src/client/hooks/` (for example `useChangePassword` and
+  `useAdminUsers`); use the `@/` alias to import from `src/`.
 - Session state lives in `src/client/contexts/`; consume it with
   `useAuth()` from any view.
 - Pure domain helpers go in `src/client/utils/`, such as

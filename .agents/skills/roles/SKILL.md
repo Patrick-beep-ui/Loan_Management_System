@@ -30,9 +30,9 @@ migration `2026-11-17-rename-operator-role-to-lender.sql`, which preserves
 `role_id`; therefore users assigned to the old `operator` are now lenders with
 no changes to their foreign keys.
 
-`POST /api/auth/signup` only creates `lender` accounts and resolves the
-`role_id` by querying this field by name, so it does not accept a role in the
-payload. `admin` is provisioned manually in the database.
+Public signup was removed. `POST /api/admin/users` creates `admin` or `lender`
+accounts by resolving `role_id` from `role_name` in the payload; the first
+`admin` is provisioned with `pnpm seed:admin`.
 
 ## Files
 

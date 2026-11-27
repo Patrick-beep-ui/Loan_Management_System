@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import AdminUserRow from "@/components/admin/users/AdminUserRow";
 
-export default function AdminUsersTable({ users, loading, onEdit }) {
+export default function AdminUsersTable({ users, loading, onEdit, onReset }) {
     return (
         <div className="rounded-lg border border-border">
             <Table>
@@ -38,6 +38,7 @@ export default function AdminUsersTable({ users, loading, onEdit }) {
                                 key={user.user_id}
                                 user={user}
                                 onEdit={onEdit}
+                                onReset={onReset}
                             />
                         ))}
                 </TableBody>

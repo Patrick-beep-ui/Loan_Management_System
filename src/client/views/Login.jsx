@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/client/contexts/AuthContext";
 import api from "@/lib/axiosService";
@@ -24,7 +24,6 @@ export default function Login() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const registered = location.state?.registered;
   const from = location.state?.from?.pathname || "/loans";
 
   async function handleSubmit(event) {
@@ -68,14 +67,6 @@ export default function Login() {
         <form onSubmit={handleSubmit}>
 
           <CardContent className="space-y-6 px-8 py-6">
-            {registered && (
-              <p
-                role="status"
-                className="rounded-lg bg-secondary/20 px-3 py-2 text-sm text-foreground"
-              >
-                Account created. Sign in to continue.
-              </p>
-            )}
             {error && (
               <p
                 role="alert"
@@ -114,15 +105,6 @@ export default function Login() {
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? "Signing in..." : "Sign in"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Need an account?{" "}
-              <Link
-                className="font-medium text-primary hover:underline"
-                to="/signup"
-              >
-                Sign up
-              </Link>
-            </p>
           </CardFooter>
         </form>
       </Card>

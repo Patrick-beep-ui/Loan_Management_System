@@ -58,13 +58,26 @@ export function AuthProvider() {
     }
   }
 
+  async function refreshUser() {
+    const { data } = await api.get("/users/auth");
+    setUser(data);
+    return data;
+  }
+
   function logout() {
     localStorage.removeItem("token");
     setUser(null);
   }
 
   const value = useMemo(
-    () => ({ user, isAuthenticated: Boolean(user), loading, login, logout }),
+    () => ({
+      user,
+      isAuthenticated: Boolean(user),
+      loading,
+      login,
+      logout,
+      refreshUser,
+    }),
     [user, loading],
   );
 
@@ -86,7 +99,7 @@ export function useAuth() {
 }
 
 export function RequireAuth() {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -98,7 +111,23 @@ export function RequireAuth() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: { pathname: location.pathname } }}
+      />
+    );
+  }
+
+  if (user?.must_change_password && location.pathname !== "/change-password") {
+    return (
+      <Navigate
+        to="/change-password"
+        replace
+        state={{ from: { pathname: location.pathname } }}
+      />
+    );
   }
 
   return <Outlet />;
@@ -117,7 +146,13 @@ export function RequireAdmin() {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: { pathname: location.pathname } }}
+      />
+    );
   }
 
   if (user.Role?.role_name !== "admin") {

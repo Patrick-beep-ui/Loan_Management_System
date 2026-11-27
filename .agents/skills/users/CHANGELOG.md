@@ -1,5 +1,18 @@
 # Changelog — users
 
+## 2026-11-26 — Admin user creation, reset, and last-admin guard
+
+- Change: `POST /api/admin/users`, `POST /api/admin/users/:userId/reset-password`,
+  and `PATCH /api/users/me/password` were added. A generated temporary password
+  is hashed and returned once; `must_change_password` is cleared only after a
+  successful password change. `updateAdminUser` now refuses to demote or
+  deactivate the last active admin.
+- Impact: users are provisioned only by admins, with `admin` or `lender` roles,
+  and must change their temporary password before other API routes respond.
+  Public signup no longer exists.
+- Verification: `node --check` on modified backend files, validator smoke
+  tests, and middleware path checks passed; no live API tests.
+
 ## 2026-11-25 — Admin editing of the linked person
 
 - Change: the `/admin/users` dialog expanded role and `is_active` editing with

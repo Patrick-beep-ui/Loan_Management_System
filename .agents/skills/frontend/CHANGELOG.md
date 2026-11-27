@@ -1,5 +1,20 @@
 # Changelog — frontend
 
+### 2026-11-26 — Admin-only provisioning and forced password change
+
+- Change: the `/signup` route and view were removed. `ChangePassword` and
+  `useChangePassword` were added under `RequireAuth`, `AuthContext` exposes
+  `refreshUser`, and `RequireAuth` redirects accounts with
+  `must_change_password` to `/change-password`. The admin users panel gained
+  create and reset dialogs with one-time temporary password display and a
+  `Password pending` badge.
+- Impact: users are created only by admins, temporary credentials force a
+  password change before other routes are usable, and the 401 interceptor
+  exception applies to `/auth/login` and `/users/me/password` so credential
+  errors remain visible instead of triggering a logout.
+- Verification: `pnpm build` succeeded and no `signup`/`Sign up` references
+  remain in the frontend; no live browser or API tests were performed.
+
 ### 2026-11-25 — P7 dashboard implemented
 
 - Change: `AdminDashboard` was no longer a stub. `useAdminDashboard`,

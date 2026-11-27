@@ -15,13 +15,17 @@ This module's change history is in [`CHANGELOG.md`](CHANGELOG.md).
 | --- | --- | --- | --- |
 | `GET` | `/api/users` | `userController.getAllUsers` | `userService.getAllUsers` |
 | `GET` | `/api/users/auth` | `userController.authUser` | `userService.authUser` |
+| `PATCH` | `/api/users/me/password` | `userController.changePassword` | `authService.changePassword` |
+| `POST` | `/api/admin/users` | `adminUserController.createAdminUser` | `adminUserService.createAdminUser` |
+| `POST` | `/api/admin/users/:userId/reset-password` | `adminUserController.resetAdminUserPassword` | `adminUserService.resetAdminUserPassword` |
 | `PATCH` | `/api/admin/users/:userId` | `adminUserController.updateAdminUser` | `adminUserService.updateAdminUser` |
 
 ## Behavior
 
-- Both routes require authentication: `Authorization: Bearer <token>`; without
+- All routes require authentication: `Authorization: Bearer <token>`; without
   a token or with an invalid token they respond `401`. This is applied by
-  `checkAuth` in `api.js`.
+  `checkAuth` in `api.js`. The `/api/admin` routes additionally require the
+  `admin` role.
 - They exclude `password_hash` from the response and, on an unexpected error,
   respond `500` with `{ error: "Internal Server Error" }`.
 - `GET /api/users` returns `200` with the array of all users, with their
@@ -35,6 +39,25 @@ This module's change history is in [`CHANGELOG.md`](CHANGELOG.md).
   `401`; if the user does not exist it responds `404` with
   `{ error: "User not found" }`.
   This is the route `AuthProvider` uses on the client to hydrate the session.
+  Its projection also includes `must_change_password`.
+- `PATCH /api/users/me/password` is authenticated and remains reachable while
+  `must_change_password` is true. It takes `{ current_password, new_password }`,
+  verifies the current hash, hashes the new password with `bcryptjs` (10 rounds),
+  clears the flag, and responds `200` with
+  `{ message: "Password changed successfully" }`. A wrong current password
+  responds `401 Current password is incorrect`; reusing the same password
+  responds `400`.
+- `POST /api/admin/users` is protected by `checkAuth` and `requireAdmin`. It
+  takes `{ email, stakeholder_id, role_name }` (`admin` or `lender`), resolves the
+  role by name, checks that the stakeholder exists and is not already linked to
+  another account, hashes a generated temporary password, creates the account
+  with `must_change_password = true`, and responds `201` with the
+  `GET /api/users/auth` projection plus `temporary_password`, shown only once.
+  A duplicate email, missing role, missing stakeholder, or already-linked
+  stakeholder responds `409`.
+- `POST /api/admin/users/:userId/reset-password` hashes a new generated
+  temporary password, sets `must_change_password = true`, and responds `200`
+  with the projection plus the one-time `temporary_password`.
 - `PATCH /api/admin/users/:userId` is protected by `checkAuth` and `requireAdmin`;
   a `lender` token responds `403 Admin access required`.
 - The payload accepts `role_name` (`admin` or `lender`) and `is_active`
@@ -42,8 +65,10 @@ This module's change history is in [`CHANGELOG.md`](CHANGELOG.md).
   `adminUserValidation`, which also requires a positive integer `user_id` and at
   least one field. An invalid `role_name` responds `400`.
 - If the user does not exist it responds `404 User not found`; if the role is
-  not in the database it responds `409 Role <name> does not exist`. An
-  unexpected error responds `500 Internal Server Error`.
+  not in the database it responds `409 Role <name> does not exist`. Demoting or
+  deactivating the last active admin responds `409 Cannot demote or deactivate
+  the last active admin`. An unexpected error responds `500 Internal Server
+  Error`.
 - The response is `200` with the updated user in the same projection as
   `GET /api/users/auth`, without `password_hash` and with `Stakeholder` and `Role`.
 
@@ -64,6 +89,12 @@ This module's change history is in [`CHANGELOG.md`](CHANGELOG.md).
   was not.
 - The stakeholder fields are reused from
   `src/components/admin/stakeholders/StakeholderFormFields.jsx`.
+- `/admin/users` also offers a `New user` action: the create dialog collects
+  email, role and a stakeholder selected from people not linked to any account,
+  then displays the returned temporary password once with a warning that it will
+  not be shown again.
+- Each row can reset a password after confirmation. The new temporary password
+  is shown once and the account returns to the forced-change state.
 
 ## Files
 
@@ -74,8 +105,10 @@ This module's change history is in [`CHANGELOG.md`](CHANGELOG.md).
 - `src/server/services/userService.js`
 - `src/server/services/adminUserService.js`
 - `src/server/utils/validators/adminUserValidation.js`
+- `src/server/utils/temporaryPassword.js`
 
-User creation does not live here: it belongs to the `auth` module via
-`POST /api/auth/signup`, which always creates `lender` accounts (role resolved
-from the database, not received in the payload). The `/api/users` listing
-remains global and does not filter by role.
+User creation no longer lives in `auth`: public signup was removed and only an
+admin can create accounts through `POST /api/admin/users`. New accounts start
+with `must_change_password = true`; the first admin is provisioned with
+`pnpm seed:admin` (see the `database` module). The `/api/users` listing remains
+global and does not filter by role.

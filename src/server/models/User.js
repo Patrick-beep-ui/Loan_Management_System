@@ -26,6 +26,11 @@ const User = connection.define("User", { // table name = users
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true
+    },
+    must_change_password: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
     }
 }, {
     tableName: "users",

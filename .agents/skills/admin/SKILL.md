@@ -31,8 +31,10 @@ The change history is in [`CHANGELOG.md`](CHANGELOG.md).
 hydration, redirects to `/login` if there is no user and to `/loans` if
 `user.Role.role_name` is not `admin`. It reads the user loaded by
 `GET /api/users/auth`; it does not perform its own checks against the API.
-`LoanListHeader` shows the `Admin` link only when that same value is
-`admin`. A `403` from the backend remains the last line of defense.
+`RequireAuth` first redirects accounts with `must_change_password = true` to
+`/change-password`, so an admin with a temporary password cannot reach the
+panel until it is replaced. `LoanListHeader` shows the `Admin` link only when
+the role is `admin`. A `403` from the backend remains the last line of defense.
 
 ## Components
 
@@ -42,10 +44,15 @@ hydration, redirects to `/login` if there is no user and to `/loans` if
 - `src/components/admin/AdminPlaceholder.jsx`: reusable placeholder card;
   no longer used by the panel views.
 - `src/components/admin/users/`: users UI (`AdminUsersHeader`,
-  `AdminUsersAlerts`, `AdminUsersTable`, `AdminUserRow` and
-  `AdminUserEditDialog`). The table lists from `GET /api/users`; the dialog
-  sends `PATCH /api/admin/users/:userId` for role and status and, if there is
-  a linked person, `PUT /api/stakeholders/:id` for their data.
+  `AdminUsersAlerts`, `AdminUsersTable`, `AdminUserRow`,
+  `AdminUserEditDialog`, `AdminUserCreateDialog` and
+  `AdminUserResetPasswordDialog`). The table lists from `GET /api/users` and
+  marks accounts with `must_change_password` as `Password pending`. The edit
+  dialog sends `PATCH /api/admin/users/:userId` for role and status and, if
+  there is a linked person, `PUT /api/stakeholders/:id` for their data. The
+  create dialog posts `POST /admin/users` and the reset dialog posts
+  `POST /admin/users/:userId/reset-password`; both display the returned
+  temporary password once with a warning.
 - `src/components/admin/stakeholders/`: stakeholders UI
   (`AdminStakeholdersHeader`, `AdminStakeholdersAlerts`,
   `AdminStakeholdersTable`, `AdminStakeholderRow`,
@@ -81,8 +88,11 @@ hydration, redirects to `/login` if there is no user and to `/loans` if
   `PATCH /api/admin/users/:userId` to change `role_name` and `is_active`.
   The same dialog edits the linked stakeholder's data with
   `GET /api/stakeholders/:id` and `PUT /api/stakeholders/:id`; if the account
-  has no linked person, only role and status are shown. There is no duplicate
-  `GET` under `/api/admin/users` and no combined endpoint.
+  has no linked person, only role and status are shown. Creation uses
+  `POST /api/admin/users` with `{ email, stakeholder_id, role_name }` and
+  password reset uses `POST /api/admin/users/:userId/reset-password`; both
+  return a one-time `temporary_password`. There is no duplicate `GET` under
+  `/api/admin/users` and no combined endpoint. Public signup does not exist.
 - P4 stakeholders: the panel reuses the `/api/stakeholders` CRUD. `POST`,
   `PUT`, `PATCH` and `DELETE` use `requireAdmin`; both `GET`s remain available
   to any authenticated account and the loan forms are unchanged.
@@ -105,13 +115,15 @@ hydration, redirects to `/login` if there is no user and to `/loans` if
   `adminDashboard.js` summarizes loans, paid/pending/overdue installments,
   `included` or `separate` interest and payments by month; the view shows
   cards, portfolio status, payment trend and the most recent payments.
-- No functionality is duplicated under `/admin`; only user administration
-  lives under that prefix.
+- No functionality is duplicated under `/admin`; user administration
+  (create, reset, role and status) lives under that prefix.
 
 ## Files
 
 - `src/client/main.jsx`
 - `src/client/contexts/AuthContext.jsx`
+- `src/client/views/ChangePassword.jsx`
+- `src/client/hooks/useChangePassword.js`
 - `src/client/layouts/AdminLayout.jsx`
 - `src/components/admin/AdminNav.jsx`
 - `src/components/admin/AdminPlaceholder.jsx`

@@ -1,5 +1,15 @@
 # Changelog — database
 
+## 2026-11-26 — Forced password change flag
+
+- Change: new migration `database/migrations/2026-11-26-user-provisioning.sql`
+  adds `users.must_change_password BOOLEAN NOT NULL DEFAULT FALSE` after
+  `is_active`.
+- Impact: existing accounts are unaffected; admin-created accounts are inserted
+  with `TRUE` and `requirePasswordChanged` allows only `/api/users/auth` and
+  `PATCH /api/users/me/password` until the password is changed.
+- Verification: migration written and reviewed; not applied in this session.
+
 ## 2026-11-25 — Column `is_active` on `users`
 
 - Change: new migration

@@ -74,5 +74,9 @@ The changelog for this module is in [`CHANGELOG.md`](CHANGELOG.md).
 - `users.is_active` is a non-null boolean with a default value of `true`.
   `checkAuth` checks it on every request, so deactivating an account invalidates
   its existing tokens without depending on JWT expiration.
+- `users.must_change_password` is a non-null boolean with a default value of
+  `false`. Admin-created accounts start with `true`; `checkAuth` exposes it in
+  `req.user` and `requirePasswordChanged` blocks other endpoints until
+  `PATCH /api/users/me/password` clears it.
 - Models neither create nor alter the schema and do not use `sequelize.sync()`.
   Schema changes are applied manually from `database/migrations/`.

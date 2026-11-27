@@ -1,52 +1,65 @@
 # Loan Management System
 
-Aplicación web para administrar préstamos, desde el desembolso hasta el pago de la última cuota. El sistema reúne en un solo lugar quién presta el dinero, quién lo recibe, qué fiadores o bienes respaldan el préstamo y cómo se han aplicado los pagos.
+A web application for managing loans, from disbursement through the last
+installment payment. The system brings together in one place who lends the
+money, who receives it, which guarantors or assets back the loan, and how
+payments have been applied.
 
-El propósito es **reemplazar el control manual de préstamos** por un registro que permita consultar el saldo de cada cuota, identificar vencimientos y ver cuándo se recibió cada abono y quién lo registró.
+The goal is to **replace manual loan tracking** with a record that lets you
+check the balance of each installment, identify due dates, and see when each
+payment was received and who recorded it.
 
-## Alcance
+## Scope
 
-- Registrar préstamos con su monto, tasa de interés ordinario, fecha de desembolso, calendario de cuotas, fiadores, garantías y modo de interés (incluido en las cuotas o cobrado por separado).
-- Registrar el pago total de una cuota o de la obligación de interés ordinario cobrado por separado, con fecha y usuario que lo registró.
-- Identificar cuotas pendientes, pagadas, vencidas o reprogramadas, y calcular la mora diaria por cuota.
-- Consultar el historial de préstamos de una persona como cliente, prestamista o fiador.
+- Register loans with their amount, ordinary interest rate, disbursement date,
+  installment schedule, guarantors, collateral, and interest mode (included in
+  the installments or charged separately).
+- Record the full payment of an installment or of the separately charged
+  ordinary interest obligation, with the date and the user who recorded it.
+- Identify pending, paid, overdue, or rescheduled installments, and calculate
+  the daily late fee for each installment.
+- Query a person's loan history as a customer, lender, or guarantor.
 
-## Entidades
+## Entities
 
-| Entidad | Qué representa |
+| Entity | What it represents |
 | --- | --- |
-| `stakeholders` | Personas que participan en los préstamos. Una misma persona puede ser cliente en un préstamo y fiadora en otro. |
-| `users` | Cuentas de acceso vinculadas a una persona, con `is_active` para desactivarlas. |
-| `roles` | Roles de acceso al sistema: `admin` y `lender`. |
-| `loans` | Préstamos que vinculan a un prestamista con un cliente y registran las condiciones del desembolso y el modo de interés (`included`/`separate`). |
-| `loan_installments` | Cuotas de un préstamo. Cada una tiene su propio monto, vencimiento, estado y tasa diaria de mora. |
-| `loan_guarantors` | Personas que actúan como fiadoras de un préstamo específico. |
-| `loan_collaterals` | Bienes dados en garantía, con su descripción y valor estimado cuando se conoce. |
-| `loan_payments` | Pagos recibidos, con su monto, fecha y usuario que los registró. |
-| `installment_payments` | Vincula un pago con la cuota a la que se aplica. La API registra un pago total por cuota. |
-| `loan_interest_payments` | Obligación de interés ordinario por préstamo: pendiente (`payment_id` nulo) o pagada. |
+| `stakeholders` | People involved in loans. The same person can be a customer in one loan and a guarantor in another. |
+| `users` | Access accounts linked to a person, with `is_active` for deactivation and `must_change_password` for forced password changes. |
+| `roles` | Access roles: `admin` and `lender`. |
+| `loans` | A loan linking a lender with a customer, recording the disbursement terms and the interest mode (`included`/`separate`). |
+| `loan_installments` | Loan installments. Each has its own amount, due date, status, and daily late-fee rate. |
+| `loan_guarantors` | People acting as guarantors for a specific loan. |
+| `loan_collaterals` | Assets pledged as collateral, with a description and estimated value when known. |
+| `loan_payments` | Payments received, with their amount, date, and recording user. |
+| `installment_payments` | Links a payment to the installment it is applied to. The API records one full payment per installment. |
+| `loan_interest_payments` | Ordinary interest obligation per loan: pending (`payment_id` is null) or paid. |
 
-## Tecnologías
+## Technologies
 
-React y Vite para la interfaz, Express para la API y MySQL con Sequelize para el acceso a datos. Vite Express permite servir la interfaz y la API desde el mismo servidor.
+React and Vite for the interface, Express for the API, and MySQL with Sequelize
+for data access. Vite Express serves the interface and the API from the same
+server.
 
-- React 19 y Vite 6 (con `@vitejs/plugin-react`).
-- React Router 7 para el enrutamiento del cliente.
-- Tailwind CSS 4 (`@tailwindcss/vite`), componentes shadcn sobre primitivos de Base UI, `class-variance-authority`, `lucide-react` y las fuentes Playfair Display y Montserrat desde Google Fonts.
-- Express 5 con módulos ES (`"type": "module"`).
-- MySQL a través de Sequelize 6 y `mysql2`.
-- Autenticación con JWT (`jsonwebtoken`) y `bcryptjs`.
-- Gestor de paquetes: pnpm.
+- React 19 and Vite 6 (with `@vitejs/plugin-react`).
+- React Router 7 for client-side routing.
+- Tailwind CSS 4 (`@tailwindcss/vite`), shadcn components over Base UI
+  primitives, `class-variance-authority`, `lucide-react`, and the Playfair
+  Display and Montserrat fonts from Google Fonts.
+- Express 5 with ES modules (`"type": "module"`).
+- MySQL through Sequelize 6 and `mysql2`.
+- Authentication with JWT (`jsonwebtoken`) and `bcryptjs`.
+- Package manager: pnpm.
 
-## Requisitos
+## Requirements
 
-- Node.js con soporte para `--env-file` (Node 20 o superior).
+- Node.js with `--env-file` support (Node 20 or newer).
 - pnpm.
-- Servidor MySQL accesible con una base de datos creada.
+- An accessible MySQL server with an existing database.
 
-## Configuración
+## Configuration
 
-Las credenciales se leen desde `.env` en la raíz del proyecto:
+Credentials are read from `.env` in the project root:
 
 ```env
 DB_HOST=localhost
@@ -58,187 +71,367 @@ JWT_SECRET=...
 JWT_EXPIRES_IN=1h
 ```
 
-## Comandos
+The first admin is provisioned with a seed script, not a public endpoint. Add
+these variables to `.env` before running it (they are only used by the seed):
 
-```bash
-pnpm install   # instala dependencias
-pnpm dev       # inicia el servidor de desarrollo en http://localhost:3000
-pnpm build     # compila la interfaz con Vite en dist/
-pnpm start     # inicia el servidor en modo producción
+```env
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=...
+ADMIN_STAKEHOLDER_ID=1
 ```
 
-`pnpm dev` ejecuta nodemon sobre `src/server`, cargando `.env` con `node --env-file=.env`.
+`ADMIN_STAKEHOLDER_ID` must be the ID of an existing stakeholder that is not
+already linked to a user.
 
-## Arquitectura
+## Commands
 
-La API se organiza en capas: `routes → controllers → services → models`.
+```bash
+pnpm install   # install dependencies
+pnpm dev       # start the development server at http://localhost:3000
+pnpm build     # build the interface with Vite into dist/
+pnpm start     # start the server in production mode
+pnpm seed:admin # create the first admin account
+```
 
-- Las **routes** definen el método y la URL y delegan en el controller.
-- Los **controllers** reciben `req`/`res`, pasan los datos al service y construyen la respuesta.
-- Los **services** contienen la lógica de negocio y no conocen HTTP, lo que permite probarlos de forma aislada.
-- Los **models** mapean las tablas MySQL con Sequelize.
+`pnpm dev` runs nodemon over `src/server`, loading `.env` with
+`node --env-file=.env`.
 
-La validación y normalización de payloads vive en `src/server/utils/validators/`, organizada por módulo. Los helpers compartidos (`common.js`) se encargan de enteros positivos, strings opcionales y números finitos; cada validador de dominio construye los atributos que recibe el service. En actualizaciones parciales el validador recibe también el registro almacenado para resolver las reglas que dependen del estado actual; los services solo ejecutan la persistencia y los conflictos por pagos existentes.
+### Initial setup
 
-Cada router se registra en `src/server/api.js`. Los services lanzan errores tipados (definidos en `src/server/utils/errors.js`) que los controllers traducen a códigos HTTP.
+1. Create the database and apply the SQL files in `database/migrations/` in
+   chronological order. Models never call `sequelize.sync()`.
+2. Ensure the `admin` and `lender` roles exist (see the roles migration) and
+   create or choose the stakeholder that will be linked to the first admin.
+3. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_STAKEHOLDER_ID` in `.env` and
+   run `pnpm seed:admin`. The seed refuses to run if an admin already exists.
+4. Sign in with those credentials. The account is created with
+   `must_change_password = true`, so the application redirects to
+   `/change-password` and blocks the rest of the API until a new password is
+   set.
+5. From then on, admins create `admin` and `lender` accounts from
+   `/admin/users`. Public signup does not exist.
 
-`/api/auth` (signup y login) es público. El middleware `checkAuth` se aplica después de ese router, así que todo lo registrado debajo (`/api/admin`, `/api/users`, `/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) exige `Authorization: Bearer <token>`. `checkAuth` verifica el JWT y consulta `users`/`Role` para reconstruir `req.user` con el rol y el stakeholder vigentes en la base: una cuenta con `is_active = false` responde `401`. El JWT incluye `user_id`, `role_id`, `role_name` y `stakeholder_id`. `/api/admin` está protegido además por `requireAdmin` (solo `admin`) y ahora incluye `PATCH /api/admin/users/:userId` para cambiar `role_name` e `is_active`; el listado sigue en `GET /api/users`. `requireAdmin` también protege `POST`, `PUT`, `PATCH` y `DELETE` de `/api/stakeholders`, mientras que sus `GET` siguen disponibles para cualquier cuenta autenticada. `requireAdminForLenderChange` impide que un `lender` asigne un prestamista distinto del suyo en `POST`, `PUT` y `PATCH` de `/api/loans`. El signup público solo crea cuentas `lender`. Las rutas de préstamos y pagos se restringen al stakeholder vinculado al usuario `lender`; `admin` conserva acceso global y puede elegir cualquier prestamista al crear préstamos.
+## Architecture
+
+The API is organized in layers: `routes → controllers → services → models`.
+
+- **Routes** define the method and URL and delegate to the controller.
+- **Controllers** receive `req`/`res`, pass data to the service, and build the
+  response.
+- **Services** contain the business logic and know nothing about HTTP, so they
+  can be tested in isolation.
+- **Models** map the MySQL tables with Sequelize.
+
+Payload validation and normalization live in `src/server/utils/validators/`,
+organized by module. Shared helpers (`common.js`) handle positive integers,
+optional strings, and finite numbers; each domain validator builds the
+attributes the service receives. For partial updates the validator also
+receives the stored record so it can resolve rules that depend on the current
+state; services only persist and enforce payment-related conflicts.
+
+Each router is registered in `src/server/api.js`. Services throw typed errors
+(defined in `src/server/utils/errors.js`) that controllers translate into HTTP
+status codes.
+
+`/api/auth` (login) is public. `checkAuth` is applied after that router, so
+everything registered below it (`/api/admin`, `/api/users`, `/api/roles`,
+`/api/stakeholders`, `/api/loans`, `/api/payments`) requires
+`Authorization: Bearer <token>`. `checkAuth` verifies the JWT and queries
+`users`/`Role` to rebuild `req.user` with the current role, stakeholder, and
+`must_change_password` flag from the database: an account with
+`is_active = false` responds `401`. The JWT itself contains `user_id`,
+`role_id`, `role_name`, and `stakeholder_id`.
+
+`requirePasswordChanged` runs after `checkAuth`. When `must_change_password` is
+true it only allows `GET /api/users/auth` (session hydration) and
+`PATCH /api/users/me/password`; every other route responds
+`403 Password change required`. Because the flag is read from the database on
+every request, an admin password reset blocks existing tokens immediately.
+
+`/api/admin` is additionally protected by `requireAdmin` (admin only) and
+provides `POST /users` (create), `POST /users/:userId/reset-password`, and
+`PATCH /users/:userId` (role and status). The listing remains at
+`GET /api/users`. An admin cannot demote or deactivate the last active admin.
+`requireAdmin` also protects `POST`, `PUT`, `PATCH`, and `DELETE` of
+`/api/stakeholders`, while its `GET`s remain available to any authenticated
+account. `requireAdminForLenderChange` prevents a `lender` from assigning a
+lender other than themselves in `POST`, `PUT`, and `PATCH` of `/api/loans`.
+Loan and payment routes restrict data to the stakeholder linked to a `lender`
+account; `admin` keeps global access and may choose any lender when creating
+loans.
 
 ## Frontend
 
-El cliente React arranca en `src/client/main.jsx`, donde `createBrowserRouter` define las rutas y `RouterProvider` monta la aplicación. `AuthProvider` es el layout raíz y `RequireAuth` protege las rutas de préstamos. Las vistas viven en `src/client/views/`, los componentes reutilizables en `src/components/ui/` y los componentes por dominio en `src/components/<dominio>/`, agrupados por propósito cuando hay más de un flujo.
+The React client starts in `src/client/main.jsx`, where `createBrowserRouter`
+defines the routes and `RouterProvider` mounts the application. `AuthProvider`
+is the root layout, `RequireAuth` protects loan routes and `/change-password`,
+and `RequireAdmin` protects `/admin`. Views live in `src/client/views/`,
+reusable primitives in `src/components/ui/`, and domain components in
+`src/components/<domain>/`, grouped by purpose when there is more than one
+flow.
 
-| Ruta | Vista | Acceso |
+| Route | View | Access |
 | --- | --- | --- |
-| `/` | `App` (demo inicial de Vite) | público |
-| `/login` | `Login` | público |
-| `/signup` | `Signup` | público |
-| `/loans` | `Loan` | protegido |
-| `/create-loan` | `CreateLoan` | protegido |
-| `/loans/:id` | `LoanDetails` | protegido |
-| `/loans/:id/edit` | `EditLoan` | protegido |
-| `/admin` | redirección a `/admin/dashboard` | admin |
+| `/` | `App` (initial Vite demo) | public |
+| `/login` | `Login` | public |
+| `/change-password` | `ChangePassword` | protected, forced |
+| `/loans` | `Loan` | protected |
+| `/create-loan` | `CreateLoan` | protected |
+| `/loans/:id` | `LoanDetails` | protected |
+| `/loans/:id/edit` | `EditLoan` | protected |
+| `/admin` | redirect to `/admin/dashboard` | admin |
 | `/admin/dashboard` | `AdminDashboard` | admin |
 | `/admin/users` | `AdminUsers` | admin |
 | `/admin/stakeholders` | `AdminStakeholders` | admin |
 | `/admin/loans` | `AdminLoans` | admin |
 | `/admin/payments` | `AdminPayments` | admin |
-| `/test` | `Test` (vista de prueba) | público |
+| `/test` | `Test` (test view) | public |
 
-`Login` y `Signup` consumen `/api/auth` mediante `src/lib/axiosService.js` (`api.post`): validan los campos, muestran estados de carga y error y usan los componentes `Card`, `Input`, `Label` y `Button`. El servicio centraliza el `baseURL` (`VITE_API_URL` o `http://localhost:3000/api`), un interceptor que envía `Authorization: Bearer <token>` leyendo `token` de `localStorage` y un interceptor de respuesta que ante un `401` limpia el token y emite `auth:unauthorized` (excepto en `/auth/login` y `/auth/signup`). `src/client/contexts/AuthContext.jsx` expone `AuthProvider`, `useAuth()`, `RequireAuth` y `RequireAdmin`: la sesión se hidrata con `GET /api/users/auth`, `/loans`, `/create-loan`, `/loans/:id` y `/loans/:id/edit` están protegidos, `/admin/*` exige rol `admin` y el resto de rutas son públicas. `Login` usa `useAuth().login(token)` y navega a la ruta de origen o `/loans`; `Signup` envía `email`, `password` y `stakeholder_id` y, tras el registro, navega a `/login` con un aviso de éxito. `Loan` compone el listado desde `src/components/loans/list/` con el hook `useLoans` y `api.get("/loans")` (ID, prestamista, cliente, monto, tasa, modo, fecha y total), con estados de carga, vacío y error y formatos en `src/client/utils/loanFormat.js`; usa `useAuth().user` solo para mostrar nombre y rol, porque el backend filtra por JWT. `CreateLoan` es un formulario de dos pasos compuesto desde `src/components/loans/create/`: el hook `useCreateLoanForm` carga stakeholders, administra el estado y valida con `src/client/utils/loanForm.js`, `CreateLoanForm` reúne los campos, fiadores y garantías, e `InstallmentPreview` muestra las cuotas calculadas por `src/client/utils/loanSchedule.js` antes de enviar `POST /api/loans`; `Loan` incluye el botón `New loan` y un aviso de creación correcta. `LoanDetails` compone `src/components/loans/details/` con `useLoanDetails` y `api.get("/loans/:id")`: muestra resumen, cuotas, fiadores, garantías e interés, y ofrece editar siempre pero eliminar solo cuando no hay pagos registrados; `useLoanFormState` es el estado compartido con la creación. Desde el detalle se registran pagos con `src/components/payments/` y `useLoanPayment`: la cuota o el interés se pagan con monto bloqueado y `paid_at` opcional, y un refetch actualiza estados sin recargar. La reversión es independiente: `usePayments` consulta `GET /api/payments?loan_id`, `usePaymentRevert` envía `DELETE /api/payments/:id` con el `payment_id` y `RevertPaymentDialog` pide confirmación antes de liberar la eliminación y la edición financiera completa. `EditLoan` usa `useEditLoanForm`: sin pagos reutiliza el formulario y la vista previa de `create/` y envía `PUT /api/loans/:id`; con pagos muestra `RestrictedLoanEditForm` y envía `PATCH /api/loans/:id` solo con fiadores, garantías y, para `admin`, `lender_id`. En ambos casos vuelve al detalle con `state.updatedLoanId`. `Loan` enlaza cada ID al detalle y muestra `state.deletedLoanId` tras una eliminación. `/test` usa `api.get("/roles")` del mismo servicio (ruta actualmente deshabilitada en `src/server/api.js`). Los estilos se definen en `src/client/index.css` con Tailwind 4, la paleta de marca (`263A69`, `B0C7DD`, `E8E3DD`, `EDECEA` y `0F0F0F`) en temas claro y oscuro, con Playfair Display para títulos y Montserrat para texto desde Google Fonts. `vite.config.js` y `jsconfig.json` resuelven el alias `@` a `src/`, y `components.json` guarda la configuración de shadcn (estilo `base-nova`, primitivos de Base UI e iconos `lucide`). El detalle está en la documentación del módulo [`frontend`](.agents/skills/frontend/SKILL.md).
+`Login` consumes `/api/auth` through `src/lib/axiosService.js` (`api.post`):
+it validates the fields and shows loading and error states with `Card`,
+`Input`, `Label`, and `Button`. The service centralizes `baseURL`
+(`VITE_API_URL` or `http://localhost:3000/api`), a request interceptor that
+sends `Authorization: Bearer <token>` from `localStorage`, and a response
+interceptor that clears the token and emits `auth:unauthorized` on `401`
+(except on `/auth/login` and `/users/me/password`, so credential errors are not
+hidden).
+`src/client/contexts/AuthContext.jsx` exposes `AuthProvider`, `useAuth()`,
+`RequireAuth`, and `RequireAdmin`: the session is hydrated with
+`GET /api/users/auth`; loan routes and `/change-password` are protected,
+`/admin/*` requires the `admin` role, and the rest are public. `login(token)`
+and `refreshUser()` return the `must_change_password` flag. `RequireAuth`
+redirects a user with that flag to `/change-password` unless they are already
+there. `ChangePassword` submits `{ current_password, new_password }` to
+`PATCH /api/users/me/password`, refreshes the session, and navigates to the
+original route or `/loans`.
 
-## Panel de administración
+`Loan` composes the listing from `src/components/loans/list/` with the
+`useLoans` hook and `api.get("/loans")` (ID, lender, customer, amount, rate,
+mode, date, and total), with loading, empty, and error states and formats in
+`src/client/utils/loanFormat.js`; it uses `useAuth().user` only for the name
+and role, because the backend filters by JWT. `CreateLoan` is a two-step form
+composed from `src/components/loans/create/`: the `useCreateLoanForm` hook
+loads stakeholders, manages state, and validates with
+`src/client/utils/loanForm.js`, `CreateLoanForm` gathers the fields,
+guarantors, and collateral, and `InstallmentPreview` shows the installments
+calculated by `src/client/utils/loanSchedule.js` before sending
+`POST /api/loans`; `Loan` includes the `New loan` button and a success notice.
+`LoanDetails` composes `src/components/loans/details/` with `useLoanDetails`
+and `api.get("/loans/:id")`: it shows the summary, installments, guarantors,
+collateral, and interest, allows editing always and deletion only when there
+are no payments, and supports recording and reverting payments from the
+components in `src/components/payments/`. `EditLoan` reuses the creation form
+without payments and a restricted form when payments exist (guarantors,
+collateral, and, for admins, the lender), created from
+`src/components/loans/edit/`.
 
-El panel del cliente vive bajo `/admin` y usa `AdminLayout` (`src/client/layouts/`), `AdminNav` (`src/components/admin/`) y vistas en `src/client/views/admin/`. `RequireAdmin`, definido en `AuthContext.jsx`, redirige a `/loans` a las cuentas que no son `admin`; la autorización real sigue en la API, donde `/api/admin/*` está protegido por `requireAdmin`. `LoanListHeader` muestra el enlace `Admin` solo para administradores. `/admin/users` lista cuentas con `useAdminUsers` y permite editar rol, estado y datos del stakeholder vinculado en un solo diálogo; `/admin/stakeholders` usa `useAdminStakeholders` para crear, editar y eliminar personas con el CRUD existente de `/api/stakeholders`, ocultando a las que están vinculadas a cuentas. `/admin/loans` usa `useAdminLoans` para listar todos los préstamos y reasignar el prestamista mediante un diálogo que envía `PATCH /api/loans/:id`; sus opciones vienen de `/api/users` filtrado a cuentas con rol `lender`. `/admin/payments` usa `useAdminPayments` para consultar el historial global con `GET /api/payments`, registrar cuotas o interés pendiente desde `GET /api/loans` y revertir pagos con `usePaymentRevert` y `RevertPaymentDialog`. `/admin/dashboard` usa `useAdminDashboard` y `src/client/utils/adminDashboard.js` para agregar métricas de préstamos, cuotas vencidas, interés y pagos desde `GET /api/loans` y `GET /api/payments`, sin endpoint propio.
+## Admin panel
 
-| Ruta | Vista | Estado |
+The client panel lives under `/admin` and uses `AdminLayout`
+(`src/client/layouts/`), `AdminNav` (`src/components/admin/`), and views in
+`src/client/views/admin/`. `RequireAdmin`, defined in `AuthContext.jsx`,
+redirects non-admins to `/loans`; real authorization stays in the API, where
+`/api/admin/*` is protected by `requireAdmin`. `LoanListHeader` shows the
+`Admin` link only to admins.
+
+`/admin/users` lists accounts with `useAdminUsers`. The edit dialog changes
+role, status, and the linked stakeholder's data; the `New user` dialog creates
+an `admin` or `lender` account with `POST /api/admin/users` after choosing an
+email, role, and a stakeholder not yet linked to a user, then displays the
+one-time temporary password. Each row can also reset a password with
+`POST /api/admin/users/:userId/reset-password`, showing the new temporary
+password once. Accounts with `must_change_password = true` are marked as
+having a password pending.
+
+`/admin/stakeholders` uses `useAdminStakeholders` for the existing
+`/api/stakeholders` CRUD, hiding people already linked to accounts.
+`/admin/loans` uses `useAdminLoans` to list all loans and reassign the lender
+with `PATCH /api/loans/:id`, with options from `GET /api/users` filtered to
+`lender` accounts. `/admin/payments` uses `useAdminPayments` for the global
+history from `GET /api/payments`, records pending installments or interest from
+`GET /api/loans`, and reverts payments with `usePaymentRevert` and
+`RevertPaymentDialog`. `/admin/dashboard` uses `useAdminDashboard` and
+`src/client/utils/adminDashboard.js` to aggregate loan, installment, interest,
+and payment metrics from `GET /api/loans` and `GET /api/payments`, with no
+dedicated endpoint.
+
+| Route | View | Status |
 | --- | --- | --- |
-| `/admin` | redirección a `/admin/dashboard` | shell |
-| `/admin/dashboard` | `AdminDashboard` | implementado |
-| `/admin/users` | `AdminUsers` | implementado |
-| `/admin/stakeholders` | `AdminStakeholders` | implementado |
-| `/admin/loans` | `AdminLoans` | implementado |
-| `/admin/payments` | `AdminPayments` | implementado |
+| `/admin` | redirect to `/admin/dashboard` | shell |
+| `/admin/dashboard` | `AdminDashboard` | implemented |
+| `/admin/users` | `AdminUsers` | implemented |
+| `/admin/stakeholders` | `AdminStakeholders` | implemented |
+| `/admin/loans` | `AdminLoans` | implemented |
+| `/admin/payments` | `AdminPayments` | implemented |
 
-Las fases de dominio reemplazaron el contenido de los stubs sin tocar `main.jsx`:
+No functionality is duplicated under `/admin`; only user administration lives
+under that prefix. The detailed contract is in
+[`.agents/skills/admin/SKILL.md`](.agents/skills/admin/SKILL.md).
 
-- P3 users: `/admin/users` reutiliza `GET /api/users` para listar y usa `PATCH /api/admin/users/:userId` para cambiar rol y estado. El mismo diálogo edita los datos del stakeholder vinculado con `GET /api/stakeholders/:id` y `PUT /api/stakeholders/:id`; si no hay persona vinculada solo se muestran rol y estado.
-- P4 stakeholders: el panel reutiliza `GET`, `POST`, `PUT` y `DELETE` de `/api/stakeholders`. Las mutaciones usan `requireAdmin`; ambos `GET` siguen disponibles para cuentas autenticadas y el formulario de préstamos no cambia. La vista oculta a las personas vinculadas a cuentas, sin filtrar la API.
-- P5 loans: `POST`, `PUT` y `PATCH` de `/api/loans` aplican `requireAdminForLenderChange`; la vista admin lista con `GET /api/loans` y reasigna prestamistas con `PATCH /api/loans/:id`, sin endpoints nuevos bajo `/api/admin`.
-- P6 payments: `/admin/payments` lista `GET /api/payments` para `admin`, usa `GET /api/loans` para ofrecer solo destinos pendientes y registra con `POST /api/payments/installment` o `POST /api/payments/interest`. La reversión reutiliza `DELETE /api/payments/:id`; no se agregó `POST /api/payments` genérico ni rutas bajo `/api/admin`.
-- P7 dashboard: `useAdminDashboard` y `src/client/utils/adminDashboard.js` calculan importes, cuotas pagadas/pendientes/vencidas, interés incluido o separado, pagos por mes y pagos recientes desde `GET /api/loans` y `GET /api/payments`, sin endpoint propio.
+## Project structure
 
-No se duplican funcionalidades bajo `/admin`; solo la administración de usuarios vive en ese prefijo. El contrato detallado del módulo está en `.agents/skills/admin/SKILL.md`.
-
-## Estructura del proyecto
-
-```
-components.json             configuración de shadcn (alias, estilo, CSS)
+```text
+components.json             shadcn configuration (aliases, style, CSS)
 jsconfig.json               alias `@/*` → `./src/*`
-vite.config.js              plugins de Vite y alias `@` → `./src`
+vite.config.js              Vite plugins and alias `@` → `./src`
 
 database/
-└─ migrations/
-   ├─ 2026-11-16-loan-interest-payment-mode.sql
-   ├─ 2026-11-17-rename-operator-role-to-lender.sql
-   └─ 2026-11-25-admin-user-management.sql
+├─ migrations/
+│  ├─ 2026-11-16-loan-interest-payment-mode.sql
+│  ├─ 2026-11-17-rename-operator-role-to-lender.sql
+│  ├─ 2026-11-25-admin-user-management.sql
+│  └─ 2026-11-26-user-provisioning.sql
+└─ seeds/
+   └─ createFirstAdmin.js   provisions the first admin from ADMIN_* variables
 
 src/
-├─ client/                  interfaz React (Vite)
-│  ├─ main.jsx              entrada, rutas, `RequireAuth` y `RequireAdmin`
-│  ├─ App.jsx               componente principal (demo de Vite)
-│  ├─ App.css / index.css   estilos base y tokens de Tailwind/shadcn
-│  ├─ contexts/             AuthContext: provider, hook y guards
-│  ├─ hooks/                hooks: useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails, useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert, useAdminUsers, useAdminStakeholders, useAdminLoans, useAdminPayments, useAdminDashboard
-│  ├─ layouts/              shell `AdminLayout`
-│  ├─ Test.jsx              vista de prueba (/test)
-│  ├─ views/                vistas: Login, Signup, Loans, CreateLoan, LoanDetails, EditLoan
-│  │  └─ admin/             vistas del panel: Dashboard, Users, Stakeholders, Loans, Payments
-│  ├─ utils/                helpers: loanFormat, loanForm, loanSchedule, loanEdit, loanPayment, paymentHistory, userForm, stakeholderForm, adminDashboard
+├─ client/                  React interface (Vite)
+│  ├─ main.jsx              entry, routes, `RequireAuth` and `RequireAdmin`
+│  ├─ App.jsx               main component (Vite demo)
+│  ├─ App.css / index.css   base styles and Tailwind/shadcn tokens
+│  ├─ contexts/             AuthContext: provider, hook, and guards
+│  ├─ hooks/                useLoans, useLoanFormState, useCreateLoanForm, useLoanDetails,
+│  │                       useEditLoanForm, useLoanPayment, usePayments, usePaymentRevert,
+│  │                       useChangePassword, useAdminUsers, useAdminStakeholders,
+│  │                       useAdminLoans, useAdminPayments, useAdminDashboard
+│  ├─ layouts/              `AdminLayout` shell
+│  ├─ Test.jsx              test view (/test)
+│  ├─ views/                Login, ChangePassword, Loans, CreateLoan, LoanDetails, EditLoan
+│  │  └─ admin/             panel views: Dashboard, Users, Stakeholders, Loans, Payments
+│  ├─ utils/                loanFormat, loanForm, loanSchedule, loanEdit, loanPayment,
+│  │                       paymentHistory, userForm, stakeholderForm, adminDashboard
 │  └─ assets/
 ├─ components/
-│  ├─ admin/                AdminNav, AdminPlaceholder, users/, stakeholders/, loans/, payments/ y dashboard/ (tablas, campos compartidos, formularios, reasignación, registro, métricas y confirmaciones)
-│  ├─ loans/                componentes de préstamos por propósito
-│  │  ├─ create/            formulario, fiadores, garantías y vista previa
-│  │  ├─ list/              encabezado, avisos y tabla del listado
-│  │  ├─ details/           resumen, tablas, avisos y confirmación de borrado
-│  │  └─ edit/              encabezado, errores, aviso y formulario reducido con pagos
-│  ├─ payments/             modales de pago, historial, reversión y avisos
-│  └─ ui/                   componentes shadcn: button, card, dialog, input, label, select, table, textarea
+│  ├─ admin/                AdminNav, AdminPlaceholder, users/, stakeholders/, loans/,
+│  │                       payments/, and dashboard/ (tables, shared fields, forms,
+│  │                       reassignment, recording, metrics, confirmations)
+│  ├─ loans/                loan components grouped by purpose
+│  │  ├─ create/            form, guarantors, collateral, and preview
+│  │  ├─ list/              header, notices, and listing table
+│  │  ├─ details/           summary, tables, notices, and delete confirmation
+│  │  └─ edit/              header, errors, notice, and restricted form with payments
+│  ├─ payments/             payment modals, history, reversal, and notices
+│  └─ ui/                   shadcn components: button, card, dialog, input, label,
+│                           select, table, textarea
 ├─ lib/
-│  ├─ axiosService.js       instancia de axios con interceptor de token
-│  └─ utils.js              reexporta `cn`
-└─ server/                  API Express
-   ├─ main.js               servidor, monta /api y escucha en el puerto 3000
-   ├─ api.js                router global: monta /auth y luego checkAuth + /admin, /users, /roles, /stakeholders, /loans y /payments
+│  ├─ axiosService.js       axios instance with token interceptor
+│  └─ utils.js              re-exports `cn`
+└─ server/                  Express API
+   ├─ main.js               server, mounts /api and listens on port 3000
+   ├─ api.js                global router: /auth, then checkAuth +
+   │                        requirePasswordChanged + /admin, /users, /roles,
+   │                        /stakeholders, /loans, /payments
    ├─ config/
-   │  ├─ connection.js      conexión Sequelize a MySQL
-   │  └─ passport.js        estrategias local y JWT (no usado por la API actual)
-   ├─ controllers/          intermediarios entre rutas y services
+   │  ├─ connection.js      Sequelize connection to MySQL
+   │  └─ passport.js        local and JWT strategies (unused by the current API)
+   ├─ controllers/          intermediaries between routes and services
    ├─ middlewares/
-   │  ├─ checkAuth.js       exige token y valida la cuenta contra la base
-   │  ├─ requireAdmin.js    exige rol admin
+   │  ├─ checkAuth.js       requires a token and validates the account in the database
+   │  ├─ requirePasswordChanged.js blocks routes while a password change is pending
+   │  ├─ requireAdmin.js    requires the admin role
    │  └─ requireAdminForLenderChange.js
-   ├─ services/             lógica de negocio y operaciones
-   ├─ routes/               definición de métodos y URLs
+   ├─ services/             business logic and operations
+   ├─ routes/               method and URL definitions
    ├─ utils/
-    │  ├─ errors.js              errores tipados (AppError, ValidationError, UnauthorizedError, ForbiddenError, ConflictError, NotFoundError)
-   │  ├─ generateToken.js       firma el JWT
+   │  ├─ errors.js              typed errors (AppError, ValidationError, UnauthorizedError,
+   │  │                        ForbiddenError, ConflictError, NotFoundError)
+   │  ├─ generateToken.js       signs the JWT
+   │  ├─ temporaryPassword.js   generates one-time temporary passwords
    │  └─ validators/
-   │     ├─ common.js              helpers compartidos (enteros, strings opcionales, números)
-   │     ├─ authValidation.js      validación/normalización de payloads de auth
-    │     ├─ loanValidation.js      validación/parseo de préstamos y sus relaciones
-    │     ├─ paymentValidation.js   validación/parseo de pagos
-    │     └─ stakeholderValidation.js validación/parseo de stakeholders
+   │     ├─ common.js              shared helpers (integers, optional strings, numbers)
+   │     ├─ authValidation.js      auth payload validation/normalization
+   │     ├─ adminUserValidation.js user creation and administration validation
+   │     ├─ loanValidation.js      loan and relation validation/parsing
+   │     ├─ paymentValidation.js   payment validation/parsing
+   │     └─ stakeholderValidation.js stakeholder validation/parsing
    └─ models/
-      ├─ Role.js               tabla roles
-      ├─ User.js               tabla users
-      ├─ Stakeholder.js        tabla stakeholders
-      ├─ Loan.js               tabla loans
-      ├─ LoanInstallment.js    tabla loan_installments
-      ├─ LoanGuarantor.js      tabla loan_guarantors
-      ├─ LoanCollateral.js     tabla loan_collaterals
-      ├─ LoanPayment.js        tabla loan_payments
-      ├─ InstallmentPayment.js tabla installment_payments
-      ├─ LoanInterestPayment.js tabla loan_interest_payments
-      └─ associations.js       relaciones entre modelos
+      ├─ Role.js               roles table
+      ├─ User.js               users table
+      ├─ Stakeholder.js        stakeholders table
+      ├─ Loan.js               loans table
+      ├─ LoanInstallment.js    loan_installments table
+      ├─ LoanGuarantor.js      loan_guarantors table
+      ├─ LoanCollateral.js     loan_collaterals table
+      ├─ LoanPayment.js        loan_payments table
+      ├─ InstallmentPayment.js installment_payments table
+      ├─ LoanInterestPayment.js loan_interest_payments table
+      └─ associations.js       model relationships
 ```
 
-La documentación por módulo vive en [`.agents/skills/`](.agents/skills/); cada módulo tiene su `SKILL.md` y `CHANGELOG.md`.
+Module documentation lives in [`.agents/skills/`](.agents/skills/); each module
+has a `SKILL.md` and a `CHANGELOG.md`.
 
 ## API
 
-| Método | Ruta | Descripción |
+| Method | Route | Description |
 | --- | --- | --- |
-| `GET` | `/api/roles` | Lista los roles registrados. Requiere token. |
-| `GET` | `/api/users` | Lista los usuarios con su stakeholder y rol. Requiere token. |
-| `GET` | `/api/stakeholders` | Lista los stakeholders ordenados por apellido y nombre. Requiere token. |
-| `GET` | `/api/stakeholders/:id` | Devuelve un stakeholder. Requiere token. |
-| `POST` | `/api/stakeholders` | Crea un stakeholder. Requiere `first_name` y `last_name`. Requiere token. |
-| `PUT` | `/api/stakeholders/:id` | Reemplaza un stakeholder; los campos opcionales omitidos quedan en `null`. Requiere token. |
-| `PATCH` | `/api/stakeholders/:id` | Actualiza solo los campos enviados. Requiere token. |
-| `DELETE` | `/api/stakeholders/:id` | Elimina un stakeholder; responde `409` si está referenciado. Requiere token. |
-| `GET` | `/api/loans` | Lista los préstamos del prestamista autenticado (todos para `admin`). Requiere token. |
-| `GET` | `/api/loans/:id` | Devuelve un préstamo propio con sus relaciones, o `404` si no pertenece al prestamista. Requiere token. |
-| `POST` | `/api/loans` | Crea un préstamo con `installments`, `guarantors` y `collaterals` en una transacción. Requiere `customer_id`, `loan_amount`, `interest_payment_mode` y `disbursed_at`; para `lender`, `lender_id` se deriva del usuario (otro valor responde `403`), mientras `admin` puede elegirlo. Requiere token. |
-| `PUT` | `/api/loans/:id` | Reemplaza un préstamo propio y todas sus relaciones; exige los tres arreglos. Requiere token. |
-| `PATCH` | `/api/loans/:id` | Actualiza solo los campos o arreglos enviados; los cambios financieros requieren `installments`. Un `lender` no puede cambiar `lender_id`. Con pagos solo se permiten `guarantors` y `collaterals`, más `lender_id` para `admin`. Requiere token. |
-| `DELETE` | `/api/loans/:id` | Elimina un préstamo propio y sus relaciones; responde `409` si tiene pagos de cuotas o interés pagado. Requiere token. |
-| `GET` | `/api/payments` | Lista los pagos visibles para el usuario, con `?loan_id` opcional. Requiere token. |
-| `GET` | `/api/payments/:id` | Devuelve un pago con su cuota o interés aplicado. Requiere token. |
-| `POST` | `/api/payments/installment` | Registra el pago total de una cuota. Requiere token. |
-| `POST` | `/api/payments/interest` | Registra el pago del interés separado. Requiere token. |
-| `PATCH` | `/api/payments/:id` | Corrige solo `paid_at` de un pago. Requiere token. |
-| `DELETE` | `/api/payments/:id` | Revierte un pago, restaura la cuota o el interés a `pending` y responde `204`. Requiere token. |
-| `POST` | `/api/auth/signup` | Crea una cuenta `lender`; recibe `email`, `password` y `stakeholder_id`. El rol se asigna desde la base, no desde el payload; un stakeholder inexistente responde `409`. |
-| `POST` | `/api/auth/login` | Inicia sesión. Recibe `email` y `password`; responde `{ token, user }` con un JWT de 1 hora que incluye `role_name` y `stakeholder_id`. |
-| `GET` | `/hello` | Verificación simple de que el servidor responde. |
+| `GET` | `/api/roles` | Lists registered roles. Requires token. |
+| `GET` | `/api/users` | Lists users with their stakeholder and role. Requires token. |
+| `GET` | `/api/users/auth` | Returns the authenticated user, including `must_change_password`. Requires token. |
+| `PATCH` | `/api/users/me/password` | Changes the authenticated user's password and clears `must_change_password`. Requires token. |
+| `POST` | `/api/admin/users` | Creates an `admin` or `lender` account with a one-time temporary password. Admin only. |
+| `POST` | `/api/admin/users/:userId/reset-password` | Generates a new one-time temporary password. Admin only. |
+| `PATCH` | `/api/admin/users/:userId` | Changes a user's `role_name` and `is_active`. Admin only. |
+| `GET` | `/api/stakeholders` | Lists stakeholders ordered by last and first name. Requires token. |
+| `GET` | `/api/stakeholders/:id` | Returns a stakeholder. Requires token. |
+| `POST` | `/api/stakeholders` | Creates a stakeholder; requires `first_name` and `last_name`. Requires token. |
+| `PUT` | `/api/stakeholders/:id` | Replaces a stakeholder; omitted optional fields become `null`. Requires token. |
+| `PATCH` | `/api/stakeholders/:id` | Updates only the sent fields. Requires token. |
+| `DELETE` | `/api/stakeholders/:id` | Deletes a stakeholder; responds `409` if referenced. Requires token. |
+| `GET` | `/api/loans` | Lists the authenticated lender's loans (all for `admin`). Requires token. |
+| `GET` | `/api/loans/:id` | Returns an own loan with its relations, or `404` if it belongs to another lender. Requires token. |
+| `POST` | `/api/loans` | Creates a loan with `installments`, `guarantors`, and `collaterals` in a transaction. Requires `customer_id`, `loan_amount`, `interest_payment_mode`, and `disbursed_at`; `lender_id` is derived for a `lender` (another value responds `403`) and selectable by `admin`. Requires token. |
+| `PUT` | `/api/loans/:id` | Replaces an own loan and all its relations; requires the three arrays. Requires token. |
+| `PATCH` | `/api/loans/:id` | Updates only the sent fields or arrays; financial changes require `installments`. A `lender` cannot change `lender_id`. With payments only `guarantors` and `collaterals`, plus `lender_id` for `admin`, are allowed. Requires token. |
+| `DELETE` | `/api/loans/:id` | Deletes an own loan and its relations; responds `409` if it has payments. Requires token. |
+| `GET` | `/api/payments` | Lists payments visible to the user, with optional `?loan_id`. Requires token. |
+| `GET` | `/api/payments/:id` | Returns a payment with its applied installment or interest. Requires token. |
+| `POST` | `/api/payments/installment` | Records the full payment of an installment. Requires token. |
+| `POST` | `/api/payments/interest` | Records payment of separate interest. Requires token. |
+| `PATCH` | `/api/payments/:id` | Corrects only `paid_at` of a payment. Requires token. |
+| `DELETE` | `/api/payments/:id` | Reverts a payment, restores the installment or interest to `pending`, and responds `204`. Requires token. |
+| `POST` | `/api/auth/login` | Signs in with `email` and `password`; responds `{ token, user }` with a 1-hour JWT including `role_name`, `stakeholder_id`, and `must_change_password`. |
+| `GET` | `/hello` | Simple server health check. |
 
-Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`; sin token o con uno inválido responden `401`. El login exitoso responde `200` y las credenciales incorrectas `401`.
+Public signup has been removed: accounts can only be created by an admin, or
+by `pnpm seed:admin` for the very first admin. Routes marked "Requires token"
+expect `Authorization: Bearer <token>`; without a token or with an invalid one
+they respond `401`. Successful login responds `200` and bad credentials `401`.
+While `must_change_password` is true, only session hydration and the password
+change route respond; everything else responds `403 Password change required`.
 
-### Préstamos
+### Creating users
 
-`POST` y `PUT` reciben el préstamo junto con `installments`, `guarantors` y `collaterals`:
+`POST /api/admin/users` receives `{ email, stakeholder_id, role_name }`, where
+`role_name` is `admin` or `lender`. The stakeholder must exist and must not be
+linked to another account. The response is `201` with the created user
+projection plus a one-time `temporary_password`:
+
+```json
+{
+  "user_id": 12,
+  "email": "lender@example.com",
+  "role_id": 2,
+  "role_name": "lender",
+  "is_active": true,
+  "must_change_password": true,
+  "stakeholder_id": 9,
+  "temporary_password": "AbCdEfGhIjKlMnOpQrStUvWx"
+}
+```
+
+`POST /api/admin/users/:userId/reset-password` takes no body and responds `200`
+with the same projection and a new temporary password. In both cases the
+password is hashed with bcrypt (10 rounds) and shown only once; the account
+must change it through `PATCH /api/users/me/password` before other API routes
+become available. A duplicate email, unknown role or stakeholder, or an
+already-linked stakeholder responds `409`. Demoting or deactivating the last
+active admin responds `409 Cannot demote or deactivate the last active admin`.
+
+### Loans
+
+`POST` and `PUT` receive the loan together with `installments`, `guarantors`,
+and `collaterals`:
 
 ```json
 {
@@ -260,24 +453,51 @@ Las rutas marcadas como "Requiere token" esperan `Authorization: Bearer <token>`
     { "first_name": "Ana", "last_name": "Pérez", "national_id": "555-1234" }
   ],
   "collaterals": [
-    { "description": "Vehículo", "estimated_value": 5000 }
+    { "description": "Vehicle", "estimated_value": 5000 }
   ]
 }
 ```
 
-Las cuotas deben numerarse desde 1, tener fechas únicas y ascendentes, y montos iguales salvo la última. El interés se calcula como `round(loan_amount * interest_rate / 100, 2)` y `total_to_pay` es `loan_amount + interest_amount`. En modo `included` las cuotas suman `total_to_pay` y no hay registro de interés; en modo `separate` suman `loan_amount` y se crea una obligación pendiente en `loan_interest_payments`. `separate` exige `interest_rate > 0`.
+Installments must be numbered from 1, have unique ascending dates, and equal
+amounts except for the last one. Interest is calculated as
+`round(loan_amount * interest_rate / 100, 2)` and `total_to_pay` is
+`loan_amount + interest_amount`. In `included` mode the installments add up to
+`total_to_pay` and no interest record is created; in `separate` mode they add
+up to `loan_amount` and a pending obligation is created in
+`loan_interest_payments`. `separate` requires `interest_rate > 0`.
 
-Cada fiador puede referenciar un `stakeholder_id` existente o enviar los campos de un stakeholder nuevo, pero no ambos. El `national_id` de un stakeholder inline debe ser único: repetir uno ya registrado responde `409`. Las garantías requieren `description` y aceptan `estimated_value` opcional. Las respuestas incluyen `interest_amount`, `total_to_pay`, cuotas ordenadas, fiadores, garantías e `interestPayment`.
+Each guarantor can reference an existing `stakeholder_id` or send the fields
+of a new stakeholder, but not both. The `national_id` of an inline stakeholder
+must be unique: repeating a registered one responds `409`. Collateral requires
+a `description` and accepts an optional `estimated_value`. Responses include
+`interest_amount`, `total_to_pay`, sorted installments, guarantors, collateral,
+and `interestPayment`.
 
-Para cuentas `lender`, `lender_id` debe ser el stakeholder vinculado al usuario: el service lo deriva del JWT y responde `403` si se envía otro valor. Un préstamo de otro prestamista responde `404` aunque el `:id` exista. Los usuarios `admin` mantienen acceso global y pueden especificar cualquier `lender_id`. En `POST`, `PUT` y `PATCH`, un `lender` que envía otro prestamista recibe `403 Only admins can change the lender`.
+For a `lender` account, `lender_id` must be the stakeholder linked to the
+user: the service derives it from the JWT and responds `403` if another value
+is sent. A loan belonging to another lender responds `404` even if the `:id`
+exists. `admin` users keep global access and may specify any `lender_id`. In
+`POST`, `PUT`, and `PATCH`, a `lender` sending another lender receives
+`403 Only admins can change the lender`.
 
-`disbursed_at` debe incluir hora y acepta ISO 8601 (`2026-01-15T10:30:00Z`, con zona opcional) o formato MySQL (`2026-01-15 10:30:00`); sin zona se interpreta como hora local del servidor y la respuesta usa ISO UTC. `loan_amount` debe ser mayor que 0, tener máximo 2 decimales y llegar hasta `9999999999.99`; `interest_rate` va de 0 a `999.9999`.
+`disbursed_at` must include a time and accepts ISO 8601
+(`2026-01-15T10:30:00Z`, with optional zone) or MySQL format
+(`2026-01-15 10:30:00`); without a zone it is interpreted as server local time
+and the response uses UTC ISO. `loan_amount` must be greater than 0, have at
+most 2 decimals, and be no larger than `9999999999.99`; `interest_rate` ranges
+from 0 to `999.9999`.
 
-`PATCH` reemplaza solo los arreglos enviados y exige `installments` cuando cambian `loan_amount`, `interest_rate` o `interest_payment_mode`. Con pagos de cuotas o interés pagado, `PATCH` solo acepta `guarantors` y `collaterals`, más `lender_id` para `admin`; cualquier otro campo responde `409`. `PUT` y `DELETE` siguen bloqueados con `409` mientras existan pagos.
+`PATCH` replaces only the arrays sent and requires `installments` when
+`loan_amount`, `interest_rate`, or `interest_payment_mode` change. With paid
+installments or paid interest, `PATCH` only accepts `guarantors` and
+`collaterals`, plus `lender_id` for `admin`; any other field responds `409`.
+`PUT` and `DELETE` stay blocked with `409` while payments exist.
 
-### Pagos
+### Payments
 
-Hay dos rutas explícitas y no existe un `POST /api/payments` genérico. Ambas reciben `loan_id` y `amount`; `paid_at` es opcional y debe ser ISO 8601 con zona; si se omite se usa la hora del servidor.
+There are two explicit routes and no generic `POST /api/payments`. Both receive
+`loan_id` and `amount`; `paid_at` is optional and must be ISO 8601 with a zone;
+if omitted the server time is used.
 
 `POST /api/payments/installment`:
 
@@ -290,7 +510,7 @@ Hay dos rutas explícitas y no existe un `POST /api/payments` genérico. Ambas r
 }
 ```
 
-`POST /api/payments/interest` para un préstamo en modo `separate`:
+`POST /api/payments/interest` for a loan in `separate` mode:
 
 ```json
 {
@@ -300,8 +520,24 @@ Hay dos rutas explícitas y no existe un `POST /api/payments` genérico. Ambas r
 }
 ```
 
-Cada ruta exige su propio identificador de destino; el campo de la otra ruta se ignora. El monto debe ser exactamente el pendiente (`amount_due` de la cuota o `interest_amount` del préstamo); no se aceptan abonos parciales. `recorded_by` se toma del usuario autenticado en el JWT, no del cuerpo, y se devuelve junto con `recordedBy` en la respuesta `201`. Un destino ajeno al préstamo responde `404`, un destino ya pagado responde `409` y un monto distinto responde `400`. Los listados y el detalle respetan el mismo filtro de prestamista que `/api/loans`.
+Each route requires its own destination ID; the other route's field is
+ignored. The amount must match exactly the pending amount (`amount_due` of the
+installment or `interest_amount` of the loan); partial payments are not
+accepted. `recorded_by` comes from the authenticated user in the JWT, not from
+the body, and is returned along with `recordedBy` in the `201` response. A
+destination outside the loan responds `404`, an already-paid destination
+responds `409`, and a wrong amount responds `400`. Listings and details respect
+the same lender filter as `/api/loans`.
 
-`PATCH /api/payments/:id` solo corrige `paid_at` (`{ "paid_at": "2026-02-16T09:15:00Z" }`). `DELETE /api/payments/:id` revierte el pago en una transacción: elimina el vínculo de la cuota o nulifica el del interés, deja el destino en `pending`, elimina el registro en `loan_payments` y responde `204`. Después de la reversión el préstamo vuelve a aceptar cambios financieros y eliminación; antes de revertir, el cliente permite actualizar fiadores, garantías y, para `admin`, el prestamista mediante `PATCH`. El cliente expone esta reversión desde `/loans/:id` y desde `/admin/payments`, en ambos casos con un flujo separado del registro de pagos.
+`PATCH /api/payments/:id` only corrects `paid_at`
+(`{ "paid_at": "2026-02-16T09:15:00Z" }`). `DELETE /api/payments/:id` reverts
+the payment in a transaction: it removes the installment link or clears the
+interest link, sets the destination back to `pending`, deletes the
+`loan_payments` record, and responds `204`. After a reversal the loan accepts
+financial changes and deletion again; before reversing, the client allows
+updating guarantors, collateral, and, for admins, the lender through `PATCH`.
+The client exposes this reversal from `/loans/:id` and `/admin/payments`, in
+both cases with a flow separate from payment recording.
 
-Passport sigue configurado en `src/server/config/passport.js` pero la API actual no lo usa; la autenticación se resuelve con JWT.
+Passport remains configured in `src/server/config/passport.js` but the current
+API does not use it; authentication is resolved with JWT.

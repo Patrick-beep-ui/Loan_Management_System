@@ -1,5 +1,14 @@
 # Changelog — roles
 
+## 2026-11-26 — Role selection moved to admin provisioning
+
+- Change: public signup was removed. `POST /api/admin/users` resolves
+  `role_id` from `role_name` (`admin` or `lender`), and the first admin is
+  created with `pnpm seed:admin` instead of being provisioned manually.
+- Impact: `GET /api/roles` is unchanged; roles are now chosen by an admin when
+  creating an account rather than being fixed to `lender` at signup.
+- Verification: syntax checks and diff review; no live API tests.
+
 ## 2026-11-17 — `operator` renamed to `lender`
 
 - Change: the migration `2026-11-17-rename-operator-role-to-lender.sql` changes

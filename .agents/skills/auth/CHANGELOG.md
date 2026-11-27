@@ -1,5 +1,18 @@
 # Changelog — auth
 
+## 2026-11-26 — Admin-created users and forced password change
+
+- Change: public `POST /api/auth/signup` was removed. `authService` now exposes
+  `changePassword`, mounted at `PATCH /api/users/me/password`, and `checkAuth`
+  reads `must_change_password` into `req.user`. A new `requirePasswordChanged`
+  middleware limits temporary-password accounts to session hydration and the
+  password-change route.
+- Impact: users can only be provisioned by an admin, receive a one-time
+  temporary password, and must replace it before using the rest of the API.
+  `login` returns the flag so the client can redirect to `/change-password`.
+- Verification: `node --check` on modified backend files, validator smoke tests,
+  and middleware path checks passed; no live API tests.
+
 ## 2026-11-25 — Lender guard mounted on loans
 
 - Change: `requireAdminForLenderChange` is applied to `POST`, `PUT`, and `PATCH`

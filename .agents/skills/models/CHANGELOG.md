@@ -1,5 +1,16 @@
 # Changelog — models
 
+## 2026-11-26 — `must_change_password` flag on `User`
+
+- Change: `User.js` declares `must_change_password` as a non-null boolean with
+  a default value of `false`, matching
+  `database/migrations/2026-11-26-user-provisioning.sql`.
+- Impact: admin-created accounts start with the flag set; `checkAuth` reads it
+  from the database and the password-change flow clears it. Models still do not
+  use `sequelize.sync()`.
+- Verification: syntax checks and diff review; the migration was not applied in
+  this session.
+
 ## 2026-11-25 — `is_active` flag on `User`
 
 - Change: `User.js` declares `is_active` as a non-null boolean with a default

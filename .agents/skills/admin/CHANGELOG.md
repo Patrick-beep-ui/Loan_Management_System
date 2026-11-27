@@ -1,5 +1,18 @@
 # Changelog — admin
 
+## 2026-11-26 — Admin user creation and password reset UI
+
+- Change: `/admin/users` gained a `New user` dialog and a per-row `Reset
+  password` action backed by `POST /api/admin/users` and
+  `POST /api/admin/users/:userId/reset-password`. `useAdminUsers` filters
+  stakeholders not linked to an account and shows the one-time temporary
+  password. Rows mark `must_change_password` as `Password pending`.
+- Impact: admins can provision `admin` and `lender` accounts and reset
+  credentials without public signup. `RequireAuth` sends accounts with a
+  pending password change to `/change-password` before the panel is reachable.
+- Verification: `pnpm build` succeeded and no `signup` references remain in the
+  frontend; no live browser or API tests were performed.
+
 ## 2026-11-25 — P7 dashboard implemented
 
 - Change: `/admin/dashboard` was no longer a stub. `useAdminDashboard`,

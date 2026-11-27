@@ -21,7 +21,7 @@ export async function checkAuth(req, res, next) {
 
     try {
         const user = await User.findByPk(payload.user_id, {
-            attributes: ["user_id", "role_id", "stakeholder_id", "is_active"],
+            attributes: ["user_id", "role_id", "stakeholder_id", "is_active", "must_change_password"],
             include: [{ model: Role, attributes: ["role_name"] }]
         });
 
@@ -37,7 +37,8 @@ export async function checkAuth(req, res, next) {
             user_id: user.user_id,
             role_id: user.role_id,
             role_name: user.Role?.role_name ?? null,
-            stakeholder_id: user.stakeholder_id
+            stakeholder_id: user.stakeholder_id,
+            must_change_password: Boolean(user.must_change_password)
         };
         return next();
     } catch (error) {
