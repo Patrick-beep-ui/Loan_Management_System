@@ -51,6 +51,7 @@ export function AuthProvider() {
     try {
       const { data } = await api.get("/users/auth");
       setUser(data);
+      return data;
     } catch (error) {
       localStorage.removeItem("token");
       setUser(null);

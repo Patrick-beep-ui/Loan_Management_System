@@ -208,11 +208,14 @@ hidden).
 `/payments` and `/stakeholders` are for lenders (admins go to
 `/admin/payments` and `/admin/stakeholders`), `/admin/*` requires the `admin`
 role, and the rest are public. `login(token)`
-and `refreshUser()` return the `must_change_password` flag. `RequireAuth`
+and `refreshUser()` return the loaded user, including the
+`must_change_password` flag. `RequireAuth`
 redirects a user with that flag to `/change-password` unless they are already
 there. `ChangePassword` submits `{ current_password, new_password }` to
 `PATCH /api/users/me/password`, refreshes the session, and navigates to the
-original route or `/loans`.
+original route or `/loans`. After sign-in, `Login` returns users to the route
+they originally requested; if there is no saved route, admins go to `/admin`
+(which redirects to `/admin/dashboard`) and other users go to `/loans`.
 
 `Loan` composes the listing from `src/components/loans/list/` with the
 `useLoans` hook and `api.get("/loans")` (ID, lender, customer, amount, rate,

@@ -24,7 +24,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const from = location.state?.from?.pathname || "/loans";
+  const from = location.state?.from?.pathname;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -41,8 +41,10 @@ export default function Login() {
       const response = await api.post("/auth/login", { email, password });
       const { data } = response;
 
-      await login(data.token);
-      navigate(from, { replace: true }); // redirection
+      const user = await login(data.token);
+      const destination =
+        from || (user.Role?.role_name === "admin" ? "/admin" : "/loans");
+      navigate(destination, { replace: true });
     } catch (error) {
       setError(
         error.response?.data?.error ||

@@ -1,5 +1,13 @@
 # Changelog — frontend
 
+### 2026-11-26 — Route admins to the admin dashboard after sign-in
+
+- Change: `login(token)` now returns the loaded user, and `Login` uses the
+  user's role to select `/admin` as the default destination for admins.
+- Impact: an existing requested route still takes precedence; otherwise
+  non-admin users continue to land on `/loans`.
+- Verification: `pnpm build` succeeded.
+
 ### 2026-11-26 — Lender stakeholders view at `/stakeholders`
 
 - Change: added `Stakeholders`, `useLenderStakeholders`,

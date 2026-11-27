@@ -52,8 +52,9 @@ and navigates to `/login` with `replace: true`.
 while submitting, and shows `error.response?.data?.error` or a network message in
 a `role="alert"` region with `destructive` tokens. `Login` uses
 `useAuth().login(token)` to save the JWT in `localStorage`, load the
-user with `/users/auth`, and navigate to the original route (`state.from`) or
-`/loans`. Public signup was removed. `ChangePassword` uses
+user with `/users/auth`, and navigate to the original route (`state.from`) when
+present; otherwise admins go to `/admin` (which redirects to the dashboard) and
+other users go to `/loans`. Public signup was removed. `ChangePassword` uses
 `useChangePassword` to validate current/new/confirm fields, sends
 `PATCH /users/me/password`, calls `refreshUser()`, and navigates to
 `state.from` or `/loans` after success.
@@ -342,8 +343,9 @@ for that event and clears the user.
 - `RequireAdmin` uses the same hydration state, redirects to `/login` without
   a session and to `/loans` if `user.Role.role_name` is not `admin`; if it is,
   it renders `<Outlet />`.
-- `login(token)` saves the JWT, loads `/users/auth`, and updates the state;
-  `refreshUser()` reloads `/users/auth` and returns the updated user;
+- `login(token)` saves the JWT, loads `/users/auth`, updates the state, and
+  returns the loaded user; `refreshUser()` reloads `/users/auth` and returns
+  the updated user;
   `logout()` clears the token and the user. All are available via `useAuth()`.
 - The exposed user retains the Sequelize `Stakeholder` and `Role` keys
   (`user.Stakeholder.first_name`, `user.Role.role_name`, etc.). `CreateLoan`
