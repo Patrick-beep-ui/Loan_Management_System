@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon -w src/server --exec \"node --env-file=.env\" src/server/main.js",
     "start": "cross-env NODE_ENV=production node --env-file=.env src/server/main.js",
-    "build": "vite build"
+    "build": "vite build",
+    "seed:admin": "node --env-file=.env database/seeds/createFirstAdmin.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

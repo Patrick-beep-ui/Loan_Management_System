@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/client/contexts/AuthContext";
 import api from "@/lib/axiosService";
@@ -24,8 +24,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const registered = location.state?.registered;
-  const from = location.state?.from?.pathname || "/loans";
+  const from = location.state?.from?.pathname;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -42,8 +41,10 @@ export default function Login() {
       const response = await api.post("/auth/login", { email, password });
       const { data } = response;
 
-      await login(data.token);
-      navigate(from, { replace: true }); // redirection
+      const user = await login(data.token);
+      const destination =
+        from || (user.Role?.role_name === "admin" ? "/admin" : "/loans");
+      navigate(destination, { replace: true });
     } catch (error) {
       setError(
         error.response?.data?.error ||
@@ -55,22 +56,19 @@ export default function Login() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Sign in</CardTitle>
+    <main className="flex min-h-screen w-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-xl shadow-md">
+
+        <CardHeader className="space-y-3 px-8 pt-8">
+
+          <CardTitle className="text-3xl">Sign in</CardTitle>
+          
           <CardDescription>Access your loan management account.</CardDescription>
+
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {registered && (
-              <p
-                role="status"
-                className="rounded-lg bg-secondary/20 px-3 py-2 text-sm text-foreground"
-              >
-                Account created. Sign in to continue.
-              </p>
-            )}
+
+          <CardContent className="space-y-6 px-8 py-6">
             {error && (
               <p
                 role="alert"
@@ -105,19 +103,10 @@ export default function Login() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex-col items-stretch gap-3">
+          <CardFooter className="flex-col items-stretch gap-5 px-8 pb-8">
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? "Signing in..." : "Sign in"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Need an account?{" "}
-              <Link
-                className="font-medium text-primary hover:underline"
-                to="/signup"
-              >
-                Sign up
-              </Link>
-            </p>
           </CardFooter>
         </form>
       </Card>

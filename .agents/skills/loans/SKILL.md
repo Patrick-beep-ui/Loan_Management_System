@@ -5,211 +5,215 @@ description: Loans CRUD with a nested installment schedule, guarantors, collater
 
 # loans
 
-CRUD de préstamos (`loans`) que vinculan a un prestamista (`lender_id`) y un
-cliente (`customer_id`) con el monto, la tasa de interés, la fecha de desembolso
-y el modo de pago del interés ordinario. Las cuentas `lender` registran y
-gestionan solo los préstamos que ellas proporcionan; `admin` conserva acceso
-global.
+CRUD for loans (`loans`) that link a lender (`lender_id`) and a customer
+(`customer_id`) with the amount, interest rate, disbursement date, and ordinary
+interest payment mode. `lender` accounts record and manage only the loans they
+provide; `admin` retains global access.
 
-El alta y el reemplazo crean o reemplazan, en una sola transacción, el calendario
-de cuotas (`loan_installments`), los fiadores (`loan_guarantors`) y las garantías
-(`loan_collaterals`). Cuando el interés se cobra por separado, también se crea
-una obligación pendiente en `loan_interest_payments`. Los abonos se registran en
-el módulo [`payments`](../payments/SKILL.md), que actualiza los estados de cuotas
-e interés y bloquea estos préstamos para cambios posteriores.
+Creation and replacement create or replace, in a single transaction, the
+installment schedule (`loan_installments`), guarantors (`loan_guarantors`), and
+collateral (`loan_collaterals`). When interest is charged separately, a pending
+obligation is also created in `loan_interest_payments`. Payments are recorded in
+the [`payments`](../payments/SKILL.md) module, which updates installment and
+interest statuses and blocks these loans from subsequent changes.
 
-El historial de cambios de este módulo está en [`CHANGELOG.md`](CHANGELOG.md).
+The change history of this module is in [`CHANGELOG.md`](CHANGELOG.md).
 
-## Validación
+## Validation
 
-Toda la validación y normalización del payload vive en
-`src/server/utils/validators/loanValidation.js`. El service no valida datos de
-entrada: recibe los atributos y arreglos ya normalizados y solo ejecuta la
-persistencia transaccional, los bloqueos por pagos existentes y la lista blanca
-de `PATCH` cuando hay pagos. En `PATCH`, el validador recibe el préstamo
-almacenado para resolver las reglas que dependen del estado actual (términos
-efectivos, cambios financieros y totales de cuotas).
+All payload validation and normalization lives in
+`src/server/utils/validators/loanValidation.js`. The service does not validate
+input data: it receives already-normalized attributes and arrays and only
+performs transactional persistence, blocks due to existing payments, and the
+`PATCH` whitelist when payments exist. In `PATCH`, the validator receives the
+stored loan to resolve rules that depend on the current status (effective terms,
+financial changes, and installment totals).
 
-Cuando una petición tiene errores de entrada y además el préstamo tiene pagos,
-responde el error de validación (`400`); el conflicto por pagos (`409`) se
-evalúa después. Un `:id` inexistente se detecta antes que un cuerpo inválido
-en `PATCH`, así que en ese caso responde `404`.
+When a request has input errors and the loan also has payments, it returns the
+validation error (`400`); the payment conflict (`409`) is evaluated afterward.
+A nonexistent `:id` is detected before an invalid body in `PATCH`, so it returns
+`404` in that case.
 
 ## Endpoints
 
-Todas las rutas requieren `Authorization: Bearer <token>`.
+All routes require `Authorization: Bearer <token>`.
 
-| Método | Ruta | Controller | Service | Acceso |
+| Method | Route | Controller | Service | Access |
 | --- | --- | --- | --- | --- |
-| `GET` | `/api/loans` | `loanController.getAllLoans` | `loanService.getAllLoans` | lender propio / admin |
-| `GET` | `/api/loans/:id` | `loanController.getLoanById` | `loanService.getLoanById` | lender propio / admin |
+| `GET` | `/api/loans` | `loanController.getAllLoans` | `loanService.getAllLoans` | own lender / admin |
+| `GET` | `/api/loans/:id` | `loanController.getLoanById` | `loanService.getLoanById` | own lender / admin |
 | `POST` | `/api/loans` | `loanController.createLoan` | `loanService.createLoan` | lender / admin |
-| `PUT` | `/api/loans/:id` | `loanController.replaceLoan` | `loanService.replaceLoan` | lender propio / admin |
-| `PATCH` | `/api/loans/:id` | `loanController.updateLoan` | `loanService.updateLoan` | lender propio / admin |
-| `DELETE` | `/api/loans/:id` | `loanController.deleteLoan` | `loanService.deleteLoan` | lender propio / admin |
+| `PUT` | `/api/loans/:id` | `loanController.replaceLoan` | `loanService.replaceLoan` | own lender / admin |
+| `PATCH` | `/api/loans/:id` | `loanController.updateLoan` | `loanService.updateLoan` | own lender / admin |
+| `DELETE` | `/api/loans/:id` | `loanController.deleteLoan` | `loanService.deleteLoan` | own lender / admin |
 
-## Permisos y propiedad
+## Permissions and ownership
 
-Los controllers pasan `req.user` (`user_id`, `role_id`, `role_name`,
-`stakeholder_id`) a todos los services de préstamos.
+Controllers pass `req.user` (`user_id`, `role_id`, `role_name`,
+`stakeholder_id`) to all loan services.
 
-- `admin` (`role_name = "admin"`): acceso global; `lender_id` sigue siendo
-  configurable en creación, reemplazo y PATCH.
-- `requireAdminForLenderChange` se aplica en `POST`, `PUT` y `PATCH` desde
-  `loanRoutes.js`: rechaza con `403 Only admins can change the lender` cualquier
-  `lender_id` distinto del propio `stakeholder_id` de una cuenta `lender`. Los
-  services mantienen sus reglas de propiedad y validación.
-- El panel `/admin/loans` reutiliza `GET /api/loans` para listar y
-  `PATCH /api/loans/:id` con `{ "lender_id" }` para reasignar el prestamista; no
-  hay endpoints nuevos bajo `/api/admin`. El desplegable toma sus opciones de
-  `GET /api/users` filtrando cuentas con rol `lender`.
-- `lender`: sus consultas y mutaciones se filtran por
-  `lender_id = req.user.stakeholder_id`. Al crear, el service deriva
-  `lender_id` del usuario: si el payload envía otro valor responde `403`. En
-  PATCH tampoco puede cambiar `lender_id`. Si el usuario no tiene
-  `stakeholder_id`, responde `403`.
-- Un préstamo de otro prestamista responde `404` en cualquier ruta con `:id`,
-  aunque el registro exista; así no se revela su existencia.
-- `loanScope(user)` está exportado desde `loanService` y lo reutiliza el módulo
-  `payments` para aplicar el mismo filtro de propiedad.
-- Las rutas `/api/users`, `/api/roles` y `/api/stakeholders` no filtran por rol.
+- `admin` (`role_name = "admin"`): global access; `lender_id` remains
+  configurable on creation, replacement, and PATCH.
+- `requireAdminForLenderChange` is applied in `POST`, `PUT`, and `PATCH` from
+  `loanRoutes.js`: it rejects with `403 Only admins can change the lender` any
+  `lender_id` other than a `lender` account's own `stakeholder_id`. The services
+  retain their ownership and validation rules.
+- The `/admin/loans` panel reuses `GET /api/loans` for listing and
+  `PATCH /api/loans/:id` with `{ "lender_id" }` to reassign the lender; there
+  are no new endpoints under `/api/admin`. The dropdown takes its options from
+  `GET /api/users`, filtering accounts with the `lender` role.
+- `lender`: its queries and mutations are filtered by
+  `lender_id = req.user.stakeholder_id`. On creation, the service derives
+  `lender_id` from the user: if the payload sends another value it returns
+  `403`. In PATCH it cannot change `lender_id` either. If the user has no
+  `stakeholder_id`, it returns `403`.
+- A loan belonging to another lender returns `404` on any route with `:id`,
+  even if the record exists; this does not reveal its existence.
+- `loanScope(user)` is exported from `loanService` and reused by the `payments`
+  module to apply the same ownership filter.
+- The routes `/api/users`, `/api/roles`, and `/api/stakeholders` do not filter
+  by role.
 
-## Campos del préstamo
+## Loan fields
 
-| Campo | Tipo | Obligatorio | Reglas |
+| Field | Type | Required | Rules |
 | --- | --- | --- | --- |
-| `loan_id` | entero | — | PK autoincremental; en la URL debe ser entero positivo. |
-| `lender_id` | entero | sí | Entero positivo; referencia a `stakeholders.stakeholder_id`; debe ser distinto de `customer_id`. Para `lender` se deriva del JWT (403 si se envía otro); `admin` puede elegirlo. |
-| `customer_id` | entero | sí | Entero positivo; referencia a `stakeholders.stakeholder_id`; debe ser distinto de `lender_id`. |
-| `loan_amount` | número/decimal | sí | Número finito mayor que 0 y hasta `9999999999.99`; máximo 2 decimales; acepta strings numéricos. |
-| `interest_rate` | número/decimal | no | Número finito entre 0 y `999.9999`; `""`/`null` se guarda como `null`. |
-| `interest_payment_mode` | enum | sí | `included` o `separate`. |
-| `disbursed_at` | datetime | sí | Debe incluir hora. Acepta ISO 8601 (`YYYY-MM-DDTHH:mm[:ss[.sss]]` con `Z` u offset opcional) o `YYYY-MM-DD HH:mm[:ss]`; la fecha debe ser real. Sin zona se interpreta en la zona local del servidor y la respuesta se normaliza a ISO UTC. |
+| `loan_id` | integer | — | Auto-incrementing PK; in the URL it must be a positive integer. |
+| `lender_id` | integer | yes | Positive integer; reference to `stakeholders.stakeholder_id`; must differ from `customer_id`. For `lender` it is derived from the JWT (403 if another is sent); `admin` can choose it. |
+| `customer_id` | integer | yes | Positive integer; reference to `stakeholders.stakeholder_id`; must differ from `lender_id`. |
+| `loan_amount` | number/decimal | yes | Finite number greater than 0 and up to `9999999999.99`; at most 2 decimals; accepts numeric strings. |
+| `interest_rate` | number/decimal | no | Finite number between 0 and `999.9999`; `""`/`null` is stored as `null`. |
+| `interest_payment_mode` | enum | yes | `included` or `separate`. |
+| `disbursed_at` | datetime | yes | Must include a time. Accepts ISO 8601 (`YYYY-MM-DDTHH:mm[:ss[.sss]]` with optional `Z` or offset) or `YYYY-MM-DD HH:mm[:ss]`; the date must be valid. Without a zone it is interpreted in the server's local time zone and the response is normalized to ISO UTC. |
 
-`interest_amount` y `total_to_pay` son campos virtuales de solo lectura que la
-API calcula y devuelve:
+`interest_amount` and `total_to_pay` are read-only virtual fields calculated and
+returned by the API:
 
 ```text
 interest_amount = round(loan_amount * interest_rate / 100, 2)
 total_to_pay    = loan_amount + interest_amount
 ```
 
-Si `interest_rate` es `null`, el interés es 0.
+If `interest_rate` is `null`, interest is 0.
 
-## Relaciones del payload
+## Payload relationships
 
-Además de los campos del préstamo, `POST` y `PUT` exigen estos arreglos no vacíos:
+In addition to the loan fields, `POST` and `PUT` require these non-empty arrays:
 
 ### `installments[]`
 
-| Campo | Reglas |
+| Field | Rules |
 | --- | --- |
-| `installment_number` | Entero positivo, único y consecutivo desde 1; el servidor ordena por este valor. |
-| `amount_due` | Número mayor que 0, hasta `9999999999.99` y máximo 2 decimales. |
-| `due_date` | `YYYY-MM-DD`, fecha real, única y estrictamente ascendente según `installment_number`. |
+| `installment_number` | Positive integer, unique and consecutive starting at 1; the server sorts by this value. |
+| `amount_due` | Number greater than 0, up to `9999999999.99`, with at most 2 decimals. |
+| `due_date` | `YYYY-MM-DD`, a valid date, unique and strictly increasing by `installment_number`. |
 
-Los montos deben ser iguales entre sí, salvo la última cuota. La suma debe
-coincidir exactamente con:
+Amounts must be equal to each other except for the last installment. The sum
+must match exactly:
 
-- `included`: `loan_amount + interest_amount` (interés incluido en las cuotas).
-- `separate`: `loan_amount` (el interés se registra aparte).
+- `included`: `loan_amount + interest_amount` (interest included in the
+  installments).
+- `separate`: `loan_amount` (interest is recorded separately).
 
-`interest_payment_mode = separate` exige `interest_rate > 0`.
+`interest_payment_mode = separate` requires `interest_rate > 0`.
 
 ### `guarantors[]`
 
-Cada elemento debe contener **o** `stakeholder_id` **o** los campos de un
-stakeholder nuevo, pero no ambos:
+Each entry must contain **either** `stakeholder_id` **or** the fields of a new
+stakeholder, but not both:
 
-- `stakeholder_id`: entero positivo de un stakeholder existente.
-- Inline: `first_name` y `last_name` obligatorios; `national_id`,
-  `marital_status`, `occupation` y `date_of_birth` siguen las reglas del módulo
-  `stakeholders`.
+- `stakeholder_id`: positive integer of an existing stakeholder.
+- Inline: `first_name` and `last_name` are required; `national_id`,
+  `marital_status`, `occupation`, and `date_of_birth` follow the rules of the
+  `stakeholders` module.
 
-No se permite repetir un mismo stakeholder. Los stakeholders inline se crean
-dentro de la misma transacción y permanecen en la base si luego se elimina el
-préstamo. Un `national_id` duplicado responde `409`.
+Repeating the same stakeholder is not allowed. Inline stakeholders are created
+within the same transaction and remain in the database if the loan is later
+deleted. A duplicate `national_id` returns `409`.
 
 ### `collaterals[]`
 
-| Campo | Reglas |
+| Field | Rules |
 | --- | --- |
-| `description` | Texto obligatorio, `trim`, máximo 65535 caracteres. |
-| `estimated_value` | Opcional; número mayor o igual que 0, hasta `9999999999.99` y máximo 2 decimales. |
+| `description` | Required text, `trim`, max 65535 characters. |
+| `estimated_value` | Optional; number greater than or equal to 0, up to `9999999999.99`, with at most 2 decimals. |
 
-## Comportamiento por endpoint
+## Endpoint behavior
 
-- `GET /`: devuelve todos los préstamos ordenados por `loan_id` descendente
-  (`200`). Cada préstamo incluye `lender` y `customer` (`stakeholder_id`,
-  `first_name`, `last_name`), `installments` ordenadas por
-  `installment_number`, `guarantors` con su `guarantor`, `collaterals` e
-  `interestPayment` (con su `payment` cuando está pagado). Si el préstamo no
-  tiene interés separado, `interestPayment` es `null`.
-- `GET /:id`: devuelve el préstamo con las mismas relaciones o `404` si no existe.
-- `POST /`: crea el préstamo, sus cuotas, fiadores, garantías y la obligación de
-  interés pendiente cuando corresponde (`201`). Devuelve el préstamo con todas
-  sus relaciones. `lender_id` se toma del usuario autenticado para cuentas
-  `lender`; enviar otro valor responde `403`. Si `customer_id` no existe, si un
-  `guarantor.stakeholder_id` no existe o si un `national_id` inline ya existe,
-  responde `409`. Si prestamista y cliente son la misma persona responde `400`.
-- `PUT /:id`: reemplazo completo (`200`). Exige los campos del préstamo y los
-  arreglos `installments`, `guarantors` y `collaterals`; reemplaza todas las
-  relaciones. Si el préstamo tiene algún pago de cuota o interés pagado responde
-  `409` y no modifica nada.
-- `PATCH /:id`: actualización parcial (`200`). Solo cambia los campos y arreglos
-  enviados; con un cuerpo vacío responde `400`. Los arreglos enviados reemplazan
-  su relación completa. Si cambia `loan_amount`, `interest_rate` o
-  `interest_payment_mode`, exige `installments` para recalcular y validar el
-  calendario. Si el préstamo tiene pagos de cuotas o interés pagado, solo se
-  permiten `guarantors` y `collaterals` para cualquier usuario, y `lender_id`
-  adicionalmente para `admin`; cualquier otro campo o arreglo (incluidos
-  `customer_id`, `disbursed_at`, campos financieros, `installments` y
-  `lender_id` de un `lender`) responde `409` con
-  `A loan with payments can only update ...`. Los campos no permitidos se
-  rechazan incluso si se envían con el mismo valor almacenado.
-- `DELETE /:id`: elimina el préstamo (`204`, sin cuerpo). Si tiene pagos de
-  cuotas o interés pagado responde `409`. En caso contrario elimina primero la
-  obligación de interés pendiente, los vínculos de fiadores, las garantías, las
-  cuotas y finalmente el préstamo. Los stakeholders inline no se eliminan.
+- `GET /`: returns all loans sorted by `loan_id` descending (`200`). Each loan
+  includes `lender` and `customer` (`stakeholder_id`, `first_name`,
+  `last_name`), `installments` sorted by `installment_number`, `guarantors` with
+  their `guarantor`, `collaterals`, and `interestPayment` (with its `payment`
+  when paid). If the loan has no separate interest, `interestPayment` is `null`.
+- `GET /:id`: returns the loan with the same relationships or `404` if it does
+  not exist.
+- `POST /`: creates the loan, its installments, guarantors, collateral, and the
+  pending interest obligation when applicable (`201`). Returns the loan with
+  all its relationships. `lender_id` is taken from the authenticated user for
+  `lender` accounts; sending another value returns `403`. If `customer_id` does
+  not exist, if a `guarantor.stakeholder_id` does not exist, or if an inline
+  `national_id` already exists, it returns `409`. If the lender and customer are
+  the same person it returns `400`.
+- `PUT /:id`: full replacement (`200`). Requires the loan fields and the
+  `installments`, `guarantors`, and `collaterals` arrays; replaces all
+  relationships. If the loan has any installment payment or paid interest it
+  returns `409` and changes nothing.
+- `PATCH /:id`: partial update (`200`). Changes only the fields and arrays
+  sent; an empty body returns `400`. Sent arrays replace their entire
+  relationship. If `loan_amount`, `interest_rate`, or
+  `interest_payment_mode` changes, `installments` is required to recalculate
+  and validate the schedule. If the loan has installment payments or paid
+  interest, only `guarantors` and `collaterals` are allowed for any user, and
+  `lender_id` additionally for `admin`; any other field or array (including
+  `customer_id`, `disbursed_at`, financial fields, `installments`, and
+  `lender_id` from a `lender`) returns `409` with
+  `A loan with payments can only update ...`. Disallowed fields are rejected
+  even if sent with the same stored value.
+- `DELETE /:id`: deletes the loan (`204`, no body). If it has installment
+  payments or paid interest it returns `409`. Otherwise it first deletes the
+  pending interest obligation, guarantor links, collateral, installments, and
+  finally the loan. Inline stakeholders are not deleted.
 
-### Interés incluido y separado
+### Included and separate interest
 
-- `included`: las cuotas suman capital + interés y no existe fila en
-  `loan_interest_payments`.
-- `separate`: las cuotas suman capital y existe exactamente una fila en
-  `loan_interest_payments` con `payment_id = null` y `status = "pending"`.
-- Al cambiar de `separate` a `included`, se elimina la obligación pendiente. Al
-  cambiar de `included` a `separate`, se crea una nueva obligación pendiente.
-- Una obligación con `status = "paid"` bloquea los cambios financieros y la
-  eliminación del préstamo; la edición parcial de fiadores, garantías y, para
-  `admin`, prestamista continúa disponible según la regla de `PATCH`.
+- `included`: installments add up to principal + interest and there is no row
+  in `loan_interest_payments`.
+- `separate`: installments add up to principal and there is exactly one row in
+  `loan_interest_payments` with `payment_id = null` and `status = "pending"`.
+- When changing from `separate` to `included`, the pending obligation is
+  deleted. When changing from `included` to `separate`, a new pending obligation
+  is created.
+- An obligation with `status = "paid"` blocks financial changes and deletion
+  of the loan; partial editing of guarantors, collateral, and, for `admin`, the
+  lender remains available under the `PATCH` rule.
 
-Los campos desconocidos se ignoran. Un `:id` no numérico o menor o igual a cero
-responde `400`.
+Unknown fields are ignored. A non-numeric `:id` or one less than or equal to
+zero returns `400`.
 
-## Errores
+## Errors
 
-- `400` campos obligatorios, formato/valor inválido, cuotas inconsistentes,
-  prestamista igual al cliente o `:id` inválido.
-- `401` token ausente o inválido (lo aplica `checkAuth`).
-- `403` prestamista no vinculado, `lender_id` distinto al del usuario `lender`
-  en cualquier mutación (`Only admins can change the lender` cuando lo detecta
-  el guard) o intento de cambiarlo en PATCH.
-- `404` préstamo inexistente o perteneciente a otro prestamista.
-- `409` referencia inválida, `national_id` inline duplicado (mensaje `A stakeholder with that national ID already exists`), fiador duplicado
-  (un `stakeholder_id` y un stakeholder inline que resuelve al mismo registro),
-  pagos de cuotas, interés pagado, campo no permitido en `PATCH` con pagos o
-  conflicto de unicidad al crear/reemplazar.
-- `500` error inesperado.
+- `400` required fields, invalid format/value, inconsistent installments,
+  lender same as customer, or invalid `:id`.
+- `401` token missing or invalid (applied by `checkAuth`).
+- `403` lender not linked, `lender_id` different from the `lender` user's in
+  any mutation (`Only admins can change the lender` when detected by the
+  guard), or an attempt to change it in PATCH.
+- `404` loan nonexistent or belonging to another lender.
+- `409` invalid reference, duplicate inline `national_id` (message
+  `A stakeholder with that national ID already exists`), duplicate guarantor
+  (a `stakeholder_id` and an inline stakeholder resolving to the same record),
+  installment payments, paid interest, disallowed field in `PATCH` with
+  payments, or a uniqueness conflict on creation/replacement.
+- `500` unexpected error.
 
-## Archivos
+## Files
 
-- `src/server/routes/loanRoutes.js` (montado en `/api/loans`)
+- `src/server/routes/loanRoutes.js` (mounted on `/api/loans`)
 - `src/server/middlewares/requireAdminForLenderChange.js`
 - `src/server/controllers/loanController.js`
 - `src/server/services/loanService.js`
 - `src/server/utils/validators/loanValidation.js`
-- `src/server/utils/validators/stakeholderValidation.js` (fiadores inline)
+- `src/server/utils/validators/stakeholderValidation.js` (inline guarantors)
 - `src/server/models/Loan.js`
 - `src/server/models/LoanInstallment.js`
 - `src/server/models/LoanGuarantor.js`

@@ -1,3 +1,10 @@
+import { fullName } from "@/client/utils/loanFormat";
+import {
+  daysOverdue,
+  isInstallmentOverdue,
+} from "@/client/utils/loanStatus";
+import { buildStakeholderSummaries } from "@/client/utils/stakeholderProfile";
+
 function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -28,18 +35,6 @@ function paymentTargetLabel(payment) {
   return installment
     ? `Installment #${installment.installment_number}`
     : "Ordinary interest";
-}
-
-function isOverdue(installment, now) {
-  if (isPaid(installment.status) || !installment.due_date) return false;
-
-  const dueDate = new Date(installment.due_date);
-  if (Number.isNaN(dueDate.getTime())) return false;
-
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-
-  return dueDate < today;
 }
 
 function monthKey(paidAt) {
@@ -107,10 +102,45 @@ export function buildRecentPayments(payments, limit = 5) {
     }));
 }
 
-export function buildAdminDashboardData({ loans = [], payments = [] } = {}) {
+export function buildOverdueInstallments(loans, now = new Date()) {
+  const rows = [];
+
+  for (const loan of asArray(loans)) {
+    for (const installment of asArray(loan.installments)) {
+      if (!isInstallmentOverdue(installment, now)) continue;
+
+      rows.push({
+        loanId: loan.loan_id,
+        installmentId: installment.installment_id,
+        installmentNumber: installment.installment_number,
+        dueDate: installment.due_date,
+        amountDue: roundAmount(toNumber(installment.amount_due)),
+        daysOverdue: daysOverdue(installment, now),
+        customer: fullName(loan.customer),
+        lender: fullName(loan.lender),
+      });
+    }
+  }
+
+  return rows.sort(
+    (left, right) =>
+      String(left.dueDate)
+        .slice(0, 10)
+        .localeCompare(String(right.dueDate).slice(0, 10)) ||
+      Number(left.loanId) - Number(right.loanId) ||
+      Number(left.installmentNumber) - Number(right.installmentNumber),
+  );
+}
+
+export function buildAdminDashboardData({
+  loans = [],
+  payments = [],
+  stakeholders = [],
+} = {}) {
   const loanList = asArray(loans);
   const paymentList = asArray(payments);
   const now = new Date();
+  const overdueInstallments = buildOverdueInstallments(loanList, now);
   const lenderIds = new Set();
   const customerIds = new Set();
 
@@ -119,7 +149,6 @@ export function buildAdminDashboardData({ loans = [], payments = [] } = {}) {
   let totalInstallments = 0;
   let paidInstallmentCount = 0;
   let pendingInstallmentCount = 0;
-  let overdueInstallmentCount = 0;
   let includedInterestLoans = 0;
   let separateInterestLoans = 0;
   let separateInterestPaid = 0;
@@ -155,10 +184,6 @@ export function buildAdminDashboardData({ loans = [], payments = [] } = {}) {
       } else {
         pendingInstallmentCount += 1;
       }
-
-      if (isOverdue(installment, now)) {
-        overdueInstallmentCount += 1;
-      }
     }
 
     const interest = loan.interestPayment;
@@ -188,7 +213,7 @@ export function buildAdminDashboardData({ loans = [], payments = [] } = {}) {
     totalInstallments,
     paidInstallmentCount,
     pendingInstallmentCount,
-    overdueInstallmentCount,
+    overdueInstallmentCount: overdueInstallments.length,
     includedInterestLoans,
     separateInterestLoans,
     separateInterestPaid,
@@ -199,5 +224,12 @@ export function buildAdminDashboardData({ loans = [], payments = [] } = {}) {
     metrics,
     monthlyPayments: buildMonthlyPayments(paymentList),
     recentPayments: buildRecentPayments(paymentList),
+    overdueInstallments,
+    stakeholderSummaries: buildStakeholderSummaries({
+      stakeholders,
+      loans: loanList,
+      limit: 5,
+      now,
+    }),
   };
 }

@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import AdminStakeholderFormDialog from "@/components/admin/stakeholders/AdminStakeholderFormDialog";
 import AdminStakeholdersAlerts from "@/components/admin/stakeholders/AdminStakeholdersAlerts";
+import AdminStakeholdersFilter from "@/components/admin/stakeholders/AdminStakeholdersFilter";
 import AdminStakeholdersHeader from "@/components/admin/stakeholders/AdminStakeholdersHeader";
 import AdminStakeholdersTable from "@/components/admin/stakeholders/AdminStakeholdersTable";
 import DeleteStakeholderDialog from "@/components/admin/stakeholders/DeleteStakeholderDialog";
@@ -8,7 +9,10 @@ import { useAdminStakeholders } from "@/client/hooks/useAdminStakeholders";
 
 export default function AdminStakeholders() {
     const {
-        stakeholders,
+        filteredStakeholders,
+        category,
+        setCategory,
+        categoryCounts,
         loading,
         saving,
         deleting,
@@ -45,9 +49,19 @@ export default function AdminStakeholders() {
                     onDismissError={dismissError}
                     onDismissSuccess={dismissSuccess}
                 />
+                <AdminStakeholdersFilter
+                    category={category}
+                    counts={categoryCounts}
+                    onChange={setCategory}
+                />
                 <AdminStakeholdersTable
-                    stakeholders={stakeholders}
+                    stakeholders={filteredStakeholders}
                     loading={loading}
+                    emptyMessage={
+                        category === "all"
+                            ? "No stakeholders found."
+                            : "No stakeholders in this category."
+                    }
                     onEdit={openEdit}
                     onDelete={openDelete}
                 />

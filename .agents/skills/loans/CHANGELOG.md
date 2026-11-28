@@ -1,116 +1,159 @@
 # Changelog — loans
 
-### 2026-11-25 — Opciones de prestamista en el panel admin
+### 2026-11-25 — Lender options in the admin panel
 
-- Change: el desplegable de reasignación del panel `/admin/loans` se construye
-  desde `GET /api/users` filtrado a cuentas con `Role.role_name = "lender"`, en
-  lugar de mostrar todos los stakeholders.
-- Impact: el contrato de la API de préstamos no cambia; solo se restringe la UI
-  a prestamistas con cuenta. Las cuentas inactivas con rol `lender` siguen
-  disponibles como opciones.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: the reassignment dropdown in the `/admin/loans` panel is built from
+  `GET /api/users` filtered to accounts with `Role.role_name = "lender"`,
+  instead of showing all stakeholders.
+- Impact: the loan API contract does not change; only the UI is restricted to
+  lenders with an account. Inactive accounts with the `lender` role remain
+  available as options.
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
 
-### 2026-11-25 — P5 administración de préstamos
+### 2026-11-25 — P5 loan administration
 
-- Change: `loanRoutes.js` aplica `requireAdminForLenderChange` en `POST`, `PUT` y
-  `PATCH`. El panel `/admin/loans` lista todos los préstamos con `GET /api/loans`
-  y reasigna el prestamista con `PATCH /api/loans/:id`.
-- Impact: una cuenta `lender` no puede enviar un `lender_id` ajeno en ninguna
-  mutación; recibe `403 Only admins can change the lender`. Un `admin` puede
-  reasignar prestamistas incluso en préstamos con pagos, sin endpoints nuevos.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `loanRoutes.js` applies `requireAdminForLenderChange` in `POST`, `PUT`
+  and `PATCH`. The `/admin/loans` panel lists all loans with `GET /api/loans`
+  and reassigns the lender with `PATCH /api/loans/:id`.
+- Impact: a `lender` account cannot send a `lender_id` belonging to another
+  lender in any mutation; it receives `403 Only admins can change the lender`.
+  An `admin` can reassign lenders even on loans with payments, without new
+  endpoints.
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
 
-### 2026-11-23 — Edición parcial de préstamos con pagos
+### 2026-11-23 — Partial editing of loans with payments
 
-- Change: `updateLoan` ahora consulta si existen pagos y aplica una lista blanca:
-  con pagos solo acepta `guarantors` y `collaterals`, y `lender_id`
-  adicionalmente para `admin`. `assertNoPayments` se dividió en
-  `findLoanPaymentConflicts`, `loanHasPayments` y `assertNoPayments`, por lo que
-  `PUT` y `DELETE` siguen bloqueados con `409`. Cualquier otro campo en `PATCH`
-  con pagos responde `409` aunque repita el valor almacenado.
-- Impact: los préstamos pagados pueden actualizar fiadores, garantías y, solo
-  administradores, el prestamista mediante `PATCH /api/loans/:id`. Los cambios
-  financieros, de cliente, fecha de desembolso y calendario requieren revertir
-  los pagos. El detalle está en [`SKILL.md`](SKILL.md).
-- Verification: no se ejecutaron pruebas de API; solo se revisó el código. El
-  comportamiento en base de datos y los códigos `409`/`403` siguen sin
-  verificación en tiempo de ejecución.
+- Change: `updateLoan` now checks whether payments exist and applies a
+  whitelist: with payments it accepts only `guarantors` and `collaterals`, and
+  `lender_id` additionally for `admin`. `assertNoPayments` was split into
+  `findLoanPaymentConflicts`, `loanHasPayments`, and `assertNoPayments`, so
+  `PUT` and `DELETE` remain blocked with `409`. Any other field in `PATCH` with
+  payments returns `409` even if it repeats the stored value.
+- Impact: loans with payments can update guarantors, collateral, and, for
+  administrators only, the lender via `PATCH /api/loans/:id`. Financial changes,
+  customer, disbursement date, and schedule changes require reversing the
+  payments. Details are in [`SKILL.md`](SKILL.md).
+- Verification: no API tests were run; only the code was reviewed. Database
+  behavior and the `409`/`403` codes remain unverified at runtime.
 
-## 2026-11-18 — `loanScope` compartido con payments
+## 2026-11-18 — `loanScope` shared with payments
 
-- Change: `loanScope` se exportó desde `loanService` y los préstamos con pagos
-  siguen bloqueando cambios financieros, reemplazo y eliminación con `409`. La
-  documentación apunta al nuevo módulo `payments`.
-- Impact: el registro de pagos actualiza estados de cuotas e interés sin duplicar
-  la lógica de propiedad; el contrato de préstamos no cambia.
-- Verification: pago de cuota e interés en préstamo temporal, `DELETE` posterior
-  bloqueado con `409`, y limpieza manual de pagos para permitir la eliminación.
+- Change: `loanScope` was exported from `loanService` and loans with payments
+  continue to block financial changes, replacement, and deletion with `409`.
+  The documentation points to the new `payments` module.
+- Impact: payment recording updates installment and interest statuses without
+  duplicating ownership logic; the loan contract does not change.
+- Verification: payment of an installment and interest on a temporary loan,
+  subsequent `DELETE` blocked with `409`, and manual cleanup of payments to
+  allow deletion.
 
-## 2026-11-17 — Préstamos restringidos al prestamista autenticado
+## 2026-11-17 — Loans restricted to the authenticated lender
 
-- Change: los controllers pasan `req.user` a los seis services de préstamos.
-  `loanService` filtra por `lender_id = req.user.stakeholder_id` para cuentas
-  `lender`, deriva ese valor al crear y rechaza con `403` un `lender_id`
-  distinto o un intento de cambiarlo en PATCH. `admin` conserva acceso global.
-- Impact: un lender solo ve y modifica sus propios préstamos; un préstamo de
-  otro prestamista responde `404`. Se agregó `ForbiddenError` (`403`) a los
-  errores tipados. Los tokens incluyen `role_name` y `stakeholder_id`.
-- Verification: dos lenders vieron solo sus préstamos (`[29]` y `[30]`), admin
-  vio ambos; `lender_id` ajeno al crear → 403, préstamo ajeno al leer/borrar →
-  404, cambio de `lender_id` en PATCH → 403, admin creó con `lender_id: 5`.
-  Datos temporales eliminados; `node --check` sin errores.
+- Change: controllers pass `req.user` to all six loan services. `loanService`
+  filters by `lender_id = req.user.stakeholder_id` for `lender` accounts,
+  derives that value on creation, and rejects with `403` a different
+  `lender_id` or an attempt to change it in PATCH. `admin` retains global
+  access.
+- Impact: a lender only sees and modifies its own loans; a loan belonging to
+  another lender returns `404`. `ForbiddenError` (`403`) was added to the typed
+  errors. Tokens include `role_name` and `stakeholder_id`.
+- Verification: two lenders saw only their loans (`[29]` and `[30]`), admin saw
+  both; a `lender_id` belonging to another lender on creation → 403, another
+  lender's loan on read/delete → 404, `lender_id` change in PATCH → 403, admin
+  created with `lender_id: 5`. Temporary data deleted; `node --check` without
+  errors.
 
-## 2026-11-17 — Conflicto de `national_id` identificado por nombre de índice
+## 2026-11-17 — `national_id` conflict identified by index name
 
-- Change: `handleConstraintError` reúne los caminos de `error.errors` y
-  `error.fields` y reconoce `national_id` o nombres de índice que lo contengan.
-- Impact: un `national_id` inline duplicado responde
-  `409 A stakeholder with that national ID already exists` en lugar del
-  mensaje genérico `A related record already exists`, incluso si Sequelize
-  informa el nombre de la restricción. El resto de unicidades conservan el
-  mensaje genérico.
-- Verification: creación de un préstamo con un fiador inline cuyo
-  `national_id` ya existía devolvió el mensaje específico sin dejar préstamos
-  almacenados; `node --check` y `git diff --check` sin errores.
+- Change: `handleConstraintError` gathers paths from `error.errors` and
+  `error.fields` and recognizes `national_id` or index names containing it.
+- Impact: a duplicate inline `national_id` returns
+  `409 A stakeholder with that national ID already exists` instead of the
+  generic message `A related record already exists`, even if Sequelize reports
+  the constraint name. Other uniqueness constraints retain the generic message.
+- Verification: creation of a loan with an inline guarantor whose `national_id`
+  already existed returned the specific message without leaving stored loans;
+  `node --check` and `git diff --check` without errors.
 
-## 2026-11-17 — Service simplificado y validación centralizada
+## 2026-11-17 — Simplified service and centralized validation
 
-- Change: `loanService.js` pasó de 24 a 10 funciones (6 operaciones y 4 helpers: `handleConstraintError`, `findLoanOrThrow`, `assertNoPayments` y `writeChildren`). Se eliminaron las funciones puente y se movieron a `loanValidation.js` el cálculo de términos efectivos, la detección de cambios financieros y todas las reglas de `PATCH` (stakeholders distintos, modo de interés y totales de cuotas). Los helpers de validación dejaron de exportarse.
-- Impact: Sin cambios en rutas ni en el contrato de respuestas. Un `stakeholder_id` de fiador repetido junto con un stakeholder inline que resuelve al mismo registro responde ahora `409` por la restricción única de `loan_guarantors` (antes `400`). La validación de entrada se resuelve antes que los bloqueos por pagos, y un `:id` inexistente se detecta antes que un cuerpo inválido en `PATCH`.
-- Verification: 28 comprobaciones de servicio sobre la base de datos (crear, listar, reemplazar, actualizar y eliminar; relaciones anidadas, campos virtuales, códigos 400/404/409, bloqueos por pago de cuota y sincronización de interés incluido/separado) y arranque del servidor de la API en el puerto 3000. `node --check` y `git diff --check` sin errores. Base restaurada a 0 préstamos y 6 stakeholders.
+- Change: `loanService.js` went from 24 to 10 functions (6 operations and 4
+  helpers: `handleConstraintError`, `findLoanOrThrow`, `assertNoPayments` and
+  `writeChildren`). Bridge functions were removed and calculation of effective
+  terms, detection of financial changes, and all `PATCH` rules (different
+  stakeholders, interest mode, and installment totals) were moved to
+  `loanValidation.js`. Validation helpers are no longer exported.
+- Impact: No changes to routes or the response contract. A repeated guarantor
+  `stakeholder_id` together with an inline stakeholder resolving to the same
+  record now returns `409` due to the unique constraint on `loan_guarantors`
+  (previously `400`). Input validation resolves before payment blocks, and a
+  nonexistent `:id` is detected before an invalid body in `PATCH`.
+- Verification: 28 service checks against the database (create, list, replace,
+  update, and delete; nested relationships, virtual fields, 400/404/409 codes,
+  installment-payment blocks, and included/separate interest synchronization)
+  and startup of the API server on port 3000. `node --check` and
+  `git diff --check` without errors. Database restored to 0 loans and 6
+  stakeholders.
 
-## 2026-11-16 — Préstamos con cuotas, fiadores, garantías e interés incluido/separado
+## 2026-11-16 — Loans with installments, guarantors, collateral, and included/separate interest
 
-- Change: `loanValidation.js` y `loanService.js` se rediseñaron para que `POST` y
-  `PUT` reciban `installments`, `guarantors` y `collaterals` anidados y los
-  persistan en una transacción. Se agregó `interest_payment_mode`
-  (`included`/`separate`), el cálculo virtual de `interest_amount` y
-  `total_to_pay`, y una obligación pendiente en `loan_interest_payments` para el
-  interés separado. Se agregó la migración
-  `database/migrations/2026-11-16-loan-interest-payment-mode.sql`.
-- Impact: `POST`/`PUT` exigen los tres arreglos y validan numeración, fechas,
-  montos iguales salvo la última cuota y totales. `PATCH` reemplaza solo los
-  arreglos enviados y exige `installments` cuando cambian campos financieros.
-  Las respuestas incluyen cuotas ordenadas, fiadores, garantías, interés y los
-  campos calculados. Los pagos de cuotas o el interés pagado bloquean cambios y
-  eliminación con `409`. `DELETE` elimina las relaciones del préstamo, pero
-  conserva los stakeholders creados inline.
-- Verification: casos de validación inválidos y redondeo de cuotas; prueba de
-  servicio con creación/lectura/reemplazo/actualización/eliminación y bloqueos
-  `409`; rollback por `national_id` duplicado; prueba HTTP de `POST`, `GET`,
-  `PATCH` y `DELETE`; modelo con `interest_amount = 200` y `total_to_pay = 1200`
-  para `1000` al 20%. Conteos de la base restaurados.
+- Change: `loanValidation.js` and `loanService.js` were redesigned so that
+  `POST` and `PUT` receive nested `installments`, `guarantors`, and
+  `collaterals` and persist them in a transaction. `interest_payment_mode`
+  (`included`/`separate`), the virtual calculation of `interest_amount` and
+  `total_to_pay`, and a pending obligation in `loan_interest_payments` for
+  separate interest were added. The migration
+  `database/migrations/2026-11-16-loan-interest-payment-mode.sql` was added.
+- Impact: `POST`/`PUT` require the three arrays and validate numbering, dates,
+  equal amounts except for the last installment, and totals. `PATCH` replaces
+  only the arrays sent and requires `installments` when financial fields
+  change. Responses include sorted installments, guarantors, collateral,
+  interest, and the calculated fields. Installment payments or paid interest
+  block changes and deletion with `409`. `DELETE` removes the loan's
+  relationships but preserves stakeholders created inline.
+- Verification: invalid validation cases and installment rounding; service test
+  with create/read/replace/update/delete and `409` blocks; rollback for
+  duplicate `national_id`; HTTP test of `POST`, `GET`, `PATCH` and `DELETE`;
+  model with `interest_amount = 200` and `total_to_pay = 1200` for `1000` at
+  20%. Database counts restored.
 
-## 2026-11-16 — Validación estricta de fecha, montos y prestatario/cliente
+## 2026-11-16 — Strict validation of date, amounts, and borrower/customer
 
-- Change: `loanValidation.js` se movió a `src/server/utils/validators/`. `disbursed_at` ahora exige hora y acepta ISO 8601 (con `Z`/offset opcional) o formato MySQL; sin zona se interpreta en la hora local del servidor, se valida que la fecha exista y se normaliza a ISO UTC. `loan_amount` queda en `(0, 9999999999.99]` e `interest_rate` en `[0, 999.9999]`, aceptando strings numéricos. Se agregó `assertDistinctStakeholders`, aplicado en creación, reemplazo y actualización parcial (considerando los valores ya guardados).
-- Impact: `POST /api/loans` y `PUT /api/loans/:id` responden `400` si `lender_id === customer_id`; `PATCH` hace lo mismo cuando el cambio produce esa igualdad. Fechas sin hora o imposibles y montos/tasas fuera de rango responden `400`. `disbursed_at` sigue siendo `DataTypes.DATE` y se responde en ISO UTC.
-- Verification: Pruebas de runtime con token: fecha ausente/solo fecha/imposible/no-string → `400`; ISO `Z`, MySQL y offset `+02:00` → `201` con instantes correctos; monto `0`, sobre el máximo, no numérico y booleano → `400`; tasa fuera de rango/no numérica → `400`; misma persona en POST/PUT/PATCH → `400`; referencia inexistente → `409`; `PUT`/`PATCH`/listado/detalle/`404`/id inválido/`DELETE` verificados. Datos temporales eliminados y conteos restaurados.
+- Change: `loanValidation.js` was moved to `src/server/utils/validators/`.
+  `disbursed_at` now requires a time and accepts ISO 8601 (with optional
+  `Z`/offset) or MySQL format; without a zone it is interpreted in server local
+  time, validated that the date exists, and normalized to ISO UTC.
+  `loan_amount` is set to `(0, 9999999999.99]` and `interest_rate` to
+  `[0, 999.9999]`, accepting numeric strings. `assertDistinctStakeholders` was
+  added, applied on creation, replacement, and partial update (considering
+  already-stored values).
+- Impact: `POST /api/loans` and `PUT /api/loans/:id` respond `400` if
+  `lender_id === customer_id`; `PATCH` does the same when the change produces
+  that equality. Dates without a time or impossible dates and amounts/rates out
+  of range respond `400`. `disbursed_at` remains `DataTypes.DATE` and is
+  returned in ISO UTC.
+- Verification: Runtime tests with token: missing/date-only/impossible/non-string
+  date → `400`; ISO `Z`, MySQL, and `+02:00` offset → `201` with correct
+  instants; amount `0`, above the maximum, non-numeric, and boolean → `400`;
+  rate out of range/non-numeric → `400`; same person in POST/PUT/PATCH → `400`;
+  nonexistent reference → `409`; `PUT`/`PATCH`/listing/detail/`404`/invalid
+  id/`DELETE` verified. Temporary data deleted and counts restored.
 
-## 2026-11-16 — CRUD inicial de préstamos
+## 2026-11-16 — Initial loan CRUD
 
-- Change: Se agregó el CRUD de `loans` en `loanRoutes` → `loanController` → `loanService`, con validación y parseo de entrada en `src/server/utils/loanValidation.js`. Incluye listado/detalle con `lender` y `customer`, creación, reemplazo (`PUT`), actualización parcial (`PATCH`) y eliminación (`DELETE`).
-- Impact: Nuevas rutas protegidas por `checkAuth` bajo `/api/loans`. Validaciones de entrada responden `400`; préstamos inexistentes `404`; referencias inválidas o registros referenciados al eliminar responden `409`.
-- Verification: `node --check` en `src/server/api.js`, `src/server/routes/loanRoutes.js`, `src/server/controllers/loanController.js`, `src/server/services/loanService.js` y `src/server/utils/loanValidation.js` (sin errores). No se ejecutaron pruebas funcionales de endpoints en esta sesión.
+- Change: The `loans` CRUD was added in `loanRoutes` → `loanController` →
+  `loanService`, with input validation and parsing in
+  `src/server/utils/loanValidation.js`. Includes listing/detail with `lender`
+  and `customer`, creation, replacement (`PUT`), partial update (`PATCH`) and
+  deletion (`DELETE`).
+- Impact: New routes protected by `checkAuth` under `/api/loans`. Input
+  validations respond `400`; nonexistent loans `404`; invalid references or
+  referenced records on deletion respond `409`.
+- Verification: `node --check` on `src/server/api.js`,
+  `src/server/routes/loanRoutes.js`,
+  `src/server/controllers/loanController.js`,
+  `src/server/services/loanService.js` and
+  `src/server/utils/loanValidation.js` (without errors). No functional endpoint
+  tests were run in this session.

@@ -14,50 +14,45 @@ export default function EditLoan() {
   const edit = useEditLoanForm();
 
   return (
-    <main className="min-h-screen bg-background px-4 py-10">
-      <Card className="mx-auto w-full max-w-4xl">
-        <EditLoanHeader
-          loanId={edit.id}
-          hasPayments={edit.hasPayments}
-          onBack={() => navigate(`/loans/${edit.id}`)}
+    <Card className="mx-auto w-full max-w-4xl">
+      <EditLoanHeader
+        loanId={edit.id}
+        hasPayments={edit.hasPayments}
+        onBack={() => navigate(`/loans/${edit.id}`)}
+      />
+
+      <CardContent>
+        <EditLoanError
+          error={edit.loadError}
+          notFound={edit.notFound}
+          onRetry={edit.fetchLoan}
+          onBack={() => navigate("/loans")}
         />
 
-        <CardContent>
-          <EditLoanError
-            error={edit.loadError}
-            notFound={edit.notFound}
-            onRetry={edit.fetchLoan}
-            onBack={() => navigate("/loans")}
-          />
+        {!edit.loadingLoan &&
+          !edit.notFound && (
+            <div className="space-y-6">
+              {edit.hasPayments && <EditLockedAlert />}
 
-          {edit.loadingLoan ? (
-            <p className="text-muted-foreground">Loading loan...</p>
-          ) : (
-            !edit.notFound && (
-              <div className="space-y-6">
-                {edit.hasPayments && <EditLockedAlert />}
-
-                {edit.hasPayments ? (
-                  <RestrictedLoanEditForm {...edit} />
-                ) : edit.preview ? (
-                  <InstallmentPreview
-                    preview={edit.preview}
-                    interestPaymentMode={edit.form.interest_payment_mode}
-                    error={edit.error}
-                    submitting={edit.submitting}
-                    approveLabel="Save changes"
-                    creatingLabel="Saving..."
-                    onBack={edit.backToEdit}
-                    onApprove={edit.handleApprove}
-                  />
-                ) : (
-                  <CreateLoanForm {...edit} submitLabel="Preview changes" />
-                )}
-              </div>
-            )
+              {edit.hasPayments ? (
+                <RestrictedLoanEditForm {...edit} />
+              ) : edit.preview ? (
+                <InstallmentPreview
+                  preview={edit.preview}
+                  interestPaymentMode={edit.form.interest_payment_mode}
+                  error={edit.error}
+                  submitting={edit.submitting}
+                  approveLabel="Save changes"
+                  creatingLabel="Saving..."
+                  onBack={edit.backToEdit}
+                  onApprove={edit.handleApprove}
+                />
+              ) : (
+                <CreateLoanForm {...edit} submitLabel="Preview changes" />
+              )}
+            </div>
           )}
-        </CardContent>
-      </Card>
-    </main>
+      </CardContent>
+    </Card>
   );
 }

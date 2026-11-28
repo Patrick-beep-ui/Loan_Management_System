@@ -1,93 +1,188 @@
 # Changelog — admin
 
-## 2026-11-25 — P7 dashboard implementado
+### 2026-11-27 — Payment recording shared with lenders
 
-- Change: `/admin/dashboard` dejó de ser stub. Se añadieron
-  `useAdminDashboard`, `src/client/utils/adminDashboard.js` y seis componentes
-  bajo `src/components/admin/dashboard/` para agregar métricas en el cliente.
-- Impact: el panel resume préstamos, importes, cuotas vencidas, interés y pagos
-  usando solo `GET /api/loans` y `GET /api/payments`. No se agregó un endpoint de
-  dashboard ni se modificaron las reglas de negocio.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `useAdminPayments` and `AdminPaymentRecordDialog` are now also used
+  by the lender `/payments` page; no admin route or endpoint was added.
+- Impact: lenders record installments and separate interest with the same form
+  and API calls as admins, while the backend keeps its lender scope. Details
+  are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
 
-## 2026-11-25 — P6 pagos implementado
+## 2026-11-26 — Stakeholder management kept in the panel
 
-- Change: `/admin/payments` dejó de ser stub. Se añadieron `useAdminPayments` y
-  cinco componentes bajo `src/components/admin/payments/` para historial,
-  registro y reversión con los endpoints existentes de `/api/payments`.
-- Impact: el panel de `admin` ve todos los pagos, registra cuotas o interés
-  pendiente desde `GET /api/loans` y reutiliza `usePaymentRevert` con
-  `RevertPaymentDialog`. No se crearon rutas bajo `/api/admin`.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: removed the dashboard stakeholder card and the profile's separate
+  loan-participation summary section. Clickable stakeholder names in the
+  existing table and the associated-loans table remain.
+- Impact: `/admin/dashboard` focuses on portfolio, overdue-installment, trend,
+  and payment data; stakeholder management stays on `/admin/stakeholders` and
+  its profile. The table design, `Edit`, and `Delete` actions are unchanged.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
 
-## 2026-11-25 — Reasignación limitada a cuentas lender
+## 2026-11-26 — Log out from the admin navigation
 
-- Change: `useAdminLoans` dejó de usar `GET /api/stakeholders` para las opciones
-  de prestamista y ahora filtra `GET /api/users` por `Role.role_name = "lender"`.
-- Impact: `/admin/loans` solo ofrece prestamistas vinculados a una cuenta con ese
-  rol; se conservan las cuentas inactivas y se deduplican resultados. El payload
-  de `PATCH /api/loans/:id` no cambia.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `AdminNav` gained a right-aligned `Log out` button that calls
+  `useAuth().logout()` and navigates to `/login` with `replace: true`.
+- Impact: admins can end the session from any panel page. The token and user
+  state are cleared through the existing auth context; routes and guards are
+  unchanged.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
 
-## 2026-11-25 — P5 préstamos implementado
+## 2026-11-26 — Text-based admin navigation
 
-- Change: `/admin/loans` dejó de ser stub. Se añadieron `useAdminLoans` y cinco
-  componentes bajo `src/components/admin/loans/` para listar préstamos y abrir
-  un diálogo de reasignación de prestamista.
-- Impact: la vista usa `GET /api/loans` (global para `admin`) y
-  `PATCH /api/loans/:id` con `lender_id`, sin duplicar endpoints bajo
-  `/api/admin`. El diálogo excluye al cliente actual y valida la selección antes
-  de enviar.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `AdminNav` now renders a horizontal bar of text links with a subtle
+  bottom border and an active underline instead of five button-styled links.
+- Impact: the same five admin sections and routes are available; active state
+  remains automatic through `NavLink`, including the stakeholder profile.
+  Authorization and views are unchanged.
+- Verification: `pnpm build` succeeded. Not tested in a browser.
 
-## 2026-11-25 — Ajustes de edición en users y stakeholders
+## 2026-11-26 — Stakeholder type filters
 
-- Change: `/admin/stakeholders` oculta a las personas vinculadas a cuentas y el
-  diálogo de `/admin/users` combina rol/estado con los datos del stakeholder
-  vinculado, reutilizando `StakeholderFormFields` y los endpoints existentes.
-- Impact: los prestamistas y administradores ya no aparecen como stakeholders
-  administrables, pero sus datos se editan desde su cuenta. El guardado sigue
-  siendo en dos pasos (`PATCH` de usuario y `PUT` de stakeholder), con aviso
-  explícito si el segundo falla.
-- Verification: `pnpm build` compiló correctamente (2564 módulos). No se probó en
-  navegador ni contra un servidor, a pedido del usuario.
+- Change: added `AdminStakeholdersFilter` and `stakeholderCategory.js`.
+  `/admin/stakeholders` now offers `All`, `Admins`, `Lenders`, and `Customers`
+  filters with counts, while keeping the existing table, clickable names,
+  `Edit`, and `Delete`. The hook reads `GET /api/users` for classification.
+- Impact: admins, lenders, and people without accounts can be reviewed
+  separately. A linked account determines the primary category; customer loan
+  participation remains visible in the profile role counts and loan note.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed the
+  category mapping, counts, and filtering. Not tested in a browser or against
+  a server.
 
-## 2026-11-25 — P4 stakeholders implementado
+## 2026-11-26 — Stakeholder profiles from the dashboard and table
 
-- Change: `/admin/stakeholders` dejó de ser stub. Se añadió
-  `useAdminStakeholders`, `src/client/utils/stakeholderForm.js` y seis componentes
-  bajo `src/components/admin/stakeholders/` para crear, editar y eliminar con
-  los endpoints existentes de `/api/stakeholders`.
-- Impact: el panel ofrece CRUD completo sin duplicar rutas bajo `/api/admin`.
-  Las mutaciones requieren `admin`; los `GET` siguen abiertos a cuentas
-  autenticadas para los formularios de préstamos.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: added `/admin/stakeholders/:id`, `useAdminStakeholderProfile`,
+  `stakeholderProfile.js`, four profile components and a compact
+  `AdminDashboardStakeholders` card. Stakeholder names in the existing table
+  and the dashboard card link to the profile; columns, `Edit`, and `Delete`
+  remain unchanged. The filter that hid people linked to user accounts was
+  removed from `useAdminStakeholders`.
+- Impact: admins can open a person's personal information, linked account,
+  role counts, and all associated loans with lender/customer/guarantor roles.
+  `/admin/dashboard` now reads `GET /api/stakeholders` in addition to loans and
+  payments. No API route or schema was added: the profile aggregates existing
+  reads on the client and a single loan can show several roles.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed the
+  multi-role aggregation. Not tested in a browser or against a server.
 
-## 2026-11-25 — P3 usuarios implementado
+## 2026-11-26 — Overdue installments in the dashboard
 
-- Change: `/admin/users` dejó de ser stub. Se añadió `useAdminUsers`, helpers en
-  `src/client/utils/userForm.js` y los componentes bajo
-  `src/components/admin/users/` para listar, actualizar y mostrar errores. El
-  listado reutiliza `GET /api/users`; el cambio de rol y estado usa
+- Change: the dashboard now renders an overdue-installment table from the
+  existing `GET /api/loans` data. `buildOverdueInstallments` and the shared
+  `loanStatus.js` helper drive the card count, the sorted list and the
+  `Overdue` badge in loan details. Each row links to `/loans/:id` with
+  `state.focusInstallmentId` to highlight and scroll to that installment.
+- Impact: admins can see and open overdue installments directly. Separate
+  interest remains outside the list because it has no `due_date`; no API,
+  endpoint or status-transition behavior changed.
+- Verification: `pnpm build` succeeded and a Node smoke check confirmed the
+  helper marks a past-due pending installment, accepts a due-today installment
+  and ignores paid ones. Not tested in a browser or against a server.
+
+## 2026-11-26 — Admin user creation and password reset UI
+
+- Change: `/admin/users` gained a `New user` dialog and a per-row `Reset
+  password` action backed by `POST /api/admin/users` and
+  `POST /api/admin/users/:userId/reset-password`. `useAdminUsers` filters
+  stakeholders not linked to an account and shows the one-time temporary
+  password. Rows mark `must_change_password` as `Password pending`.
+- Impact: admins can provision `admin` and `lender` accounts and reset
+  credentials without public signup. `RequireAuth` sends accounts with a
+  pending password change to `/change-password` before the panel is reachable.
+- Verification: `pnpm build` succeeded and no `signup` references remain in the
+  frontend; no live browser or API tests were performed.
+
+## 2026-11-25 — P7 dashboard implemented
+
+- Change: `/admin/dashboard` was no longer a stub. `useAdminDashboard`,
+  `src/client/utils/adminDashboard.js` and six components
+  under `src/components/admin/dashboard/` were added to aggregate metrics
+  on the client.
+- Impact: the panel summarizes loans, amounts, overdue installments, interest
+  and payments using only `GET /api/loans` and `GET /api/payments`. No dashboard
+  endpoint was added and no business rules were changed.
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
+
+## 2026-11-25 — P6 payments implemented
+
+- Change: `/admin/payments` was no longer a stub. `useAdminPayments` and
+  five components under `src/components/admin/payments/` were added for
+  history, recording and reversals with the existing endpoints of `/api/payments`.
+- Impact: the `admin` panel sees all payments, records pending installments or
+  interest from `GET /api/loans` and reuses `usePaymentRevert` with
+  `RevertPaymentDialog`. No routes were created under `/api/admin`.
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
+
+## 2026-11-25 — Reassignment limited to `lender` accounts
+
+- Change: `useAdminLoans` no longer uses `GET /api/stakeholders` for the lender
+  options and now filters `GET /api/users` by `Role.role_name = "lender"`.
+- Impact: `/admin/loans` only offers lenders linked to an account with that
+  role; inactive accounts are kept and results are deduplicated. The payload
+  of `PATCH /api/loans/:id` is unchanged.
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
+
+## 2026-11-25 — P5 loans implemented
+
+- Change: `/admin/loans` was no longer a stub. `useAdminLoans` and five
+  components under `src/components/admin/loans/` were added to list loans and
+  open a lender reassignment dialog.
+- Impact: the view uses `GET /api/loans` (global for `admin`) and
+  `PATCH /api/loans/:id` with `lender_id`, without duplicating endpoints under
+  `/api/admin`. The dialog excludes the current customer and validates the
+  selection before sending.
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
+
+## 2026-11-25 — Editing adjustments for users and stakeholders
+
+- Change: `/admin/stakeholders` hides people linked to accounts and the
+  `/admin/users` dialog combines role/status with the linked stakeholder's
+  data, reusing `StakeholderFormFields` and the existing endpoints.
+- Impact: lenders and admins no longer appear as manageable stakeholders, but
+  their data is edited from their account. Saving is still a two-step process
+  (`PATCH` for the user and `PUT` for the stakeholder), with an explicit
+  notice if the second step fails.
+- Verification: `pnpm build` built successfully (2564 modules). It was not
+  tested in a browser or against a server, at the user's request.
+
+## 2026-11-25 — P4 stakeholders implemented
+
+- Change: `/admin/stakeholders` was no longer a stub. `useAdminStakeholders`,
+  `src/client/utils/stakeholderForm.js` and six components
+  under `src/components/admin/stakeholders/` were added to create, edit and
+  delete with the existing endpoints of `/api/stakeholders`.
+- Impact: the panel offers full CRUD without duplicating routes under
+  `/api/admin`. Mutations require `admin`; the `GET`s remain open to
+  authenticated accounts for the loan forms.
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
+
+## 2026-11-25 — P3 users implemented
+
+- Change: `/admin/users` was no longer a stub. `useAdminUsers`, helpers in
+  `src/client/utils/userForm.js` and the components under
+  `src/components/admin/users/` were added for listing, updating and error
+  display. The listing reuses `GET /api/users`; role and status changes use
   `PATCH /api/admin/users/:userId`.
-- Impact: los administradores pueden editar cuentas desde el panel sin tocar el
-  router. La API sigue siendo la autoridad: `requireAdmin` protege la mutación.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Impact: admins can edit accounts from the panel without touching the router.
+  The API remains the authority: `requireAdmin` protects the mutation.
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
 
-## 2026-11-25 — Shell del panel de administración
+## 2026-11-25 — Admin panel shell
 
-- Change: Se añadió `RequireAdmin`, el layout `AdminLayout`, `AdminNav`,
-  `AdminPlaceholder`, cinco vistas stub bajo `src/client/views/admin/` y el
-  enlace `Admin` en `LoanListHeader`. `main.jsx` registra `/admin` y sus hijos
-  detrás de `RequireAuth` y `RequireAdmin`.
-- Impact: solo las cuentas `admin` pueden abrir el panel; los no admins vuelven
-  a `/loans`. Las fases de dominio posteriores solo reemplazan el contenido de
-  las vistas stub. El detalle está en [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: `RequireAdmin`, the `AdminLayout` layout, `AdminNav`,
+  `AdminPlaceholder`, five stub views under `src/client/views/admin/` and the
+  `Admin` link in `LoanListHeader` were added. `main.jsx` registers `/admin`
+  and its children behind `RequireAuth` and `RequireAdmin`.
+- Impact: only `admin` accounts can open the panel; non-admins return
+  to `/loans`. Future domain phases only replace the content of the stub
+  views. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.

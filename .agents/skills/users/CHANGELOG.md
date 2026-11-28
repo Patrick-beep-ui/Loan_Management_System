@@ -1,63 +1,77 @@
 # Changelog — users
 
-## 2026-11-25 — Edición administrativa de la persona vinculada
+## 2026-11-26 — Admin user creation, reset, and last-admin guard
 
-- Change: el diálogo de `/admin/users` amplió la edición de rol e `is_active`
-  con los datos del stakeholder vinculado. `useAdminUsers` carga
-  `GET /api/stakeholders/:id`, valida localmente y guarda con
-  `PATCH /api/admin/users/:userId` más `PUT /api/stakeholders/:id`; reutiliza
-  `StakeholderFormFields` del panel de stakeholders.
-- Impact: las cuentas con `stakeholder_id` pueden editar estado y datos personales
-  en un solo diálogo; sin stakeholder o si la carga falla solo se editable rol y
-  estado. No se añadió ningún endpoint ni se duplicó el CRUD.
-- Verification: `pnpm build` compiló correctamente (2564 módulos). No se probó en
-  navegador ni contra un servidor, a pedido del usuario.
+- Change: `POST /api/admin/users`, `POST /api/admin/users/:userId/reset-password`,
+  and `PATCH /api/users/me/password` were added. A generated temporary password
+  is hashed and returned once; `must_change_password` is cleared only after a
+  successful password change. `updateAdminUser` now refuses to demote or
+  deactivate the last active admin.
+- Impact: users are provisioned only by admins, with `admin` or `lender` roles,
+  and must change their temporary password before other API routes respond.
+  Public signup no longer exists.
+- Verification: `node --check` on modified backend files, validator smoke
+  tests, and middleware path checks passed; no live API tests.
 
-## 2026-11-25 — Administración de rol y estado de cuenta
+## 2026-11-25 — Admin editing of the linked person
 
-- Change: se añadió `PATCH /api/admin/users/:userId` directamente en
-  `adminRoutes`, con `adminUserController` → `adminUserService` y el validador
-  `adminUserValidation`. Acepta `role_name` y `is_active`, resuelve el rol por
-  nombre y devuelve la proyección de `authUser`.
-- Impact: el listado sigue en `GET /api/users`; solo las mutaciones viven bajo
-  `/api/admin` y quedan detrás de `checkAuth` y `requireAdmin`. El cliente
-  administrativo usa el mismo listado y actualiza la fila con la respuesta.
-- Verification: `pnpm build` compiló correctamente. No se probó contra un
-  servidor ni en navegador, a pedido del usuario.
+- Change: the `/admin/users` dialog expanded role and `is_active` editing with
+  the linked stakeholder's data. `useAdminUsers` loads
+  `GET /api/stakeholders/:id`, validates locally and saves with
+  `PATCH /api/admin/users/:userId` plus `PUT /api/stakeholders/:id`; it reuses
+  `StakeholderFormFields` from the stakeholders panel.
+- Impact: accounts with a `stakeholder_id` can edit status and personal data
+  in a single dialog; without a stakeholder or if loading fails, only role and
+  status are editable. No endpoint was added and the CRUD was not duplicated.
+- Verification: `pnpm build` built successfully (2564 modules). It was not
+  tested in a browser or against a server, at the user's request.
 
-## 2026-11-19 — Documentado `GET /api/users/auth`
+## 2026-11-25 — Role and account status administration
 
-- Change: se documentó el endpoint existente que devuelve el usuario actual
-  desde `req.user.user_id`, con su proyección de `Stakeholder` y `Role`, y su
-  uso desde `AuthProvider` en el cliente.
-- Impact: no cambió el backend; se aclara la hidratación de sesión y la
-  diferencia de proyección frente a `GET /api/users`.
-- Verification: implementación revisada en `userRoutes.js`, `userController.js`
-  y `userService.js`; `pnpm build` del cliente compiló correctamente.
+- Change: `PATCH /api/admin/users/:userId` was added directly in
+  `adminRoutes`, with `adminUserController` → `adminUserService` and the
+  validator `adminUserValidation`. It accepts `role_name` and `is_active`,
+  resolves the role by name and returns the `authUser` projection.
+- Impact: the listing remains at `GET /api/users`; only mutations live under
+  `/api/admin` and sit behind `checkAuth` and `requireAdmin`. The admin client
+  uses the same listing and updates the row with the response.
+- Verification: `pnpm build` built successfully. It was not tested against a
+  server or in a browser, at the user's request.
 
-## 2026-11-17 — Signup crea cuentas `lender`
+## 2026-11-19 — Documented `GET /api/users/auth`
 
-- Change: se documenta que `POST /api/auth/signup` asigna siempre el rol
-  `lender`, resuelto por nombre desde `roles`, y que el usuario queda vinculado
-  al `stakeholder_id` enviado.
-- Impact: `GET /api/users` puede mostrar cuentas `admin` aprovisionadas
-  manualmente y cuentas `lender` creadas públicamente; el listado no cambia.
-- Verification: dos signups temporales crearon usuarios con `role_id: 2` y
-  `role_name: "lender"`; se eliminaron al finalizar la prueba.
+- Change: the existing endpoint that returns the current user from
+  `req.user.user_id`, with its `Stakeholder` and `Role` projection and its use
+  from `AuthProvider` on the client, was documented.
+- Impact: the backend did not change; session hydration and the difference in
+  projection compared with `GET /api/users` are clarified.
+- Verification: implementation reviewed in `userRoutes.js`, `userController.js`
+  and `userService.js`; the client `pnpm build` built successfully.
 
-## 2026-11-13 — Ruta protegida con JWT
+## 2026-11-17 — Signup creates `lender` accounts
 
-- Change: `GET /api/users` ahora pasa por `checkAuth` en `api.js`.
-- Impact: Requiere `Authorization: Bearer <token>`; sin token o con token
-  inválido responde `401`.
-- Verification: Sin token → `401`; con token válido de `generateToken` → `200`.
+- Change: it is documented that `POST /api/auth/signup` always assigns the
+  `lender` role, resolved by name from `roles`, and that the user is linked to
+  the submitted `stakeholder_id`.
+- Impact: `GET /api/users` may show manually provisioned `admin` accounts and
+  publicly created `lender` accounts; the listing does not change.
+- Verification: two temporary signups created users with `role_id: 2` and
+  `role_name: "lender"`; they were deleted after the test.
 
-## 2026-11-13 — Módulo de usuarios en capas
+## 2026-11-13 — Route protected with JWT
 
-- Change: `GET /api/users` se movió de `api.js` a `userRoutes` →
-  `userController` → `userService`. El service importa los modelos
-  directamente y excluye `password_hash` de la respuesta.
-- Impact: La URL no cambia. Se eliminó `POST /api/users`; la creación de
-  usuarios ahora corresponde a `POST /api/auth/signup`.
-- Verification: `GET /api/users` respondió `200` con datos de la base y
-  `password_hash` fuera de la proyección SQL.
+- Change: `GET /api/users` now passes through `checkAuth` in `api.js`.
+- Impact: requires `Authorization: Bearer <token>`; without a token or with an
+  invalid token it responds `401`.
+- Verification: without a token → `401`; with a valid token from
+  `generateToken` → `200`.
+
+## 2026-11-13 — Layered users module
+
+- Change: `GET /api/users` moved from `api.js` to `userRoutes` →
+  `userController` → `userService`. The service imports the models directly
+  and excludes `password_hash` from the response.
+- Impact: the URL does not change. `POST /api/users` was removed; user creation
+  now belongs to `POST /api/auth/signup`.
+- Verification: `GET /api/users` responded `200` with data from the database
+  and `password_hash` outside the SQL projection.

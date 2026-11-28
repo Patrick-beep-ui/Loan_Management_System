@@ -11,6 +11,7 @@ import AdminStakeholderRow from "@/components/admin/stakeholders/AdminStakeholde
 export default function AdminStakeholdersTable({
     stakeholders,
     loading,
+    emptyMessage = "No stakeholders found.",
     onEdit,
     onDelete,
 }) {
@@ -29,17 +30,10 @@ export default function AdminStakeholdersTable({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {loading && (
-                        <TableRow>
-                            <TableCell colSpan={7}>
-                                Loading stakeholders...
-                            </TableCell>
-                        </TableRow>
-                    )}
                     {!loading && stakeholders.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={7}>
-                                No stakeholders found.
+                                {emptyMessage}
                             </TableCell>
                         </TableRow>
                     )}

@@ -1,81 +1,115 @@
 # Changelog — payments
 
-### 2026-11-25 — P6 administración de pagos
+### 2026-11-27 — Lender payment recording
 
-- Change: `/admin/payments` dejó de ser stub. Se añadieron `useAdminPayments` y
-  cinco componentes bajo `src/components/admin/payments/` para consultar el
-  historial global, registrar pagos pendientes y revertir pagos existentes.
-- Impact: el registro reutiliza `buildPaymentPayload` y los endpoints de
-  `/api/payments/installment` e `/api/payments/interest`, con `GET /api/loans`
-  como fuente de destinos pendientes. La reversión usa `usePaymentRevert` y
-  `RevertPaymentDialog` sin duplicar lógica ni rutas bajo `/api/admin`.
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
-
-### 2026-11-23 — Relación con edición parcial de préstamos
-
-- Change: se documentó que, con pagos registrados, `PATCH /api/loans/:id` sigue
-  permitiendo fiadores, garantías y, para `admin`, el prestamista. La reversión
-  de pagos restaura la edición financiera completa y la eliminación.
-- Impact: no cambia el contrato de `/api/payments`; aclara cuándo el detalle
-  muestra el formulario reducido frente al completo. El detalle está en
+- Change: `/payments` now lets lenders record a pending installment or separate
+  interest using the shared `useAdminPayments` hook and recording dialog. The
+  read-only `usePaymentsOverview` hook was removed.
+- Impact: lenders use the same validated form and endpoints as admins, with
+  loans and payments scoped by the API to their own account. No API or schema
+  changed; reversal remains on `/loans/:id`. Details are in
   [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
 
-## 2026-11-23 — Reversión expuesta en el cliente
+### 2026-11-27 — Lender payments header simplified
 
-- Change: La interfaz del detalle consume `GET /api/payments?loan_id=...` y
-  `DELETE /api/payments/:id` mediante hooks propios, separados del registro de
-  pagos. El borrado sigue siendo la reversión transaccional ya implementada.
-- Impact: Los pagos de cuota e interés se pueden revertir desde `/loans/:id` con
-   confirmación; la vista recarga el préstamo y el historial, habilita la
-   eliminación y restaura la edición financiera completa. El flujo está en
-   [`SKILL.md`](SKILL.md).
-- Verification: `pnpm build` compiló correctamente. No se probó en navegador ni
-  contra un servidor, a pedido del usuario.
+- Change: removed `Back to loans` from `PaymentsHeader` and the `Payments`
+  button from `LoanListHeader`; navigation now stays in `LenderLayout`.
+- Impact: the read-only history and its data loading are unchanged, and no API
+  or schema changed. Details are in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` succeeded. Not tested in a browser.
 
-## 2026-11-18 — Corrección y reversión de pagos
+### 2026-11-26 — General lender payments view
 
-- Change: Se agregaron `PATCH /api/payments/:id` (solo `paid_at`) y
-  `DELETE /api/payments/:id`. El borrado revierte el pago en una transacción:
-  elimina el vínculo de cuota o nulifica el de interés, restaura el destino a
-  `pending` y elimina el registro en `loan_payments`.
-- Impact: Los pagos siguen siendo inmutables en monto, destino y `recorded_by`;
-  solo se puede corregir la fecha. Tras una reversión el préstamo vuelve a aceptar
-  cambios financieros y eliminación porque ya no tiene pagos.
-- Verification: prueba de servicio sobre MySQL sin `node --check`: pago de cuota e
-  interés separado, `PATCH` de `paid_at` en ambos, `PATCH` sin `paid_at` → `400`,
-  `DELETE` de ambos → `404` en el detalle, cuota/interés en `pending`,
-  `payment_id` nulo y préstamo temporal eliminado. Datos preexistentes no
-  modificados.
+- Change: added `/payments` with `usePaymentsOverview` and components under
+  `src/components/payments/` for a read-only payment history. `RequireLender`
+  redirects admins to `/admin/payments`, and the loans list links lenders to the
+  new view.
+- Impact: a lender can review all payments on their loans in one place, with
+  loan links, target, amount, date, recorder, and total. The page relies on the
+  existing lender-scoped `GET /api/payments`; no backend route or schema changed.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
 
-## 2026-11-18 — Endpoints separados para cuota e interés
+### 2026-11-25 — P6 payment administration
 
-- Change: Se reemplazó el `POST /api/payments` genérico por
-  `POST /api/payments/installment` y `POST /api/payments/interest`. El validador
-  expone un builder por destino y el service exporta dos funciones explícitas que
-  comparten una única transacción; se eliminó el despacho por payload.
-- Impact: La ruta declara qué se está pagando, así que no hay ambigüedad por los
-  campos `installment_id`/`loan_interest_payment_id`. El campo del otro destino se
-  ignora. `recorded_by` sigue derivándose del JWT y se devuelve en la respuesta.
-- Verification: la misma prueba ejecutó `createInstallmentPayment` y
-  `createInterestPayment` desde cero, comprobando `recorded_by: 16`, `paid_at`
-  provisto y los vínculos de cuota e interés.
+- Change: `/admin/payments` was no longer a stub. `useAdminPayments` and five
+  components under `src/components/admin/payments/` were added to query the
+  global history, record pending payments, and reverse existing payments.
+- Impact: recording reuses `buildPaymentPayload` and the
+  `/api/payments/installment` and `/api/payments/interest` endpoints, with
+  `GET /api/loans` as the source of pending targets. Reversal uses
+  `usePaymentRevert` and `RevertPaymentDialog` without duplicating logic or
+  routes under `/api/admin`.
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
 
-## 2026-11-18 — Registro de pagos de cuotas e interés separado
+### 2026-11-23 — Relationship with partial loan editing
 
-- Change: Se agregó el módulo `payments` con validador, service transaccional,
-  controller y rutas protegidas `GET /api/payments`, `GET /api/payments/:id` y
-  `POST /api/payments`. El pago cubre el monto total de una cuota o de una
-  obligación de interés separado, actualiza su estado y guarda `recorded_by` desde
-  el JWT. `loanScope` se exportó desde `loanService` para reutilizar el filtro por
-  prestamista.
-- Impact: Los préstamos con pagos siguen bloqueados para cambios financieros y
-  eliminación (`409`). Los listados de pagos respetan el scoping de `lender` y
-  `admin` conserva acceso global.
-- Verification: `node --check` en los archivos nuevos y modificados; prueba de
-  servicio sobre MySQL con pago de cuota e interés, estados `paid`, vínculos
-  `payment_id`, duplicados `409`, `loan_id` ajeno y bloqueo de `DELETE` (`409`),
-  listados por lender/admin y detalle por id. Datos temporales eliminados; base
-  en 0 préstamos y 0 pagos.
+- Change: it was documented that, with payments recorded, `PATCH /api/loans/:id`
+  still allows guarantors, collateral, and, for `admin`, the lender. Reversing
+  payments restores full financial editing and deletion.
+- Impact: does not change the `/api/payments` contract; it clarifies when the
+  detail view shows the reduced form versus the full form. Details are in
+  [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
+
+## 2026-11-23 — Reversal exposed in the client
+
+- Change: The detail view consumes `GET /api/payments?loan_id=...` and
+  `DELETE /api/payments/:id` via its own hooks, separate from payment recording.
+  Deletion remains the transactional reversal already implemented.
+- Impact: Installment and interest payments can be reversed from `/loans/:id`
+  with confirmation; the view reloads the loan and the history, enables
+  deletion, and restores full financial editing. The flow is in
+  [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` built successfully. It was not tested in a browser
+  or against a server, at the user's request.
+
+## 2026-11-18 — Payment correction and reversal
+
+- Change: `PATCH /api/payments/:id` (only `paid_at`) and
+  `DELETE /api/payments/:id` were added. Deletion reverses the payment in a
+  transaction: it removes the installment link or nullifies the interest link,
+  restores the target to `pending`, and deletes the record in `loan_payments`.
+- Impact: Payments remain immutable in amount, target, and `recorded_by`; only
+  the date can be corrected. After a reversal the loan again accepts financial
+  changes and deletion because it no longer has payments.
+- Verification: service test on MySQL without `node --check`: installment and
+  separate interest payment, `PATCH` of `paid_at` on both, `PATCH` without
+  `paid_at` → `400`, `DELETE` of both → `404` on detail, installment/interest in
+  `pending`, null `payment_id`, and temporary loan deleted. Pre-existing data
+  not modified.
+
+## 2026-11-18 — Separate endpoints for installments and interest
+
+- Change: The generic `POST /api/payments` was replaced by
+  `POST /api/payments/installment` and `POST /api/payments/interest`. The
+  validator exposes a builder per target and the service exports two explicit
+  functions sharing a single transaction; payload-based dispatch was removed.
+- Impact: The route declares what is being paid, so there is no ambiguity from
+  the `installment_id`/`loan_interest_payment_id` fields. The field for the
+  other target is ignored. `recorded_by` still derives from the JWT and is
+  returned in the response.
+- Verification: the same test ran `createInstallmentPayment` and
+  `createInterestPayment` from scratch, checking `recorded_by: 16`, provided
+  `paid_at`, and the installment and interest links.
+
+## 2026-11-18 — Recording of installment and separate interest payments
+
+- Change: The `payments` module was added with a validator, transactional
+  service, controller, and protected routes `GET /api/payments`,
+  `GET /api/payments/:id` and `POST /api/payments`. A payment covers the full
+  amount of an installment or of a separate interest obligation, updates its
+  status, and stores `recorded_by` from the JWT. `loanScope` was exported from
+  `loanService` to reuse the lender filter.
+- Impact: Loans with payments remain blocked for financial changes and deletion
+  (`409`). Payment listings respect `lender` scoping and `admin` retains global
+  access.
+- Verification: `node --check` on the new and modified files; service test on
+  MySQL with installment and interest payment, `paid` statuses, `payment_id`
+  links, duplicates `409`, a `loan_id` belonging to another lender, and
+  `DELETE` block (`409`), listings by lender/admin and detail by id. Temporary
+  data deleted; database at 0 loans and 0 payments.

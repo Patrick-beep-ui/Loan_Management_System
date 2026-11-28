@@ -21,10 +21,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const url = error.config?.url || "";
-    const isAuthRequest =
-      url.includes("/auth/login") || url.includes("/auth/signup");
+    const isCredentialRequest =
+      url.includes("/auth/login") || url.includes("/users/me/password");
 
-    if (error.response?.status === 401 && !isAuthRequest) {
+    if (error.response?.status === 401 && !isCredentialRequest) {
       localStorage.removeItem("token");
       window.dispatchEvent(new CustomEvent("auth:unauthorized"));
     }

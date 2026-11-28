@@ -12,9 +12,9 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
-  --background: oklch(0.9181 0.0098 72.66);
+  --background:   oklch(0.9181 0.0098 72.66);
   --foreground: oklch(0.1684 0 89.88);
-  --card: oklch(0.9181 0.0098 72.66);
+  --card: oklch(0.9433 0.0029 84.56);
   --card-foreground: oklch(0.1684 0 89.88);
   --popover: oklch(0.9433 0.0029 84.56);
   --popover-foreground: oklch(0.1684 0 89.88);
@@ -46,18 +46,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
 
 @theme inline {
   --font-heading: 'Playfair Display', serif;

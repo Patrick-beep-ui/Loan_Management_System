@@ -1,9 +1,8 @@
 import { ValidationError } from "../errors.js";
-import { parsePositiveInteger } from "./common.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+$/;
-const SIGNUP_REQUIRED_FIELDS = ["email", "password", "stakeholder_id"];
 const LOGIN_REQUIRED_FIELDS = ["email", "password"];
+const CHANGE_PASSWORD_REQUIRED_FIELDS = ["current_password", "new_password"];
 
 function asObject(payload) {
     return payload && typeof payload === "object" ? payload : {};
@@ -16,7 +15,7 @@ function missingFields(data, fields) {
     });
 }
 
-function validateEmail(value) {
+export function validateEmail(value) {
     if (value === undefined || value === null || value === "") {
         throw new ValidationError("email is required");
     }
@@ -38,35 +37,20 @@ function validateEmail(value) {
     return trimmed.toLowerCase();
 }
 
-function validatePassword(value) {
+export function validatePassword(value, field = "password") {
     if (value === undefined || value === null || value === "") {
-        throw new ValidationError("password is required");
+        throw new ValidationError(`${field} is required`);
     }
 
     if (typeof value !== "string") {
-        throw new ValidationError("password must be a string");
+        throw new ValidationError(`${field} must be a string`);
     }
 
     if (value.trim() === "") {
-        throw new ValidationError("password is required");
+        throw new ValidationError(`${field} is required`);
     }
 
     return value;
-}
-
-export function validateSignupPayload(payload) {
-    const data = asObject(payload);
-    const missing = missingFields(data, SIGNUP_REQUIRED_FIELDS);
-
-    if (missing.length > 0) {
-        throw new ValidationError(`Missing required fields: ${missing.join(", ")}`);
-    }
-
-    return {
-        email: validateEmail(data.email),
-        password: validatePassword(data.password),
-        stakeholder_id: parsePositiveInteger(data.stakeholder_id, "stakeholder_id")
-    };
 }
 
 export function validateLoginPayload(payload) {
@@ -80,5 +64,19 @@ export function validateLoginPayload(payload) {
     return {
         email: validateEmail(data.email),
         password: validatePassword(data.password)
+    };
+}
+
+export function validateChangePasswordPayload(payload) {
+    const data = asObject(payload);
+    const missing = missingFields(data, CHANGE_PASSWORD_REQUIRED_FIELDS);
+
+    if (missing.length > 0) {
+        throw new ValidationError(`Missing required fields: ${missing.join(", ")}`);
+    }
+
+    return {
+        current_password: validatePassword(data.current_password, "current_password"),
+        new_password: validatePassword(data.new_password, "new_password")
     };
 }

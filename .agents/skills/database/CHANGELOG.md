@@ -1,33 +1,43 @@
 # Changelog — database
 
-## 2026-11-25 — Columna `is_active` en `users`
+## 2026-11-26 — Forced password change flag
 
-- Change: nueva migración
-  `database/migrations/2026-11-25-admin-user-management.sql` que agrega
-  `users.is_active BOOLEAN NOT NULL DEFAULT TRUE` después de `role_id`.
-- Impact: las cuentas existentes quedan activas; la desactivación es una
-  actualización de esta columna y `checkAuth` la verifica en cada petición.
-- Verification: migración escrita y revisada; no se aplicó en esta sesión.
+- Change: new migration `database/migrations/2026-11-26-user-provisioning.sql`
+  adds `users.must_change_password BOOLEAN NOT NULL DEFAULT FALSE` after
+  `is_active`.
+- Impact: existing accounts are unaffected; admin-created accounts are inserted
+  with `TRUE` and `requirePasswordChanged` allows only `/api/users/auth` and
+  `PATCH /api/users/me/password` until the password is changed.
+- Verification: migration written and reviewed; not applied in this session.
 
-## 2026-11-17 — Renombrado de `operator` a `lender`
+## 2026-11-25 — Column `is_active` on `users`
 
-- Change: nueva migración
-  `database/migrations/2026-11-17-rename-operator-role-to-lender.sql` que
-  actualiza `roles.role_name` y `updated_at` donde el nombre es `operator`.
-- Impact: el `role_id` no cambia, así que los usuarios asignados siguen válidos.
-  El signup resuelve el rol `lender` por nombre desde esta tabla.
-- Verification: migración aplicada con `mysql2`; `roles` devolvió
-  `(1, admin), (2, lender)` y el usuario 16 conservó `role_id = 2`.
+- Change: new migration
+  `database/migrations/2026-11-25-admin-user-management.sql` that adds
+  `users.is_active BOOLEAN NOT NULL DEFAULT TRUE` after `role_id`.
+- Impact: existing accounts remain active; deactivation is an update of this
+  column and `checkAuth` verifies it on every request.
+- Verification: migration written and reviewed; not applied in this session.
 
-## 2026-11-16 — Migración de interés incluido/separado
+## 2026-11-17 — Renaming `operator` to `lender`
 
-- Change: Se documentó que los cambios de esquema se aplican manualmente desde
-  `database/migrations/` y se registró la migración
-  `2026-11-16-loan-interest-payment-mode.sql`, que agrega
-  `loans.interest_payment_mode`, hace nullable
-  `loan_interest_payments.payment_id`, agrega `status`, el índice único de
-  `loan_id` y la restricción de estado.
-- Impact: La base ahora distingue interés incluido en cuotas de una obligación
-  pendiente por préstamo; el esquema sigue fuera de `sequelize.sync()`.
-- Verification: Migración aplicada y verificada contra MySQL 8.4.3; los conteos
-  de datos de prueba se restauraron.
+- Change: new migration
+  `database/migrations/2026-11-17-rename-operator-role-to-lender.sql` that
+  updates `roles.role_name` and `updated_at` where the name is `operator`.
+- Impact: `role_id` does not change, so assigned users remain valid. Signup
+  resolves the `lender` role by name from this table.
+- Verification: migration applied with `mysql2`; `roles` returned
+  `(1, admin), (2, lender)` and user 16 retained `role_id = 2`.
+
+## 2026-11-16 — Included/separate interest migration
+
+- Change: It was documented that schema changes are applied manually from
+  `database/migrations/`, and the migration
+  `2026-11-16-loan-interest-payment-mode.sql` was recorded; it adds
+  `loans.interest_payment_mode`, makes `loan_interest_payments.payment_id`
+  nullable, and adds `status`, the unique index on `loan_id`, and the status
+  constraint.
+- Impact: The database now distinguishes interest included in installments from
+  a pending obligation per loan; the schema remains outside `sequelize.sync()`.
+- Verification: Migration applied and verified against MySQL 8.4.3; the test
+  data counts were restored.

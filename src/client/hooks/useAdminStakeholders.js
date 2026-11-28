@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import api from "@/lib/axiosService";
+import {
+    categorizeStakeholders,
+    countStakeholderCategories,
+    filterStakeholdersByCategory,
+} from "@/client/utils/stakeholderCategory";
 import {
     buildStakeholderPayload,
     EMPTY_STAKEHOLDER_FORM,
@@ -10,6 +15,7 @@ import {
 
 export function useAdminStakeholders() {
     const [stakeholders, setStakeholders] = useState([]);
+    const [category, setCategory] = useState("all");
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -32,23 +38,14 @@ export function useAdminStakeholders() {
                 api.get("/stakeholders"),
                 api.get("/users"),
             ]);
+            const people = Array.isArray(stakeholdersResponse.data)
+                ? stakeholdersResponse.data
+                : [];
             const users = Array.isArray(usersResponse.data)
                 ? usersResponse.data
                 : [];
-            const linkedStakeholderIds = new Set(
-                users
-                    .map((user) => user.stakeholder_id)
-                    .filter((stakeholderId) => stakeholderId),
-            );
-            const stakeholders = Array.isArray(stakeholdersResponse.data)
-                ? stakeholdersResponse.data
-                : [];
-            const visibleStakeholders = stakeholders.filter(
-                (stakeholder) =>
-                    !linkedStakeholderIds.has(stakeholder.stakeholder_id),
-            );
 
-            setStakeholders(visibleStakeholders);
+            setStakeholders(categorizeStakeholders(people, users));
         } catch (requestError) {
             setError(
                 requestError.response?.data?.error ||
@@ -166,6 +163,15 @@ export function useAdminStakeholders() {
         }
     }
 
+    const categoryCounts = useMemo(
+        () => countStakeholderCategories(stakeholders),
+        [stakeholders],
+    );
+    const filteredStakeholders = useMemo(
+        () => filterStakeholdersByCategory(stakeholders, category),
+        [stakeholders, category],
+    );
+
     function dismissError() {
         setError("");
     }
@@ -176,6 +182,10 @@ export function useAdminStakeholders() {
 
     return {
         stakeholders,
+        filteredStakeholders,
+        category,
+        setCategory,
+        categoryCounts,
         loading,
         saving,
         deleting,

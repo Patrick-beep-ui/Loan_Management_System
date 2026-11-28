@@ -26,27 +26,19 @@ export default function LoanTable({ loans, loading }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {loading ? (
-          <TableRow>
-            <TableCell
-              colSpan={8}
-              className="text-center text-muted-foreground"
-            >
-              Loading loans...
-            </TableCell>
-          </TableRow>
-        ) : loans.length === 0 ? (
-          <TableRow>
-            <TableCell
-              colSpan={8}
-              className="text-center text-muted-foreground"
-            >
-              No loans found.
-            </TableCell>
-          </TableRow>
-        ) : (
-          loans.map((loan) => <LoanTableRow key={loan.loan_id} loan={loan} />)
-        )}
+        {!loading &&
+          (loans.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={8}
+                className="text-center text-muted-foreground"
+              >
+                No loans found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            loans.map((loan) => <LoanTableRow key={loan.loan_id} loan={loan} />)
+          ))}
       </TableBody>
     </Table>
   );
