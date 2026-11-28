@@ -16,8 +16,15 @@ run queries. Connection settings come from `.env` in the repository root.
 ## Schema migrations
 
 Schema changes are applied manually from `database/migrations/*.sql`; the models
-do not use `sequelize.sync()`. `2026-11-16-loan-interest-payment-mode.sql`
-adds `loans.interest_payment_mode`, makes `loan_interest_payments.payment_id`
+do not use `sequelize.sync()`. The initial schema is
+`2026-11-11-loan-managament-system-inital-model.sql`. Three ordered key-upgrade
+migrations follow it: `2026-11-12-installment-payment-surrogate-key.sql`,
+`2026-11-13-loan-guarantor-surrogate-key.sql`, and
+`2026-11-14-loan-interest-payment-surrogate-key.sql`. They replace the original
+join-table primary keys with the surrogate keys used by the Sequelize models
+while retaining the required unique foreign-key constraints.
+`2026-11-16-loan-interest-payment-mode.sql` adds
+`loans.interest_payment_mode`, makes `loan_interest_payments.payment_id`
 nullable, adds `status`, adds the unique key on `loan_id`, and adds
 `chk_loan_interest_payment_state`.
 `2026-11-17-rename-operator-role-to-lender.sql` renames the `operator` role to
@@ -42,6 +49,11 @@ verify the affected columns, keys, and constraints with `information_schema`.
 Keep existing data in mind: the migration that adds a `NOT NULL` column without
 a default assumes the table is empty or that MySQL assigns the enum's first
 value.
+
+For a fresh database, apply every migration in chronological order. Existing
+current databases must not rerun the three key-upgrade migrations; inspect the
+expected schema through `information_schema` instead. The exact order and key
+expectations are in [`database/migrations/README.md`](../../../database/migrations/README.md).
 
 ## Connection method
 

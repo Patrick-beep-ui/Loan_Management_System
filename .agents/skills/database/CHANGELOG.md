@@ -1,5 +1,16 @@
 # Changelog — database
 
+## 2026-11-14 — Canonical join-table key migrations
+
+- Change: preserved the 2026-11-11 initial schema and added three ordered MySQL
+  8 key-upgrade migrations for `installment_payments`, `loan_guarantors`, and
+  `loan_interest_payments` before the interest-mode migration.
+- Impact: a fresh database can reproduce the surrogate keys and unique
+  constraints expected by the Sequelize models. Existing current databases must
+  verify their keys through `information_schema` instead of rerunning them.
+- Verification: migration SQL reviewed against the current MySQL schema and
+  Sequelize models; not applied in this change.
+
 ## 2026-11-26 — Forced password change flag
 
 - Change: new migration `database/migrations/2026-11-26-user-provisioning.sql`

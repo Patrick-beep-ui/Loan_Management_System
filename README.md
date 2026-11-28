@@ -98,8 +98,11 @@ pnpm seed:admin # create the first admin account
 
 ### Initial setup
 
-1. Create the database and apply the SQL files in `database/migrations/` in
-   chronological order. Models never call `sequelize.sync()`.
+1. For a fresh database, apply the SQL files in `database/migrations/` in
+   chronological order. Models never call `sequelize.sync()`. Existing current
+   databases must not rerun the already-applied key-upgrade migrations; verify
+   their schema through `information_schema` instead. See
+   [`database/migrations/README.md`](database/migrations/README.md).
 2. Ensure the `admin` and `lender` roles exist (see the roles migration) and
    create or choose the stakeholder that will be linked to the first admin.
 3. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_STAKEHOLDER_ID` in `.env` and
@@ -329,10 +332,15 @@ vite.config.js              Vite plugins and alias `@` → `./src`
 
 database/
 ├─ migrations/
+│  ├─ 2026-11-11-loan-managament-system-inital-model.sql
+│  ├─ 2026-11-12-installment-payment-surrogate-key.sql
+│  ├─ 2026-11-13-loan-guarantor-surrogate-key.sql
+│  ├─ 2026-11-14-loan-interest-payment-surrogate-key.sql
 │  ├─ 2026-11-16-loan-interest-payment-mode.sql
 │  ├─ 2026-11-17-rename-operator-role-to-lender.sql
 │  ├─ 2026-11-25-admin-user-management.sql
-│  └─ 2026-11-26-user-provisioning.sql
+│  ├─ 2026-11-26-user-provisioning.sql
+│  └─ README.md              application order and existing-schema verification
 └─ seeds/
    └─ createFirstAdmin.js   provisions the first admin from ADMIN_* variables
 
