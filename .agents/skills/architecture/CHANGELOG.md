@@ -1,5 +1,15 @@
 # Changelog — architecture
 
+## 2026-11-27 — OpenAPI contract governance
+
+- Change: added `docs/openapi.json` as the canonical API contract and documented
+  the contract-first workflow in the architecture module.
+- Impact: endpoint changes must update the contract before implementation. The
+  document defines the approved cookie-JWT target and planned logout endpoint;
+  current Bearer authentication remains until that migration is implemented.
+- Verification: JSON contract reviewed against routes, controllers, validators,
+  services, README API documentation, and module contracts.
+
 ## 2026-11-26 — Admin user provisioning and forced password change
 
 - Change: `api.js` mounts `requirePasswordChanged` after `checkAuth`;

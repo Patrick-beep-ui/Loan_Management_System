@@ -67,6 +67,14 @@ api.use("/payments", PaymentRouter); // /api/payments
 Order matters: any router registered after `checkAuth` requires
 `Authorization: Bearer <token>`.
 
+## API contract
+
+`docs/openapi.json` is the canonical API contract. It must be updated before
+adding or changing endpoints, request bodies, responses, error statuses, or
+authorization behavior. It defines the approved target cookie-based JWT scheme
+and planned `POST /api/auth/logout`; current code still uses Bearer tokens until
+the authentication migration implements that contract.
+
 `AdminRouter` (`src/server/routes/adminRoutes.js`) applies `requireAdmin` to
 everything registered below it and directly defines `POST /users` →
 `POST /api/admin/users`, `POST /users/:userId/reset-password` →

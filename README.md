@@ -431,6 +431,12 @@ has a `SKILL.md` and a `CHANGELOG.md`.
 
 ## API
 
+[`docs/openapi.json`](docs/openapi.json) is the canonical API contract and must
+be updated before endpoint changes. It specifies the approved target
+cookie-based JWT transport and planned `POST /api/auth/logout`; the current
+Bearer-token implementation remains in place until the authentication migration
+is completed.
+
 | Method | Route | Description |
 | --- | --- | --- |
 | `GET` | `/api/roles` | Lists registered roles. Requires token. |
