@@ -69,6 +69,9 @@ DB_PASSWORD=...
 DB_NAME=loan_management_system
 JWT_SECRET=...
 JWT_EXPIRES_IN=1h
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+API_RATE_LIMIT_MAX=300
+LOGIN_RATE_LIMIT_MAX=5
 ```
 
 The first admin is provisioned with a seed script, not a public endpoint. Add
@@ -82,6 +85,12 @@ ADMIN_STAKEHOLDER_ID=1
 
 `ADMIN_STAKEHOLDER_ID` must be the ID of an existing stakeholder that is not
 already linked to a user.
+
+`CORS_ALLOWED_ORIGINS` is a comma-separated browser-origin allowlist. It never
+uses `*`; only listed origins receive credentialed CORS responses. Same-origin
+deployment needs no CORS header. API requests default to 300 per 15 minutes,
+while login defaults to 5 per 15 minutes; both values are configurable through
+the variables above.
 
 ## Commands
 
@@ -98,8 +107,11 @@ pnpm seed:admin # create the first admin account
 
 ### Initial setup
 
-1. Create the database and apply the SQL files in `database/migrations/` in
-   chronological order. Models never call `sequelize.sync()`.
+1. For a fresh database, apply the SQL files in `database/migrations/` in
+   chronological order. Models never call `sequelize.sync()`. Existing current
+   databases must not rerun the already-applied key-upgrade migrations; verify
+   their schema through `information_schema` instead. See
+   [`database/migrations/README.md`](database/migrations/README.md).
 2. Ensure the `admin` and `lender` roles exist (see the roles migration) and
    create or choose the stakeholder that will be linked to the first admin.
 3. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_STAKEHOLDER_ID` in `.env` and
@@ -130,17 +142,42 @@ receives the stored record so it can resolve rules that depend on the current
 state; services only persist and enforce payment-related conflicts.
 
 Each router is registered in `src/server/api.js`. Services throw typed errors
-(defined in `src/server/utils/errors.js`) that controllers translate into HTTP
-status codes.
+(defined in `src/server/utils/errors.js`) that the terminal Express error
+middleware translates into HTTP status codes.
 
-`/api/auth` (login) is public. `checkAuth` is applied after that router, so
-everything registered below it (`/api/admin`, `/api/users`, `/api/roles`,
-`/api/stakeholders`, `/api/loans`, `/api/payments`) requires
-`Authorization: Bearer <token>`. `checkAuth` verifies the JWT and queries
-`users`/`Role` to rebuild `req.user` with the current role, stakeholder, and
-`must_change_password` flag from the database: an account with
-`is_active = false` responds `401`. The JWT itself contains `user_id`,
-`role_id`, `role_name`, and `stakeholder_id`.
+`/api/auth/login` and `/api/auth/logout` are public. Login writes the JWT to the
+`access_token` cookie, and logout clears it. `checkAuth` is applied after that
+router, so everything registered below it (`/api/admin`, `/api/users`,
+`/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) requires that
+cookie. `checkAuth` verifies the JWT and queries `users`/`Role` to rebuild
+`req.user` with the current role, stakeholder, and `must_change_password` flag
+from the database: an account with `is_active = false` responds `401`. The JWT
+itself contains `user_id`, `role_id`, `role_name`, and `stakeholder_id`.
+
+The cookie is always `HttpOnly`, `SameSite=Strict`, and scoped to `/`. It is
+also `Secure` when `NODE_ENV=production`, which requires HTTPS. Local HTTP
+development intentionally omits only the `Secure` flag because browsers reject
+secure cookies over `http://localhost`; production must never use that exception.
+
+`main.js` applies Helmet security headers, the exact CORS allowlist, and the
+API-wide rate limit before routes. Production adds a content-security policy
+that permits the application's Google Fonts sources; development keeps Helmet's
+other headers but disables CSP so Vite development tooling can run. Login has a
+stricter rate limit. Dependency rationale and `pnpm audit` evidence are in
+[`docs/dependency-rfcs/`](docs/dependency-rfcs/).
+
+### Authorization boundary
+
+`GET /api/users`, `GET /api/stakeholders`, and `GET /api/stakeholders/:id` are
+intentional authenticated global-read exceptions: any authenticated role can
+read those records because the loan and administration workflows need shared
+participant and account data. This exception does not extend to loans, payments,
+or mutations. Loan and payment access remains lender-scoped (or globally
+available to admins), and stakeholder mutations remain admin-only. Therefore,
+the application does not claim complete BOLA/IDOR protection for user or
+stakeholder read enumeration without instructor approval. See
+[`docs/security/red-team-audit.md`](docs/security/red-team-audit.md) for the
+security audit scope and reproducible checks.
 
 `requirePasswordChanged` runs after `checkAuth`. When `must_change_password` is
 true it only allows `GET /api/users/auth` (session hydration) and
@@ -200,20 +237,19 @@ offers `Record payment`, while Stakeholders keeps only `Refresh`.
 | `/test` | `Test` (test view) | public |
 
 `Login` consumes `/api/auth` through `src/lib/axiosService.js` (`api.post`):
-it validates the fields and shows loading and error states with `Card`,
-`Input`, `Label`, and `Button`. The service centralizes `baseURL`
-(`VITE_API_URL` or `http://localhost:3000/api`), a request interceptor that
-sends `Authorization: Bearer <token>` from `localStorage`, and a response
-interceptor that clears the token and emits `auth:unauthorized` on `401`
-(except on `/auth/login` and `/users/me/password`, so credential errors are not
-hidden).
+it validates the fields and shows loading and error states with `Card`, `Input`,
+`Label`, and `Button`. The service centralizes `baseURL`
+(`VITE_API_URL` or `http://localhost:3000/api`) and sets `withCredentials` so
+the browser sends the HttpOnly cookie without exposing it to JavaScript. Its
+response interceptor emits `auth:unauthorized` on `401` (except on
+`/auth/login` and `/users/me/password`, so credential errors are not hidden).
 `src/client/contexts/AuthContext.jsx` exposes `AuthProvider`, `useAuth()`,
 `RequireAuth`, `RequireAdmin`, and `RequireLender`: the session is hydrated with
 `GET /api/users/auth`; loan routes and `/change-password` are protected,
 `/payments` and `/stakeholders` are for lenders (admins go to
 `/admin/payments` and `/admin/stakeholders`), `/admin/*` requires the `admin`
-role, and the rest are public. `login(token)`
-and `refreshUser()` return the loaded user, including the
+role, and the rest are public. `login()` and `refreshUser()` return the loaded
+user, including the
 `must_change_password` flag. `RequireAuth`
 redirects a user with that flag to `/change-password` unless they are already
 there. `ChangePassword` submits `{ current_password, new_password }` to
@@ -329,10 +365,15 @@ vite.config.js              Vite plugins and alias `@` → `./src`
 
 database/
 ├─ migrations/
+│  ├─ 2026-11-11-loan-managament-system-inital-model.sql
+│  ├─ 2026-11-12-installment-payment-surrogate-key.sql
+│  ├─ 2026-11-13-loan-guarantor-surrogate-key.sql
+│  ├─ 2026-11-14-loan-interest-payment-surrogate-key.sql
 │  ├─ 2026-11-16-loan-interest-payment-mode.sql
 │  ├─ 2026-11-17-rename-operator-role-to-lender.sql
 │  ├─ 2026-11-25-admin-user-management.sql
-│  └─ 2026-11-26-user-provisioning.sql
+│  ├─ 2026-11-26-user-provisioning.sql
+│  └─ README.md              application order and existing-schema verification
 └─ seeds/
    └─ createFirstAdmin.js   provisions the first admin from ADMIN_* variables
 
@@ -423,6 +464,12 @@ has a `SKILL.md` and a `CHANGELOG.md`.
 
 ## API
 
+[`docs/openapi.json`](docs/openapi.json) is the canonical API contract and must
+be updated before endpoint changes. It specifies the approved target
+cookie-based JWT transport and planned `POST /api/auth/logout`; the current
+Bearer-token implementation remains in place until the authentication migration
+is completed.
+
 | Method | Route | Description |
 | --- | --- | --- |
 | `GET` | `/api/roles` | Lists registered roles. Requires token. |
@@ -450,13 +497,15 @@ has a `SKILL.md` and a `CHANGELOG.md`.
 | `POST` | `/api/payments/interest` | Records payment of separate interest. Requires token. |
 | `PATCH` | `/api/payments/:id` | Corrects only `paid_at` of a payment. Requires token. |
 | `DELETE` | `/api/payments/:id` | Reverts a payment, restores the installment or interest to `pending`, and responds `204`. Requires token. |
-| `POST` | `/api/auth/login` | Signs in with `email` and `password`; responds `{ token, user }` with a 1-hour JWT including `role_name`, `stakeholder_id`, and `must_change_password`. |
+| `POST` | `/api/auth/login` | Signs in with `email` and `password`; sets the HttpOnly JWT cookie and responds with `{ user }`, including `role_name`, `stakeholder_id`, and `must_change_password`. |
+| `POST` | `/api/auth/logout` | Clears the JWT cookie and responds `204`. |
 | `GET` | `/hello` | Simple server health check. |
 
 Public signup has been removed: accounts can only be created by an admin, or
 by `pnpm seed:admin` for the very first admin. Routes marked "Requires token"
-expect `Authorization: Bearer <token>`; without a token or with an invalid one
-they respond `401`. Successful login responds `200` and bad credentials `401`.
+expect the HttpOnly `access_token` cookie; without a cookie or with an invalid
+one they respond `401`. Successful login responds `200` and bad credentials
+respond `401`.
 While `must_change_password` is true, only session hydration and the password
 change route respond; everything else responds `403 Password change required`.
 

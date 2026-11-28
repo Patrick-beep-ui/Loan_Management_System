@@ -17,8 +17,8 @@ This module's change history is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Behavior
 
-- Requires authentication: `Authorization: Bearer <token>`; without a token or
-  with an invalid token it responds `401`. This is applied by `checkAuth` in `api.js`.
+- Requires the `access_token` HttpOnly cookie; without a valid cookie it responds
+  `401`. This is applied by `checkAuth` in `api.js`.
 - Returns all `roles` records (`role_id`, `role_name`, dates).
 - Responds `200` with the array of roles.
 - On an unexpected error it responds `500` with `{ error: "Internal Server Error" }`.

@@ -36,7 +36,7 @@ A nonexistent `:id` is detected before an invalid body in `PATCH`, so it returns
 
 ## Endpoints
 
-All routes require `Authorization: Bearer <token>`.
+All routes require the `access_token` HttpOnly cookie.
 
 | Method | Route | Controller | Service | Access |
 | --- | --- | --- | --- | --- |

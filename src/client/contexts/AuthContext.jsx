@@ -23,16 +23,12 @@ export function AuthProvider() {
     let active = true;
 
     async function hydrate() {
-      if (!localStorage.getItem("token")) {
-        if (active) setLoading(false);
-        return;
-      }
+      localStorage.removeItem("token");
 
       try {
         const { data } = await api.get("/users/auth");
         if (active) setUser(data);
       } catch {
-        localStorage.removeItem("token");
         if (active) setUser(null);
       } finally {
         if (active) setLoading(false);
@@ -45,15 +41,12 @@ export function AuthProvider() {
     };
   }, []);
 
-  async function login(token) {
-    localStorage.setItem("token", token);
-
+  async function login() {
     try {
       const { data } = await api.get("/users/auth");
       setUser(data);
       return data;
     } catch (error) {
-      localStorage.removeItem("token");
       setUser(null);
       throw error;
     }
@@ -65,9 +58,12 @@ export function AuthProvider() {
     return data;
   }
 
-  function logout() {
-    localStorage.removeItem("token");
-    setUser(null);
+  async function logout() {
+    try {
+      await api.post("/auth/logout");
+    } finally {
+      setUser(null);
+    }
   }
 
   const value = useMemo(

@@ -1,5 +1,15 @@
 # Changelog — frontend
 
+### 2026-11-27 — Cookie-based JWT client transport
+
+- Change: axios now sends credentials without a Bearer request interceptor;
+  `AuthProvider` hydrates from the HttpOnly cookie, discards legacy local storage
+  tokens, and logs out through `POST /api/auth/logout`.
+- Impact: browser JavaScript no longer stores or handles the JWT. Session state
+  continues to hydrate through `/api/users/auth`.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ### 2026-11-27 — Orphaned stakeholder components removed
 
 - Change: removed `AdminDashboardStakeholders.jsx` and

@@ -1,5 +1,25 @@
 # Changelog — auth
 
+## 2026-11-27 — Login rate protection
+
+- Change: applied the login-specific rate limiter to `POST /api/auth/login`.
+- Impact: login attempts default to 5 per 15 minutes in addition to the
+  API-wide limit; `LOGIN_RATE_LIMIT_MAX` can change that threshold.
+- Verification: `pnpm audit --json` found no advisory for the limiter package;
+  `node --check` and `pnpm build` succeeded. Not tested against a running
+  server.
+
+## 2026-11-27 — JWT transport moved to HttpOnly cookies
+
+- Change: login now writes the JWT to the `access_token` cookie, `checkAuth`
+  reads that cookie, and public `POST /api/auth/logout` clears it. The login
+  body no longer returns the token.
+- Impact: browser JavaScript does not receive or store JWTs. Production cookies
+  are `HttpOnly`, `Secure`, and `SameSite=Strict`; local HTTP omits only
+  `Secure` so browsers can use localhost.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ## 2026-11-26 — Lender route guard
 
 - Change: added `RequireLender` to `src/client/contexts/AuthContext.jsx`. It

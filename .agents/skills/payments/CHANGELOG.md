@@ -1,5 +1,13 @@
 # Changelog — payments
 
+### 2026-11-27 — Corrected authentication documentation
+
+- Change: replaced the obsolete Bearer-token requirement with the current
+  `access_token` HttpOnly cookie requirement.
+- Impact: payment ownership behavior is unchanged; the module guide now matches
+  `checkAuth` and the cookie-based session contract.
+- Verification: reviewed `checkAuth.js` and `docs/openapi.json`.
+
 ### 2026-11-27 — Lender payment recording
 
 - Change: `/payments` now lets lenders record a pending installment or separate

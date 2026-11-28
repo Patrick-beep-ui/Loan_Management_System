@@ -6,67 +6,33 @@ import {
     replaceLoan as replaceLoanService,
     updateLoan as updateLoanService
 } from "../services/loanService.js";
-import { AppError } from "../utils/errors.js";
-
-function handleError(res, error, context) {
-    if (error instanceof AppError) {
-        return res.status(error.statusCode).json({ error: error.message });
-    }
-
-    console.error(`Error ${context}:`, error);
-    return res.status(500).json({ error: "Internal Server Error" });
-}
 
 export async function getAllLoans(req, res) {
-    try {
-        const loans = await getAllLoansService(req.user);
-        return res.status(200).json(loans);
-    } catch (error) {
-        return handleError(res, error, "fetching loans");
-    }
+    const loans = await getAllLoansService(req.user);
+    return res.status(200).json(loans);
 }
 
 export async function getLoanById(req, res) {
-    try {
-        const loan = await getLoanByIdService(req.params.id, req.user);
-        return res.status(200).json(loan);
-    } catch (error) {
-        return handleError(res, error, "fetching loan");
-    }
+    const loan = await getLoanByIdService(req.params.id, req.user);
+    return res.status(200).json(loan);
 }
 
 export async function createLoan(req, res) {
-    try {
-        const loan = await createLoanService(req.body, req.user);
-        return res.status(201).json(loan);
-    } catch (error) {
-        return handleError(res, error, "creating loan");
-    }
+    const loan = await createLoanService(req.body, req.user);
+    return res.status(201).json(loan);
 }
 
 export async function replaceLoan(req, res) {
-    try {
-        const loan = await replaceLoanService(req.params.id, req.body, req.user);
-        return res.status(200).json(loan);
-    } catch (error) {
-        return handleError(res, error, "replacing loan");
-    }
+    const loan = await replaceLoanService(req.params.id, req.body, req.user);
+    return res.status(200).json(loan);
 }
 
 export async function updateLoan(req, res) {
-    try {
-        const loan = await updateLoanService(req.params.id, req.body, req.user);
-        return res.status(200).json(loan);
-    } catch (error) {
-        return handleError(res, error, "updating loan");
-    }
+    const loan = await updateLoanService(req.params.id, req.body, req.user);
+    return res.status(200).json(loan);
 }
 
 export async function deleteLoan(req, res) {
-    try {
-        await deleteLoanService(req.params.id, req.user);
-        return res.status(204).send();
-    } catch (error) {
-        return handleError(res, error, "deleting loan");
-    }
+    await deleteLoanService(req.params.id, req.user);
+    return res.status(204).send();
 }

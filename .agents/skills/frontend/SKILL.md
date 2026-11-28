@@ -319,9 +319,9 @@ is used in `CardTitle` and `DialogTitle`, and `@layer base` also applies it to
 
 `src/lib/axiosService.js` exports an axios instance with
 `baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"`.
-A request interceptor reads the JWT from `localStorage` under the key `token`
-and, if present, adds `Authorization: Bearer <token>` to all requests.
-That is why views call methods with paths relative to `/api`
+It sets `withCredentials: true` so the browser includes the HttpOnly
+`access_token` cookie without exposing it to JavaScript. That is why views call
+methods with paths relative to `/api`
 (`api.post("/auth/login")`, `api.get("/roles")`, `api.get("/users")`,
 `api.get("/stakeholders")`, `api.get("/stakeholders/:id")`,
 `api.post("/stakeholders")`, `api.put("/stakeholders/:id")`,
@@ -332,8 +332,7 @@ That is why views call methods with paths relative to `/api`
 `api.put("/loans/:id")`, `api.patch("/loans/:id")`,
 `api.post("/payments/installment")`, `api.post("/payments/interest")`,
 `api.get("/payments")`, `api.delete("/payments/:id")`) and do not need to build the header or repeat the
-`/api` prefix. The response interceptor removes
-`token` and emits `auth:unauthorized` on a `401`, except on `/auth/login` and
+`/api` prefix. The response interceptor emits `auth:unauthorized` on a `401`, except on `/auth/login` and
 `/users/me/password` so credential errors are not hidden. `AuthProvider` listens
 for that event and clears the user.
 
@@ -342,8 +341,8 @@ for that event and clears the user.
 `src/client/contexts/AuthContext.jsx` exports `AuthProvider`, `useAuth()`,
 `RequireAuth`, and `RequireAdmin`:
 
-- `AuthProvider` is the root layout: on mount it hydrates the user with
-  `api.get("/users/auth")` if there is a `token`, exposes `{ user, isAuthenticated,
+- `AuthProvider` is the root layout: on mount it removes the legacy local
+  storage token, then hydrates the user with `api.get("/users/auth")`, exposes `{ user, isAuthenticated,
   loading, login, logout, refreshUser }`, and renders `<Outlet />`.
 - `useAuth()` lets you read the user and session actions from any
   view; it fails if used outside the provider.
@@ -355,19 +354,18 @@ for that event and clears the user.
 - `RequireAdmin` uses the same hydration state, redirects to `/login` without
   a session and to `/loans` if `user.Role.role_name` is not `admin`; if it is,
   it renders `<Outlet />`.
-- `login(token)` saves the JWT, loads `/users/auth`, updates the state, and
-  returns the loaded user; `refreshUser()` reloads `/users/auth` and returns
-  the updated user;
-  `logout()` clears the token and the user. All are available via `useAuth()`.
+- `login()` loads `/users/auth` after the server writes the HttpOnly cookie,
+  updates the state, and returns the loaded user; `refreshUser()` reloads
+  `/users/auth`; `logout()` posts to `/auth/logout` to clear the cookie and
+  clears the user. All are available via `useAuth()`.
 - The exposed user retains the Sequelize `Stakeholder` and `Role` keys
   (`user.Stakeholder.first_name`, `user.Role.role_name`, etc.). `CreateLoan`
   takes `lender_id` from `user.stakeholder_id` for `lender` accounts; `admin` selects
   it in the form.
-- Requests to `/auth/login` and `/users/me/password` use `api.post`/`api.patch`
-  from the shared service; the final URL resolves with the configured `baseURL`. The JWT is
-  saved in `localStorage` with the key `token` and the interceptor attaches it as
-  `Authorization: Bearer <token>` to all requests, even public ones
-  when a session already exists. That is the mechanism required by `checkAuth`.
+- Requests to `/auth/login`, `/auth/logout`, and `/users/me/password` use the
+  shared service; the final URL resolves with the configured `baseURL`. The JWT
+  remains inaccessible to JavaScript in the `access_token` cookie, which is the
+  mechanism required by `checkAuth`.
 - Errors are read from `error.response?.data?.error`; if there is no response,
   a generic message is displayed. Both cases use a `role="alert"` region with
   `text-destructive` and `bg-destructive/10`.

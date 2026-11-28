@@ -64,8 +64,16 @@ api.use("/loans", LoanRouter); // /api/loans
 api.use("/payments", PaymentRouter); // /api/payments
 ```
 
-Order matters: any router registered after `checkAuth` requires
-`Authorization: Bearer <token>`.
+Order matters: any router registered after `checkAuth` requires the
+`access_token` HttpOnly cookie.
+
+## API contract
+
+`docs/openapi.json` is the canonical API contract. It must be updated before
+adding or changing endpoints, request bodies, responses, error statuses, or
+authorization behavior. It defines the approved target cookie-based JWT scheme
+and planned `POST /api/auth/logout`; current code still uses Bearer tokens until
+the authentication migration implements that contract.
 
 `AdminRouter` (`src/server/routes/adminRoutes.js`) applies `requireAdmin` to
 everything registered below it and directly defines `POST /users` →
@@ -76,8 +84,15 @@ listing remains at `GET /api/users`.
 
 ## Middlewares
 
+- `src/server/config/security.js`: parses the exact
+  `CORS_ALLOWED_ORIGINS` allowlist, configures Helmet headers, and exports the
+  API-wide plus login-specific rate limiters. Unknown browser origins receive no
+  CORS permission, credentials are never paired with a wildcard origin, and
+  same-origin requests need no CORS header. The production CSP permits only the
+  application and configured Google Fonts sources; development disables CSP for
+  Vite while retaining the other Helmet headers.
 - `src/server/middlewares/checkAuth.js`: validates the JWT from the
-  `Authorization: Bearer <token>` header, queries `users` and `Role` in the
+  `access_token` cookie, queries `users` and `Role` in the
   database, and sets `req.user = { user_id, role_id, role_name, stakeholder_id,
   must_change_password }` with up-to-date values. Responds `401` if the token is
   missing, invalid, the user does not exist, or the account is inactive
@@ -98,6 +113,21 @@ Token signing lives in `src/server/utils/generateToken.js` (payload
 by ownership; the `payments` module reuses `loanScope` from `loanService` to
 apply the same filter.
 
+## Authorization boundary
+
+Loans and payments are ownership-scoped: admins can access all records, while a
+lender is scoped to loans whose `lender_id` matches the account's
+`stakeholder_id`. Payment operations resolve their parent loan through the same
+scope. Stakeholder mutations require `admin`.
+
+`GET /api/users`, `GET /api/stakeholders`, and `GET /api/stakeholders/:id` are
+selected authenticated global-read exceptions. They deliberately allow every
+authenticated role to enumerate shared account and participant records. This
+does not weaken ownership checks for loans, payments, or mutations, but it also
+means the application must not claim complete BOLA/IDOR protection for read
+enumeration without instructor approval. The reproducible audit record is
+`docs/security/red-team-audit.md`.
+
 ## Route convention
 
 Routers use `Router.route(path)` and chain the verbs on the following lines, one
@@ -114,7 +144,7 @@ UserRouter.route("/me/password")
 ## Error handling
 
 `src/server/utils/errors.js` defines typed errors that services throw and
-controllers translate into HTTP codes:
+validators, services, and controllers may throw:
 
 - `AppError` — base, with `statusCode` (500 by default).
 - `ValidationError` — invalid input (400).
@@ -125,9 +155,13 @@ controllers translate into HTTP codes:
   resource (403).
 - `NotFoundError` — nonexistent resource (404).
 
-Controllers use `try/catch`: if the error is an `AppError` they respond with
-`error.statusCode` and `{ error: error.message }`; any other error is logged and
-responds `500` with `{ error: "Internal Server Error" }`.
+Express 5 forwards rejected async controller promises to
+`src/server/middlewares/errorHandler.js`, mounted last in `main.js`. It returns
+`{ error: error.message }` for typed `AppError` instances with a `4xx` status.
+It logs every unexpected error and returns the generic
+`500 { error: "Internal Server Error" }` response without exposing details.
+Controllers contain only service calls and successful responses; validators keep
+throwing the same typed errors.
 
 ## Status codes
 
@@ -138,4 +172,5 @@ responds `500` with `{ error: "Internal Server Error" }`.
 - `403` operation not allowed for the authenticated user.
 - `404` nonexistent resource.
 - `409` uniqueness conflict.
+- `429` rate limit exceeded.
 - `500` unexpected error.

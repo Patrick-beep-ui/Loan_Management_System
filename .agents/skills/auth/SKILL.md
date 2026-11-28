@@ -18,6 +18,7 @@ refresh tokens, which is not yet implemented, is in
 | Method | Route | Controller | Service | Access |
 | --- | --- | --- | --- | --- |
 | `POST` | `/api/auth/login` | `authController.login` | `authService.login` | public |
+| `POST` | `/api/auth/logout` | `authController.logout` | — | public |
 | `PATCH` | `/api/users/me/password` | `userController.changePassword` | `authService.changePassword` | token |
 
 ## Password change
@@ -40,6 +41,9 @@ Receives `{ current_password, new_password }` from an authenticated account.
 Receives `{ email, password }`.
 
 - If either is missing, it throws `ValidationError` (`400`).
+- Login is limited to 5 requests per 15 minutes by default; a limit breach
+  responds `429 Too many requests. Please try again later.`. The limit can be
+  changed with `LOGIN_RATE_LIMIT_MAX`.
 - Requires `email` and `password` to be strings; the email is normalized (`trim` +
   lowercase) and must have the basic format `local@domain`.
 - Looks up the user by normalized email.
@@ -49,17 +53,29 @@ Receives `{ email, password }`.
 - If the account is inactive (`is_active = false`), it throws
   `UnauthorizedError` (`401`) with `Account is inactive`, even with the correct
   password.
-- Responds `200` with `{ token, user }`; `user` includes `user_id`,
+- Writes the JWT to the `access_token` cookie and responds `200` with `{ user }`;
+  `user` includes `user_id`,
   `stakeholder_id`, `email`, `role_id`, `role_name`, and `must_change_password`
   (never `password_hash`).
-- `token` is a JWT signed by `generateToken` with the payload
+- The JWT is signed by `generateToken` with the payload
   `{ user_id, role_id, role_name, stakeholder_id }` and expiration
-  `JWT_EXPIRES_IN` or `1h` by default.
+  `JWT_EXPIRES_IN` or `1h` by default. It is never returned to browser
+  JavaScript.
+
+`POST /api/auth/logout` clears `access_token` and responds `204`. It is safe to
+call without an active session.
+
+## Cookie transport
+
+`authCookie.js` defines the `access_token` cookie attributes: `HttpOnly`,
+`SameSite=Strict`, and `Path=/` always; `Secure` when `NODE_ENV=production`.
+Production therefore requires HTTPS. Local HTTP development omits only
+`Secure`, because browsers reject secure cookies on `http://localhost`.
 
 ## Route protection
 
-`checkAuth` (`src/server/middlewares/checkAuth.js`) requires the
-`Authorization: Bearer <token>` header. It verifies the JWT and then queries
+`checkAuth` (`src/server/middlewares/checkAuth.js`) reads the `access_token`
+cookie. It verifies the JWT and then queries
 `users` (along with `Role`) to rebuild `req.user = { user_id, role_id,
 role_name, stakeholder_id, must_change_password }` from the database, so that
 role changes, deactivation, and password resets take effect without waiting for
@@ -111,6 +127,7 @@ Any unexpected error is logged and responds `500` with
 - `src/server/services/authService.js`
 - `src/server/utils/validators/authValidation.js`
 - `src/server/utils/generateToken.js`
+- `src/server/utils/authCookie.js`
 - `src/server/middlewares/checkAuth.js`
 - `src/server/middlewares/requirePasswordChanged.js`
 - `src/server/middlewares/requireAdmin.js`

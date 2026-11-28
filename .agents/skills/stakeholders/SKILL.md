@@ -12,7 +12,7 @@ The change history of this module is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Endpoints
 
-All routes require `Authorization: Bearer <token>`. Mutations additionally
+All routes require the `access_token` HttpOnly cookie. Mutations additionally
 require the `admin` role.
 
 | Method | Route | Controller | Service | Access |
@@ -41,8 +41,11 @@ require the `admin` role.
 - `GET /`: returns all stakeholders sorted by `last_name` and then `first_name`
   (`200`).
 - `GET /:id`: returns the stakeholder or `404` if it does not exist.
-- `GET /` and `GET /:id` remain available to any authenticated account; the
-  loan form depends on `GET /` to choose lenders, customers, and guarantors.
+- `GET /` and `GET /:id` are intentional authenticated global-read exceptions:
+  any authenticated account can read them, and the loan form depends on `GET /`
+  to choose lenders, customers, and guarantors. They are not lender-scoped, so
+  this module must not claim complete BOLA/IDOR protection for stakeholder reads
+  without instructor approval.
 - `GET /` does not filter by account: the API returns all stakeholders. The
   `/admin/stakeholders` view also lists all of them, including people linked to
   an account; account data is still managed from `/admin/users`.

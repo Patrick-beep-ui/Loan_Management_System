@@ -1,3 +1,16 @@
+# Full-Stack System Constitution
+
+1. **Contract compliance:** Update `docs/openapi.json` before adding or changing
+   an API endpoint. Implementations must match its documented signatures.
+2. **Row-level authorization:** Enforce ownership checks for protected resources
+   in middleware or services. A documented global-read exception must never
+   weaken ownership checks on loans, payments, or mutations.
+3. **Database rules:** Never build dynamic SQL strings. Use Sequelize model APIs,
+   ORM bindings, or parameterized queries exclusively.
+4. **Cookie security:** Store JWTs only in cookies configured as `HttpOnly`,
+   `Secure`, and `SameSite=Strict`; browser JavaScript must not receive or store
+   the token.
+
 ## Project documentation
 
 At the start of each session, read `README.md` for the project

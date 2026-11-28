@@ -1,5 +1,56 @@
 # Changelog — architecture
 
+## 2026-11-27 — Documented authorization boundary and global reads
+
+- Change: documented lender ownership scoping for loans/payments alongside the
+  intentional authenticated global reads for users and stakeholders.
+- Impact: the exception is explicit and does not weaken ownership checks for
+  loans, payments, or mutations; complete read-enumeration BOLA/IDOR protection
+  is not claimed without instructor approval.
+- Verification: service and route implementations reviewed; reproducible
+  runtime procedures are recorded in `docs/security/red-team-audit.md`.
+
+## 2026-11-27 — Centralized API error middleware
+
+- Change: added terminal `errorHandler` middleware and removed duplicated
+  controller-local `try/catch` error translation.
+- Impact: validators and services continue throwing the same typed errors, while
+  Express 5 forwards rejected async controller promises to one consistent JSON
+  response handler. Unexpected errors are logged and do not expose details.
+- Verification: backend syntax, focused typed/unexpected error mapping, and
+  `pnpm build` passed.
+
+## 2026-11-27 — CORS, headers, and request limits
+
+- Change: added environment-configured CORS, Helmet security headers, API-wide
+  rate limiting, and a stricter login rate limit through `security.js`.
+- Impact: browser credentials are only sent to exact configured origins; all API
+  routes receive standard rate-limit protection and login receives additional
+  brute-force protection. Dependency RFC and audit evidence are in `docs/`.
+- Verification: `pnpm audit --json` found two pre-existing moderate transitive
+  advisories; no new security-middleware advisory. `node --check` and
+  `pnpm build` succeeded. Not tested against a running server.
+
+## 2026-11-27 — Cookie-based JWT authentication
+
+- Change: implemented the OpenAPI cookie-JWT contract: login sets the
+  `access_token` cookie, `checkAuth` reads it, and logout clears it.
+- Impact: protected API routes no longer accept browser-provided Bearer tokens;
+  the cookie retains `HttpOnly`, `SameSite=Strict`, and production `Secure`
+  attributes.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
+## 2026-11-27 — OpenAPI contract governance
+
+- Change: added `docs/openapi.json` as the canonical API contract and documented
+  the contract-first workflow in the architecture module.
+- Impact: endpoint changes must update the contract before implementation. The
+  document defines the approved cookie-JWT target and planned logout endpoint;
+  current Bearer authentication remains until that migration is implemented.
+- Verification: JSON contract reviewed against routes, controllers, validators,
+  services, README API documentation, and module contracts.
+
 ## 2026-11-26 — Admin user provisioning and forced password change
 
 - Change: `api.js` mounts `requirePasswordChanged` after `checkAuth`;
