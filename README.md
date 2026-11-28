@@ -142,8 +142,8 @@ receives the stored record so it can resolve rules that depend on the current
 state; services only persist and enforce payment-related conflicts.
 
 Each router is registered in `src/server/api.js`. Services throw typed errors
-(defined in `src/server/utils/errors.js`) that controllers translate into HTTP
-status codes.
+(defined in `src/server/utils/errors.js`) that the terminal Express error
+middleware translates into HTTP status codes.
 
 `/api/auth/login` and `/api/auth/logout` are public. Login writes the JWT to the
 `access_token` cookie, and logout clears it. `checkAuth` is applied after that

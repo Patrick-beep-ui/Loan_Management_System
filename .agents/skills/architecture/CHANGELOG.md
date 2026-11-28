@@ -1,5 +1,15 @@
 # Changelog — architecture
 
+## 2026-11-27 — Centralized API error middleware
+
+- Change: added terminal `errorHandler` middleware and removed duplicated
+  controller-local `try/catch` error translation.
+- Impact: validators and services continue throwing the same typed errors, while
+  Express 5 forwards rejected async controller promises to one consistent JSON
+  response handler. Unexpected errors are logged and do not expose details.
+- Verification: backend syntax, focused typed/unexpected error mapping, and
+  `pnpm build` passed.
+
 ## 2026-11-27 — CORS, headers, and request limits
 
 - Change: added environment-configured CORS, Helmet security headers, API-wide

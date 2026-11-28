@@ -129,7 +129,7 @@ UserRouter.route("/me/password")
 ## Error handling
 
 `src/server/utils/errors.js` defines typed errors that services throw and
-controllers translate into HTTP codes:
+validators, services, and controllers may throw:
 
 - `AppError` — base, with `statusCode` (500 by default).
 - `ValidationError` — invalid input (400).
@@ -140,9 +140,13 @@ controllers translate into HTTP codes:
   resource (403).
 - `NotFoundError` — nonexistent resource (404).
 
-Controllers use `try/catch`: if the error is an `AppError` they respond with
-`error.statusCode` and `{ error: error.message }`; any other error is logged and
-responds `500` with `{ error: "Internal Server Error" }`.
+Express 5 forwards rejected async controller promises to
+`src/server/middlewares/errorHandler.js`, mounted last in `main.js`. It returns
+`{ error: error.message }` for typed `AppError` instances with a `4xx` status.
+It logs every unexpected error and returns the generic
+`500 { error: "Internal Server Error" }` response without exposing details.
+Controllers contain only service calls and successful responses; validators keep
+throwing the same typed errors.
 
 ## Status codes
 
