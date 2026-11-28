@@ -42,12 +42,13 @@ remaining routes are public:
 | `/test` | `Test` (test view) | `src/client/Test.jsx` | public |
 
 `LenderLayout` (`src/client/layouts/LenderLayout.jsx`) mirrors `AdminLayout`:
-`main` with `px-4 py-10`, a centered `max-w-6xl` container, a `Lenders` heading
-with `mb-6`, and a `mb-8` bottom-bordered navigation bar. The bar keeps the
-`Loans`, `Payments`, and `Stakeholders` text links with the same active-border
-styling as `AdminNav`, plus a right-aligned `LogoutButton`. The general views
-now render only their cards inside the shell; `ChangePassword` and the `/admin`
-panel stay outside it. That bar is the only in-app navigation to the lender
+`main` with `px-4 py-10`, a centered `max-w-6xl` container, a
+`Loan Management System` heading with `mb-6`, and a `mb-8` bottom-bordered
+navigation bar. The bar keeps the `Loans`, `Payments`, and `Stakeholders` text
+links with the same active-border styling as `AdminNav`, plus a right-aligned
+`LogoutButton`. The general views now render only their cards inside the shell;
+`ChangePassword` and the `/admin` panel stay outside it. That bar is the only
+in-app navigation to the lender
 `Payments` and `Stakeholders` views; the Payments header adds `Record payment`,
 while Stakeholders keeps just `Refresh`. The button calls `useAuth().logout()`
 and navigates to `/login` with `replace: true`.
@@ -189,7 +190,6 @@ while the API applies the lender scope.
 | `stakeholders/DeleteStakeholderDialog.jsx` | deletion confirmation with `Dialog` |
 | `stakeholders/AdminStakeholderProfileHeader.jsx` | profile title, stakeholder ID, and back action |
 | `stakeholders/AdminStakeholderPersonalInfo.jsx` | personal fields and linked access account summary |
-| `stakeholders/AdminStakeholderLoanRoles.jsx` | associated-loan count and lender/customer/guarantor counts |
 | `stakeholders/AdminStakeholderLoansTable.jsx` | associated loans with role badges and detail links |
 | `loans/AdminLoansHeader.jsx` | title, description, and refresh button |
 | `loans/AdminLoansAlerts.jsx` | error and success notices for the loan flow |
@@ -205,7 +205,6 @@ while the API applies the lender scope.
 | `dashboard/AdminDashboardAlerts.jsx` | panel error notice |
 | `dashboard/AdminDashboardCards.jsx` | cards of amounts, payments, and overdue installments |
 | `dashboard/AdminDashboardOverdue.jsx` | sorted overdue-installment table with highlighted-detail links |
-| `dashboard/AdminDashboardStakeholders.jsx` | compact stakeholder list with profile links and a manage action |
 | `dashboard/AdminDashboardStatus.jsx` | status of installments, interest, and portfolio |
 | `dashboard/AdminDashboardPaymentTrend.jsx` | payments grouped by month |
 | `dashboard/AdminDashboardRecentPayments.jsx` | table of the most recent payments |
@@ -414,13 +413,13 @@ pending destinations; `Record payment` posts to the installment or interest
 endpoints with an amount calculated by the destination, and reversal reuses
 `usePaymentRevert` with `RevertPaymentDialog`. `PATCH /api/payments/:id` is not
 exposed in the panel. `/admin/dashboard` uses `useAdminDashboard` and
-`src/client/utils/adminDashboard.js` to aggregate `GET /api/loans`,
-`GET /api/payments` and `GET /api/stakeholders` on the client: cards of amounts,
-a list of overdue installments, portfolio status, monthly trend, and recent
-payments, with no dedicated endpoint. Stakeholder management stays on
-`/admin/stakeholders`. `src/client/utils/loanStatus.js` defines the shared date-overdue rule
-for the card, list and detail badge, while `stakeholderProfile.js` supplies the
-stakeholder summaries and role labels. Each overdue row links to `/loans/:id`
+`src/client/utils/adminDashboard.js` to aggregate `GET /api/loans` and
+`GET /api/payments` on the client: cards of amounts, a list of overdue
+installments, portfolio status, monthly trend, and recent payments, with no
+dedicated endpoint. Stakeholder management stays on `/admin/stakeholders`.
+`src/client/utils/loanStatus.js` defines the shared date-overdue rule for the
+card, list and detail badge, while `stakeholderProfile.js` supplies the role
+labels used by the stakeholder profile. Each overdue row links to `/loans/:id`
 with `state: { focusInstallmentId }` and separate interest is excluded because
 it has no due date.
 `LoanListHeader` shows the `Admin` link only when

@@ -62,8 +62,8 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
   `AdminStakeholdersTable`, `AdminStakeholderRow`,
   `StakeholderFormFields`, `AdminStakeholderFormDialog`,
   `DeleteStakeholderDialog`, `AdminStakeholderProfileHeader`,
-  `AdminStakeholderPersonalInfo`, `AdminStakeholderLoanRoles` and
-  `AdminStakeholderLoansTable`). It uses the existing endpoints of
+  `AdminStakeholderPersonalInfo` and `AdminStakeholderLoansTable`). It uses
+  the existing endpoints of
   `/api/stakeholders` to create, edit and delete; `StakeholderFormFields` is
   also reused in the users dialog. The table lists every stakeholder and the
   name links to the profile; `Edit` and `Delete` are unchanged.
@@ -83,17 +83,15 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
   for reversals. The recording options come from `GET /api/loans`. The same
   hook and `AdminPaymentRecordDialog` are reused by the lender `/payments` page;
   the API scopes its loans and payments to that lender.
-- `src/client/hooks/useAdminDashboard.js`, `src/client/utils/adminDashboard.js`,
-  `src/client/utils/loanStatus.js`, `src/client/utils/stakeholderProfile.js`
-  and `src/components/admin/dashboard/`
+- `src/client/hooks/useAdminDashboard.js`, `src/client/utils/adminDashboard.js`
+  and `src/client/utils/loanStatus.js` with `src/components/admin/dashboard/`
   (`AdminDashboardHeader`, `AdminDashboardAlerts`, `AdminDashboardCards`,
-  `AdminDashboardOverdue`, `AdminDashboardStakeholders`,
-  `AdminDashboardStatus`, `AdminDashboardPaymentTrend` and
-  `AdminDashboardRecentPayments`): calculate loan, installment, interest,
-  payment and stakeholder metrics on the client from `GET /api/loans`,
-  `GET /api/payments` and `GET /api/stakeholders`. The overdue table reuses the
-  same helper as the metric and links each installment to `/loans/:id` with a
-  focus state; the stakeholder card links names to their profiles.
+  `AdminDashboardOverdue`, `AdminDashboardStatus`,
+  `AdminDashboardPaymentTrend` and `AdminDashboardRecentPayments`): calculate
+  loan, installment, interest and payment metrics on the client from
+  `GET /api/loans` and `GET /api/payments`. The overdue table reuses the same
+  helper as the metric and links each installment to `/loans/:id` with a focus
+  state; stakeholder management stays on `/admin/stakeholders`.
 - `src/client/views/admin/*.jsx`: domain phases replace only the content of
   their own file; no panel view is still a stub.
 - `src/components/loans/list/LoanListHeader.jsx`: `Admin` link for admins.
@@ -115,8 +113,8 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
   lists all stakeholders, including those linked to an account, and filters
   them by linked account role (`admin`, `lender`, or customer with no account).
   The account role wins when the person is also a loan customer; the profile
-  keeps that participation in its role counts and loan note. A name opens
-  `/admin/stakeholders/:id`, which reads `GET /api/stakeholders/:id`,
+  keeps that participation in the associated-loan roles and a loan note. A
+  name opens `/admin/stakeholders/:id`, which reads `GET /api/stakeholders/:id`,
   `GET /api/loans` and `GET /api/users` with no dedicated profile endpoint;
   roles are derived from loan relationships in `stakeholderProfile.js`.
 - P5 loans: `POST`, `PUT` and `PATCH` of `/api/loans` apply
@@ -134,16 +132,14 @@ the role is `admin`. A `403` from the backend remains the last line of defense.
   lender-scoped reads. There is no generic `POST /api/payments` and no duplicate
   endpoints under `/admin`.
 - P7 dashboard: `/admin/dashboard` calculates metrics on the client from
-  `GET /api/loans`, `GET /api/payments` and `GET /api/stakeholders`, with no
-  dedicated endpoint. `adminDashboard.js` summarizes loans,
-  paid/pending/overdue installments, `included` or `separate` interest and
-  payments by month and builds a list of overdue installments sorted by due
-  date. `loanStatus.js` provides the shared date-overdue rule and day count, so
-  the card, list and loan-detail badge agree. `stakeholderProfile.js` supplies
-  stakeholder summaries used by the panel. The view shows cards, the overdue
-  list, portfolio status, payment trend and the most recent payments;
-  stakeholder management stays on `/admin/stakeholders`. Each overdue row links
-  to `/loans/:id` with
+  `GET /api/loans` and `GET /api/payments`, with no dedicated endpoint.
+  `adminDashboard.js` summarizes loans, paid/pending/overdue installments,
+  `included` or `separate` interest and payments by month and builds a list of
+  overdue installments sorted by due date. `loanStatus.js` provides the shared
+  date-overdue rule and day count, so the card, list and loan-detail badge
+  agree. The view shows cards, the overdue list, portfolio status, payment
+  trend and the most recent payments; stakeholder management stays on
+  `/admin/stakeholders`. Each overdue row links to `/loans/:id` with
   `state: { focusInstallmentId }`; separate interest is excluded because it has
   no due date.
 - No functionality is duplicated under `/admin`; user administration

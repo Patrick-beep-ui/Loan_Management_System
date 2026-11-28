@@ -171,8 +171,9 @@ Views live in `src/client/views/`,
 reusable primitives in `src/components/ui/`, and domain components in
 `src/components/<domain>/`, grouped by purpose when there is more than one
 flow. `LenderLayout` mirrors `AdminLayout`: `px-4 py-10`, a centered `max-w-6xl`
-container, a `Lenders` heading, a `mb-8` underlined navigation bar with
-`Loans`, `Payments`, and `Stakeholders`, and a right-aligned `Log out` button.
+container, a `Loan Management System` heading, a `mb-8` underlined navigation
+bar with `Loans`, `Payments`, and `Stakeholders`, and a right-aligned `Log out`
+button.
 The general views render only their cards inside that shell;
 `/change-password` and `/admin` remain outside it. The bar is the only in-app
 link to the lender Payments and Stakeholders views; the Payments header also
@@ -281,14 +282,14 @@ to accounts. `All`, `Admins`, `Lenders`, and `Customers` filters split the
 table by linked account role: admins and lenders come from `GET /api/users`,
 and a person without a linked account is a customer. An admin or lender who is
 also a loan customer stays in their account category; the profile keeps that
-participation in its role counts and adds a loan note. The table design and
-its `Edit` and `Delete` actions are unchanged; each name links to
+participation in the associated-loan roles and adds a loan note. The table
+design and its `Edit` and `Delete` actions are unchanged; each name links to
 `/admin/stakeholders/:id`. That profile uses
 `useAdminStakeholderProfile` and `src/client/utils/stakeholderProfile.js` to
 combine `GET /api/stakeholders/:id`, `GET /api/loans`, and `GET /api/users` on
-the client: it shows personal information, the linked account, counts by role,
-and one row per associated loan with all applicable lender, customer, and
-guarantor roles. A loan can give the same stakeholder more than one role.
+the client: it shows personal information, the linked account, and one row per
+associated loan with all applicable lender, customer, and guarantor roles. A
+loan can give the same stakeholder more than one role.
 Collateral remains an asset with no stakeholder link in the schema.
 `/admin/loans` uses `useAdminLoans` to list all loans and reassign the lender
 with `PATCH /api/loans/:id`, with options from `GET /api/users` filtered to
@@ -297,14 +298,13 @@ history from `GET /api/payments`, records pending installments or interest from
 `GET /api/loans`, and reverts payments with `usePaymentRevert` and
 `RevertPaymentDialog`. `/admin/dashboard` uses `useAdminDashboard` and
 `src/client/utils/adminDashboard.js` to aggregate loan, installment, interest,
-payment, and stakeholder metrics from `GET /api/loans`, `GET /api/payments`,
-and `GET /api/stakeholders`, with no dedicated endpoint. The same data produces
-a list of overdue installments sorted by due date; each item links to
-`/loans/:id` with `state.focusInstallmentId` so the specific installment is
-highlighted on the detail page. Stakeholder management stays on
-`/admin/stakeholders`. `src/client/utils/loanStatus.js` is the shared
-date-overdue rule for the card, the list, and the detail badge;
-`stakeholderProfile.js` supplies the stakeholder summaries.
+and payment metrics from `GET /api/loans` and `GET /api/payments`, with no
+dedicated endpoint. The same data produces a list of overdue installments
+sorted by due date; each item links to `/loans/:id` with
+`state.focusInstallmentId` so the specific installment is highlighted on the
+detail page. Stakeholder management stays on `/admin/stakeholders`.
+`src/client/utils/loanStatus.js` is the shared date-overdue rule for the card,
+the list, and the detail badge.
 
 | Route | View | Status |
 | --- | --- | --- |

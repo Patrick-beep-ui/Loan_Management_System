@@ -1,5 +1,16 @@
 # Changelog — stakeholders
 
+### 2026-11-27 — Stakeholder dashboard leftovers removed
+
+- Change: deleted the unused `AdminDashboardStakeholders.jsx` and
+  `AdminStakeholderLoanRoles.jsx` components and updated the profile description
+  to match the role badges and customer loan note that remain.
+- Impact: `/admin/stakeholders/:id` and the lender stakeholder view are
+  unchanged; `/admin/dashboard` no longer reads stakeholders. Details are in
+  [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ### 2026-11-27 — Lender stakeholders header simplified
 
 - Change: removed `Back to loans` from `StakeholdersHeader`; `LenderLayout`

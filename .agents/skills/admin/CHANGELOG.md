@@ -1,5 +1,16 @@
 # Changelog — admin
 
+### 2026-11-27 — Orphaned stakeholder UI removed
+
+- Change: deleted the unused `AdminDashboardStakeholders` and
+  `AdminStakeholderLoanRoles` components and removed the corresponding
+  stakeholder request, state and summaries from the dashboard data flow.
+- Impact: `/admin/dashboard` now reads only `GET /api/loans` and
+  `GET /api/payments`; stakeholder management stays on `/admin/stakeholders`.
+  Current behavior is described in [`SKILL.md`](SKILL.md).
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ### 2026-11-27 — Payment recording shared with lenders
 
 - Change: `useAdminPayments` and `AdminPaymentRecordDialog` are now also used

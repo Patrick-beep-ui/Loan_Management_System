@@ -3,7 +3,6 @@ import {
   daysOverdue,
   isInstallmentOverdue,
 } from "@/client/utils/loanStatus";
-import { buildStakeholderSummaries } from "@/client/utils/stakeholderProfile";
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -132,11 +131,7 @@ export function buildOverdueInstallments(loans, now = new Date()) {
   );
 }
 
-export function buildAdminDashboardData({
-  loans = [],
-  payments = [],
-  stakeholders = [],
-} = {}) {
+export function buildAdminDashboardData({ loans = [], payments = [] } = {}) {
   const loanList = asArray(loans);
   const paymentList = asArray(payments);
   const now = new Date();
@@ -225,11 +220,5 @@ export function buildAdminDashboardData({
     monthlyPayments: buildMonthlyPayments(paymentList),
     recentPayments: buildRecentPayments(paymentList),
     overdueInstallments,
-    stakeholderSummaries: buildStakeholderSummaries({
-      stakeholders,
-      loans: loanList,
-      limit: 5,
-      now,
-    }),
   };
 }

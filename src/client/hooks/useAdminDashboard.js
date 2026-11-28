@@ -6,7 +6,6 @@ import api from "@/lib/axiosService";
 export function useAdminDashboard() {
   const [loans, setLoans] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [stakeholders, setStakeholders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -15,19 +14,14 @@ export function useAdminDashboard() {
     setError("");
 
     try {
-      const [loansResponse, paymentsResponse, stakeholdersResponse] =
-        await Promise.all([
-          api.get("/loans"),
-          api.get("/payments"),
-          api.get("/stakeholders"),
-        ]);
+      const [loansResponse, paymentsResponse] = await Promise.all([
+        api.get("/loans"),
+        api.get("/payments"),
+      ]);
 
       setLoans(Array.isArray(loansResponse.data) ? loansResponse.data : []);
       setPayments(
         Array.isArray(paymentsResponse.data) ? paymentsResponse.data : [],
-      );
-      setStakeholders(
-        Array.isArray(stakeholdersResponse.data) ? stakeholdersResponse.data : [],
       );
     } catch (requestError) {
       if (requestError.response?.status !== 401) {
@@ -38,7 +32,6 @@ export function useAdminDashboard() {
       }
       setLoans([]);
       setPayments([]);
-      setStakeholders([]);
     } finally {
       setLoading(false);
     }
@@ -49,8 +42,8 @@ export function useAdminDashboard() {
   }, [refresh]);
 
   const dashboard = useMemo(
-    () => buildAdminDashboardData({ loans, payments, stakeholders }),
-    [loans, payments, stakeholders],
+    () => buildAdminDashboardData({ loans, payments }),
+    [loans, payments],
   );
 
   return { ...dashboard, loading, error, refresh };

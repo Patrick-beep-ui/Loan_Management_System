@@ -1,5 +1,16 @@
 # Changelog — frontend
 
+### 2026-11-27 — Orphaned stakeholder components removed
+
+- Change: removed `AdminDashboardStakeholders.jsx` and
+  `AdminStakeholderLoanRoles.jsx`, dropped the unused stakeholder read from
+  `useAdminDashboard`, and corrected the documented `LenderLayout` heading to
+  `Loan Management System`.
+- Impact: the dashboard and stakeholder profile keep their current rendered UI;
+  docs now match the code. No API, schema or route changed.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ### 2026-11-27 — Lender payment recording
 
 - Change: the lender `/payments` page now has a `Record payment` action. It

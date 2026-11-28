@@ -73,10 +73,9 @@ the person with `GET /api/stakeholders/:id`, the loan list with `GET /api/loans`
 `src/client/utils/stakeholderProfile.js` associates a stakeholder with a loan
 when they are its `lender_id`, its `customer_id`, or a
 `guarantors[].guarantor_stakeholder_id`. One loan can produce several roles.
-The profile displays personal information, linked account data, counts by role,
-and one row per associated loan with links to `/loans/:id`. The dashboard no
-longer shows a stakeholder card; stakeholder management stays on
-`/admin/stakeholders`.
+The profile displays personal information, linked account data, role badges
+per associated loan and links to `/loans/:id`. The dashboard no longer shows a
+stakeholder card; stakeholder management stays on `/admin/stakeholders`.
 
 Collateral remains an asset with a description and estimated value; it has no
 stakeholder link in the schema. People who back a loan are represented as
@@ -88,8 +87,8 @@ including those linked to accounts. Above the table, the `All`, `Admins`,
 `Lenders`, and `Customers` filters split the list by linked account role:
 `admin` and `lender` accounts use those roles, while a person with no linked
 account is a customer. The account role wins when that person is also a
-customer on loans; the profile still shows those loans in its customer count
-and loan note.
+customer on loans; the profile still shows those loans with the customer role
+and a loan note.
 
 ## Lender stakeholders view
 
@@ -128,5 +127,3 @@ associated loans. `RequireLender` redirects admins to `/admin/stakeholders`, and
 - `src/client/views/Stakeholders.jsx`
 - `src/components/admin/stakeholders/` (profile sections and linked table name)
 - `src/components/stakeholders/` (lender stakeholder header, table, and row)
-- `src/components/admin/dashboard/AdminDashboardStakeholders.jsx` (unused after
-  the dashboard section was removed)
