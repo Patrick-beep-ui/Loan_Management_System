@@ -38,10 +38,8 @@ export default function Login() {
     setSubmitting(true);
 
     try {
-      const response = await api.post("/auth/login", { email, password });
-      const { data } = response;
-
-      const user = await login(data.token);
+      await api.post("/auth/login", { email, password });
+      const user = await login();
       const destination =
         from || (user.Role?.role_name === "admin" ? "/admin" : "/loans");
       navigate(destination, { replace: true });

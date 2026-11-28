@@ -136,14 +136,19 @@ Each router is registered in `src/server/api.js`. Services throw typed errors
 (defined in `src/server/utils/errors.js`) that controllers translate into HTTP
 status codes.
 
-`/api/auth` (login) is public. `checkAuth` is applied after that router, so
-everything registered below it (`/api/admin`, `/api/users`, `/api/roles`,
-`/api/stakeholders`, `/api/loans`, `/api/payments`) requires
-`Authorization: Bearer <token>`. `checkAuth` verifies the JWT and queries
-`users`/`Role` to rebuild `req.user` with the current role, stakeholder, and
-`must_change_password` flag from the database: an account with
-`is_active = false` responds `401`. The JWT itself contains `user_id`,
-`role_id`, `role_name`, and `stakeholder_id`.
+`/api/auth/login` and `/api/auth/logout` are public. Login writes the JWT to the
+`access_token` cookie, and logout clears it. `checkAuth` is applied after that
+router, so everything registered below it (`/api/admin`, `/api/users`,
+`/api/roles`, `/api/stakeholders`, `/api/loans`, `/api/payments`) requires that
+cookie. `checkAuth` verifies the JWT and queries `users`/`Role` to rebuild
+`req.user` with the current role, stakeholder, and `must_change_password` flag
+from the database: an account with `is_active = false` responds `401`. The JWT
+itself contains `user_id`, `role_id`, `role_name`, and `stakeholder_id`.
+
+The cookie is always `HttpOnly`, `SameSite=Strict`, and scoped to `/`. It is
+also `Secure` when `NODE_ENV=production`, which requires HTTPS. Local HTTP
+development intentionally omits only the `Secure` flag because browsers reject
+secure cookies over `http://localhost`; production must never use that exception.
 
 `requirePasswordChanged` runs after `checkAuth`. When `must_change_password` is
 true it only allows `GET /api/users/auth` (session hydration) and
@@ -203,20 +208,19 @@ offers `Record payment`, while Stakeholders keeps only `Refresh`.
 | `/test` | `Test` (test view) | public |
 
 `Login` consumes `/api/auth` through `src/lib/axiosService.js` (`api.post`):
-it validates the fields and shows loading and error states with `Card`,
-`Input`, `Label`, and `Button`. The service centralizes `baseURL`
-(`VITE_API_URL` or `http://localhost:3000/api`), a request interceptor that
-sends `Authorization: Bearer <token>` from `localStorage`, and a response
-interceptor that clears the token and emits `auth:unauthorized` on `401`
-(except on `/auth/login` and `/users/me/password`, so credential errors are not
-hidden).
+it validates the fields and shows loading and error states with `Card`, `Input`,
+`Label`, and `Button`. The service centralizes `baseURL`
+(`VITE_API_URL` or `http://localhost:3000/api`) and sets `withCredentials` so
+the browser sends the HttpOnly cookie without exposing it to JavaScript. Its
+response interceptor emits `auth:unauthorized` on `401` (except on
+`/auth/login` and `/users/me/password`, so credential errors are not hidden).
 `src/client/contexts/AuthContext.jsx` exposes `AuthProvider`, `useAuth()`,
 `RequireAuth`, `RequireAdmin`, and `RequireLender`: the session is hydrated with
 `GET /api/users/auth`; loan routes and `/change-password` are protected,
 `/payments` and `/stakeholders` are for lenders (admins go to
 `/admin/payments` and `/admin/stakeholders`), `/admin/*` requires the `admin`
-role, and the rest are public. `login(token)`
-and `refreshUser()` return the loaded user, including the
+role, and the rest are public. `login()` and `refreshUser()` return the loaded
+user, including the
 `must_change_password` flag. `RequireAuth`
 redirects a user with that flag to `/change-password` unless they are already
 there. `ChangePassword` submits `{ current_password, new_password }` to
@@ -464,13 +468,15 @@ is completed.
 | `POST` | `/api/payments/interest` | Records payment of separate interest. Requires token. |
 | `PATCH` | `/api/payments/:id` | Corrects only `paid_at` of a payment. Requires token. |
 | `DELETE` | `/api/payments/:id` | Reverts a payment, restores the installment or interest to `pending`, and responds `204`. Requires token. |
-| `POST` | `/api/auth/login` | Signs in with `email` and `password`; responds `{ token, user }` with a 1-hour JWT including `role_name`, `stakeholder_id`, and `must_change_password`. |
+| `POST` | `/api/auth/login` | Signs in with `email` and `password`; sets the HttpOnly JWT cookie and responds with `{ user }`, including `role_name`, `stakeholder_id`, and `must_change_password`. |
+| `POST` | `/api/auth/logout` | Clears the JWT cookie and responds `204`. |
 | `GET` | `/hello` | Simple server health check. |
 
 Public signup has been removed: accounts can only be created by an admin, or
 by `pnpm seed:admin` for the very first admin. Routes marked "Requires token"
-expect `Authorization: Bearer <token>`; without a token or with an invalid one
-they respond `401`. Successful login responds `200` and bad credentials `401`.
+expect the HttpOnly `access_token` cookie; without a cookie or with an invalid
+one they respond `401`. Successful login responds `200` and bad credentials
+respond `401`.
 While `must_change_password` is true, only session hydration and the password
 change route respond; everything else responds `403 Password change required`.
 

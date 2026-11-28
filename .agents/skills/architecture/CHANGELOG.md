@@ -1,5 +1,15 @@
 # Changelog — architecture
 
+## 2026-11-27 — Cookie-based JWT authentication
+
+- Change: implemented the OpenAPI cookie-JWT contract: login sets the
+  `access_token` cookie, `checkAuth` reads it, and logout clears it.
+- Impact: protected API routes no longer accept browser-provided Bearer tokens;
+  the cookie retains `HttpOnly`, `SameSite=Strict`, and production `Secure`
+  attributes.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ## 2026-11-27 — OpenAPI contract governance
 
 - Change: added `docs/openapi.json` as the canonical API contract and documented

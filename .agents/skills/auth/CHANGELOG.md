@@ -1,5 +1,16 @@
 # Changelog — auth
 
+## 2026-11-27 — JWT transport moved to HttpOnly cookies
+
+- Change: login now writes the JWT to the `access_token` cookie, `checkAuth`
+  reads that cookie, and public `POST /api/auth/logout` clears it. The login
+  body no longer returns the token.
+- Impact: browser JavaScript does not receive or store JWTs. Production cookies
+  are `HttpOnly`, `Secure`, and `SameSite=Strict`; local HTTP omits only
+  `Secure` so browsers can use localhost.
+- Verification: `pnpm build` succeeded. Not tested in a browser or against a
+  server.
+
 ## 2026-11-26 — Lender route guard
 
 - Change: added `RequireLender` to `src/client/contexts/AuthContext.jsx`. It

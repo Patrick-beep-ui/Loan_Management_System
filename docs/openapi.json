@@ -43,11 +43,10 @@
       "post": {
         "tags": ["Authentication"],
         "summary": "End the authenticated session",
-        "description": "Planned operation. Clears the JWT cookie using matching HttpOnly, Secure, SameSite=Strict, and Path attributes.",
-        "x-implementation-status": "planned",
+        "description": "Clears the JWT cookie using matching HttpOnly, Secure, SameSite=Strict, and Path attributes. This operation is safe to call without an active session.",
+        "security": [],
         "responses": {
           "204": { "description": "JWT cookie cleared", "headers": { "Set-Cookie": { "$ref": "#/components/headers/ClearedAuthCookie" } } },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
           "500": { "$ref": "#/components/responses/InternalError" }
         }
       }

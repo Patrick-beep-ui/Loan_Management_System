@@ -64,8 +64,8 @@ api.use("/loans", LoanRouter); // /api/loans
 api.use("/payments", PaymentRouter); // /api/payments
 ```
 
-Order matters: any router registered after `checkAuth` requires
-`Authorization: Bearer <token>`.
+Order matters: any router registered after `checkAuth` requires the
+`access_token` HttpOnly cookie.
 
 ## API contract
 
@@ -85,7 +85,7 @@ listing remains at `GET /api/users`.
 ## Middlewares
 
 - `src/server/middlewares/checkAuth.js`: validates the JWT from the
-  `Authorization: Bearer <token>` header, queries `users` and `Role` in the
+  `access_token` cookie, queries `users` and `Role` in the
   database, and sets `req.user = { user_id, role_id, role_name, stakeholder_id,
   must_change_password }` with up-to-date values. Responds `401` if the token is
   missing, invalid, the user does not exist, or the account is inactive

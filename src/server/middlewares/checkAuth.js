@@ -2,12 +2,12 @@ import jwt from "jsonwebtoken";
 
 import Role from "../models/Role.js";
 import User from "../models/User.js";
+import { readAuthCookie } from "../utils/authCookie.js";
 
 export async function checkAuth(req, res, next) {
-    const header = req.headers.authorization || "";
-    const [scheme, token] = header.split(" ");
+    const token = readAuthCookie(req);
 
-    if (scheme !== "Bearer" || !token) {
+    if (!token) {
         return res.status(401).json({ error: "Authentication required" });
     }
 
