@@ -1,5 +1,16 @@
 # Changelog — architecture
 
+## 2026-11-27 — CORS, headers, and request limits
+
+- Change: added environment-configured CORS, Helmet security headers, API-wide
+  rate limiting, and a stricter login rate limit through `security.js`.
+- Impact: browser credentials are only sent to exact configured origins; all API
+  routes receive standard rate-limit protection and login receives additional
+  brute-force protection. Dependency RFC and audit evidence are in `docs/`.
+- Verification: `pnpm audit --json` found two pre-existing moderate transitive
+  advisories; no new security-middleware advisory. `node --check` and
+  `pnpm build` succeeded. Not tested against a running server.
+
 ## 2026-11-27 — Cookie-based JWT authentication
 
 - Change: implemented the OpenAPI cookie-JWT contract: login sets the

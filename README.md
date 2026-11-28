@@ -69,6 +69,9 @@ DB_PASSWORD=...
 DB_NAME=loan_management_system
 JWT_SECRET=...
 JWT_EXPIRES_IN=1h
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+API_RATE_LIMIT_MAX=300
+LOGIN_RATE_LIMIT_MAX=5
 ```
 
 The first admin is provisioned with a seed script, not a public endpoint. Add
@@ -82,6 +85,12 @@ ADMIN_STAKEHOLDER_ID=1
 
 `ADMIN_STAKEHOLDER_ID` must be the ID of an existing stakeholder that is not
 already linked to a user.
+
+`CORS_ALLOWED_ORIGINS` is a comma-separated browser-origin allowlist. It never
+uses `*`; only listed origins receive credentialed CORS responses. Same-origin
+deployment needs no CORS header. API requests default to 300 per 15 minutes,
+while login defaults to 5 per 15 minutes; both values are configurable through
+the variables above.
 
 ## Commands
 
@@ -149,6 +158,13 @@ The cookie is always `HttpOnly`, `SameSite=Strict`, and scoped to `/`. It is
 also `Secure` when `NODE_ENV=production`, which requires HTTPS. Local HTTP
 development intentionally omits only the `Secure` flag because browsers reject
 secure cookies over `http://localhost`; production must never use that exception.
+
+`main.js` applies Helmet security headers, the exact CORS allowlist, and the
+API-wide rate limit before routes. Production adds a content-security policy
+that permits the application's Google Fonts sources; development keeps Helmet's
+other headers but disables CSP so Vite development tooling can run. Login has a
+stricter rate limit. Dependency rationale and `pnpm audit` evidence are in
+[`docs/dependency-rfcs/`](docs/dependency-rfcs/).
 
 `requirePasswordChanged` runs after `checkAuth`. When `must_change_password` is
 true it only allows `GET /api/users/auth` (session hydration) and

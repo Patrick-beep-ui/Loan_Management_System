@@ -84,6 +84,13 @@ listing remains at `GET /api/users`.
 
 ## Middlewares
 
+- `src/server/config/security.js`: parses the exact
+  `CORS_ALLOWED_ORIGINS` allowlist, configures Helmet headers, and exports the
+  API-wide plus login-specific rate limiters. Unknown browser origins receive no
+  CORS permission, credentials are never paired with a wildcard origin, and
+  same-origin requests need no CORS header. The production CSP permits only the
+  application and configured Google Fonts sources; development disables CSP for
+  Vite while retaining the other Helmet headers.
 - `src/server/middlewares/checkAuth.js`: validates the JWT from the
   `access_token` cookie, queries `users` and `Role` in the
   database, and sets `req.user = { user_id, role_id, role_name, stakeholder_id,
@@ -146,4 +153,5 @@ responds `500` with `{ error: "Internal Server Error" }`.
 - `403` operation not allowed for the authenticated user.
 - `404` nonexistent resource.
 - `409` uniqueness conflict.
+- `429` rate limit exceeded.
 - `500` unexpected error.

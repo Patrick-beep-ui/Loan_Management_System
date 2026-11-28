@@ -41,6 +41,9 @@ Receives `{ current_password, new_password }` from an authenticated account.
 Receives `{ email, password }`.
 
 - If either is missing, it throws `ValidationError` (`400`).
+- Login is limited to 5 requests per 15 minutes by default; a limit breach
+  responds `429 Too many requests. Please try again later.`. The limit can be
+  changed with `LOGIN_RATE_LIMIT_MAX`.
 - Requires `email` and `password` to be strings; the email is normalized (`trim` +
   lowercase) and must have the basic format `local@domain`.
 - Looks up the user by normalized email.

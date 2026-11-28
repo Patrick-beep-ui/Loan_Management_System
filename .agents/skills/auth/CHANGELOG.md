@@ -1,5 +1,14 @@
 # Changelog — auth
 
+## 2026-11-27 — Login rate protection
+
+- Change: applied the login-specific rate limiter to `POST /api/auth/login`.
+- Impact: login attempts default to 5 per 15 minutes in addition to the
+  API-wide limit; `LOGIN_RATE_LIMIT_MAX` can change that threshold.
+- Verification: `pnpm audit --json` found no advisory for the limiter package;
+  `node --check` and `pnpm build` succeeded. Not tested against a running
+  server.
+
 ## 2026-11-27 — JWT transport moved to HttpOnly cookies
 
 - Change: login now writes the JWT to the `access_token` cookie, `checkAuth`

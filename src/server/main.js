@@ -1,9 +1,14 @@
 import express from "express";
 import ViteExpress from "vite-express";
 import passport from "passport";
+import cors from "cors";
+import helmet from "helmet";
 import api from "./api.js";
+import { corsOptions, helmetOptions } from "./config/security.js";
 
 const app = express();
+app.use(helmet(helmetOptions));
+app.use(cors(corsOptions));
 app.use(passport.initialize());
 app.use(express.json());
 app.use('/api', api);

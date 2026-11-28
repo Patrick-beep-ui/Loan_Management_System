@@ -3,7 +3,7 @@
   "info": {
     "title": "Loan Management System API",
     "version": "1.0.0",
-    "description": "Canonical API contract. All endpoint changes must update this document before implementation. It defines the approved target cookie-based JWT transport; the logout operation is planned and must be implemented before the target contract is considered complete."
+    "description": "Canonical API contract. All endpoint changes must update this document before implementation. Authentication uses the HttpOnly cookie scheme below. All /api operations may return 429 when their rate limit is exceeded; login has a stricter limit."
   },
   "servers": [{ "url": "/", "description": "Same-origin application server" }],
   "tags": [
@@ -35,6 +35,7 @@
           "200": { "description": "Authenticated user and JWT cookie", "headers": { "Set-Cookie": { "$ref": "#/components/headers/AuthCookie" } }, "content": { "application/json": { "schema": { "type": "object", "required": ["user"], "properties": { "user": { "$ref": "#/components/schemas/AuthUser" } } } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" },
           "500": { "$ref": "#/components/responses/InternalError" }
         }
       }
@@ -258,6 +259,7 @@
       "Forbidden": { "description": "Role or ownership restriction", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
       "NotFound": { "description": "Resource not found or not accessible", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
       "Conflict": { "description": "Resource or business-rule conflict", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "TooManyRequests": { "description": "Rate limit exceeded", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
       "InternalError": { "description": "Unexpected server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
       "Message": { "description": "Success message", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Message" } } } },
       "RoleList": { "description": "Roles", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Role" } } } } },
