@@ -1,5 +1,15 @@
 # Changelog — architecture
 
+## 2026-11-27 — Documented authorization boundary and global reads
+
+- Change: documented lender ownership scoping for loans/payments alongside the
+  intentional authenticated global reads for users and stakeholders.
+- Impact: the exception is explicit and does not weaken ownership checks for
+  loans, payments, or mutations; complete read-enumeration BOLA/IDOR protection
+  is not claimed without instructor approval.
+- Verification: service and route implementations reviewed; reproducible
+  runtime procedures are recorded in `docs/security/red-team-audit.md`.
+
 ## 2026-11-27 — Centralized API error middleware
 
 - Change: added terminal `errorHandler` middleware and removed duplicated

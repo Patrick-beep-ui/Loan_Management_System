@@ -113,6 +113,21 @@ Token signing lives in `src/server/utils/generateToken.js` (payload
 by ownership; the `payments` module reuses `loanScope` from `loanService` to
 apply the same filter.
 
+## Authorization boundary
+
+Loans and payments are ownership-scoped: admins can access all records, while a
+lender is scoped to loans whose `lender_id` matches the account's
+`stakeholder_id`. Payment operations resolve their parent loan through the same
+scope. Stakeholder mutations require `admin`.
+
+`GET /api/users`, `GET /api/stakeholders`, and `GET /api/stakeholders/:id` are
+selected authenticated global-read exceptions. They deliberately allow every
+authenticated role to enumerate shared account and participant records. This
+does not weaken ownership checks for loans, payments, or mutations, but it also
+means the application must not claim complete BOLA/IDOR protection for read
+enumeration without instructor approval. The reproducible audit record is
+`docs/security/red-team-audit.md`.
+
 ## Route convention
 
 Routers use `Router.route(path)` and chain the verbs on the following lines, one

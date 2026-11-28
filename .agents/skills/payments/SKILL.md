@@ -34,7 +34,7 @@ different from the pending amount returns `400`.
 
 ## Endpoints
 
-All routes require `Authorization: Bearer <token>`.
+All routes require the `access_token` HttpOnly cookie.
 
 | Method | Route | Controller | Service | Access |
 | --- | --- | --- | --- | --- |

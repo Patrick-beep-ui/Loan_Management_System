@@ -1,5 +1,13 @@
 # Changelog — loans
 
+### 2026-11-27 — Corrected authentication documentation
+
+- Change: replaced the obsolete Bearer-token requirement with the current
+  `access_token` HttpOnly cookie requirement.
+- Impact: loan ownership behavior is unchanged; the module guide now matches
+  `checkAuth` and the cookie-based session contract.
+- Verification: reviewed `checkAuth.js` and `docs/openapi.json`.
+
 ### 2026-11-25 — Lender options in the admin panel
 
 - Change: the reassignment dropdown in the `/admin/loans` panel is built from

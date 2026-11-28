@@ -56,7 +56,7 @@
       "get": {
         "tags": ["Users"],
         "summary": "List user accounts",
-        "description": "Available to every authenticated role. Password hashes are excluded.",
+        "description": "Intentional authenticated global-read exception: every authenticated role can enumerate user accounts. Password hashes are excluded. This endpoint is not lender-scoped.",
         "responses": { "200": { "$ref": "#/components/responses/UserList" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/PasswordChangeRequired" }, "500": { "$ref": "#/components/responses/InternalError" } }
       }
     },
@@ -116,7 +116,7 @@
       "get": {
         "tags": ["Stakeholders"],
         "summary": "List stakeholders",
-        "description": "Available to every authenticated role; records are ordered by last and first name.",
+        "description": "Intentional authenticated global-read exception: every authenticated role can enumerate stakeholders. Records are ordered by last and first name; this endpoint is not lender-scoped.",
         "responses": { "200": { "$ref": "#/components/responses/StakeholderList" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/PasswordChangeRequired" }, "500": { "$ref": "#/components/responses/InternalError" } }
       },
       "post": {
@@ -129,7 +129,7 @@
     },
     "/api/stakeholders/{id}": {
       "get": {
-        "tags": ["Stakeholders"], "summary": "Get a stakeholder", "parameters": [{ "$ref": "#/components/parameters/StakeholderId" }],
+        "tags": ["Stakeholders"], "summary": "Get a stakeholder", "description": "Intentional authenticated global-read exception; this endpoint is not lender-scoped.", "parameters": [{ "$ref": "#/components/parameters/StakeholderId" }],
         "responses": { "200": { "$ref": "#/components/responses/Stakeholder" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/PasswordChangeRequired" }, "404": { "$ref": "#/components/responses/NotFound" }, "500": { "$ref": "#/components/responses/InternalError" } }
       },
       "put": {

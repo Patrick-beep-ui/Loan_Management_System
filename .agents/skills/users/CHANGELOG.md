@@ -1,5 +1,15 @@
 # Changelog — users
 
+## 2026-11-27 — Documented global user reads as an exception
+
+- Change: documented `GET /api/users` as an intentional authenticated
+  global-read exception and corrected its cookie-based authentication wording.
+- Impact: user enumeration remains available to every authenticated role; this
+  must not be represented as complete BOLA/IDOR protection without instructor
+  approval.
+- Verification: implementation reviewed in `api.js`, `userRoutes.js`, and
+  `checkAuth.js`; runtime audit steps are in `docs/security/red-team-audit.md`.
+
 ## 2026-11-26 — Admin user creation, reset, and last-admin guard
 
 - Change: `POST /api/admin/users`, `POST /api/admin/users/:userId/reset-password`,

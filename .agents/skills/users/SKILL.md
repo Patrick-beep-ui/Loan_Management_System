@@ -22,15 +22,18 @@ This module's change history is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Behavior
 
-- All routes require authentication: `Authorization: Bearer <token>`; without
-  a token or with an invalid token they respond `401`. This is applied by
-  `checkAuth` in `api.js`. The `/api/admin` routes additionally require the
+- All routes require the `access_token` HttpOnly cookie; without a valid cookie
+  they respond `401`. This is applied by `checkAuth` in `api.js`. The
+  `/api/admin` routes additionally require the
   `admin` role.
 - They exclude `password_hash` from the response and, on an unexpected error,
   respond `500` with `{ error: "Internal Server Error" }`.
-- `GET /api/users` returns `200` with the array of all users, with their
+- `GET /api/users` is an intentional authenticated global-read exception. It
+  returns `200` with the array of all users, with their
   `Stakeholder` (`stakeholder_id`, `first_name`, `last_name`) and their `Role`
-  (`role_id`, `role_name`).
+  (`role_id`, `role_name`), regardless of the caller's lender scope. This does
+  not imply complete BOLA/IDOR protection for user enumeration; changing it
+  requires instructor approval.
 - `GET /api/users/auth` returns `200` with the current user, resolved from
   `req.user.user_id`. It includes `Stakeholder` (`stakeholder_id`, `first_name`,
   `last_name`, `national_id`, `marital_status`, `occupation`, `date_of_birth`)

@@ -1,5 +1,13 @@
 # Changelog — roles
 
+## 2026-11-27 — Corrected authentication documentation
+
+- Change: replaced the obsolete Bearer-token requirement with the current
+  `access_token` HttpOnly cookie requirement.
+- Impact: role access behavior is unchanged; the module guide now matches
+  `checkAuth` and the cookie-based session contract.
+- Verification: reviewed `checkAuth.js` and `docs/openapi.json`.
+
 ## 2026-11-26 — Role selection moved to admin provisioning
 
 - Change: public signup was removed. `POST /api/admin/users` resolves

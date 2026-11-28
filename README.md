@@ -166,6 +166,19 @@ other headers but disables CSP so Vite development tooling can run. Login has a
 stricter rate limit. Dependency rationale and `pnpm audit` evidence are in
 [`docs/dependency-rfcs/`](docs/dependency-rfcs/).
 
+### Authorization boundary
+
+`GET /api/users`, `GET /api/stakeholders`, and `GET /api/stakeholders/:id` are
+intentional authenticated global-read exceptions: any authenticated role can
+read those records because the loan and administration workflows need shared
+participant and account data. This exception does not extend to loans, payments,
+or mutations. Loan and payment access remains lender-scoped (or globally
+available to admins), and stakeholder mutations remain admin-only. Therefore,
+the application does not claim complete BOLA/IDOR protection for user or
+stakeholder read enumeration without instructor approval. See
+[`docs/security/red-team-audit.md`](docs/security/red-team-audit.md) for the
+security audit scope and reproducible checks.
+
 `requirePasswordChanged` runs after `checkAuth`. When `must_change_password` is
 true it only allows `GET /api/users/auth` (session hydration) and
 `PATCH /api/users/me/password`; every other route responds

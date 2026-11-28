@@ -1,5 +1,16 @@
 # Changelog — stakeholders
 
+### 2026-11-27 — Documented global stakeholder reads as an exception
+
+- Change: documented the authenticated global reads for `GET /api/stakeholders`
+  and `GET /api/stakeholders/:id`, and corrected authentication wording to the
+  cookie-based session.
+- Impact: shared participant reads remain intentional while every stakeholder
+  mutation remains admin-only; the read exception is not a claim of complete
+  BOLA/IDOR protection.
+- Verification: implementation reviewed in `stakeholderRoutes.js`, `api.js`,
+  and `checkAuth.js`; runtime audit steps are in `docs/security/red-team-audit.md`.
+
 ### 2026-11-27 — Stakeholder dashboard leftovers removed
 
 - Change: deleted the unused `AdminDashboardStakeholders.jsx` and
